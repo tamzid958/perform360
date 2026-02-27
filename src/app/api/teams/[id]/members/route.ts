@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdminOrHR, isAuthError } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
+import { applyRateLimit } from "@/lib/rate-limit";
+import { validateCuidParam } from "@/lib/validation";
 
 const addMemberSchema = z.object({
   userId: z.string().min(1, "User ID is required"),
@@ -12,6 +14,11 @@ export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const rl = applyRateLimit(request);
+  if (rl) return rl;
+  const invalid = validateCuidParam(params.id);
+  if (invalid) return invalid;
+
   const authResult = await requireAdminOrHR();
   if (isAuthError(authResult)) return authResult;
 

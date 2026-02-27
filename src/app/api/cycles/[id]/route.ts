@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAuth, requireAdminOrHR, isAuthError } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
+import { applyRateLimit } from "@/lib/rate-limit";
+import { validateCuidParam } from "@/lib/validation";
 
 const updateCycleSchema = z.object({
   name: z.string().min(1).optional(),
@@ -23,9 +25,14 @@ function isValidTransition(from: string, to: string): boolean {
 }
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const rl = applyRateLimit(request);
+  if (rl) return rl;
+  const invalid = validateCuidParam(params.id);
+  if (invalid) return invalid;
+
   const authResult = await requireAuth();
   if (isAuthError(authResult)) return authResult;
 
@@ -119,6 +126,11 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const rl = applyRateLimit(request);
+  if (rl) return rl;
+  const invalid = validateCuidParam(params.id);
+  if (invalid) return invalid;
+
   const authResult = await requireAdminOrHR();
   if (isAuthError(authResult)) return authResult;
 
@@ -188,9 +200,14 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const rl = applyRateLimit(request);
+  if (rl) return rl;
+  const invalid = validateCuidParam(params.id);
+  if (invalid) return invalid;
+
   const authResult = await requireAdminOrHR();
   if (isAuthError(authResult)) return authResult;
 

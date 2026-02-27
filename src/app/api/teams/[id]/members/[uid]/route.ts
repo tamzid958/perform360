@@ -1,11 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminOrHR, isAuthError } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
+import { applyRateLimit } from "@/lib/rate-limit";
+import { validateCuidParam } from "@/lib/validation";
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: { id: string; uid: string } }
 ) {
+  const rl = applyRateLimit(request);
+  if (rl) return rl;
+  const invalidId = validateCuidParam(params.id, "teamId");
+  if (invalidId) return invalidId;
+  const invalidUid = validateCuidParam(params.uid, "userId");
+  if (invalidUid) return invalidUid;
+
   const authResult = await requireAdminOrHR();
   if (isAuthError(authResult)) return authResult;
 

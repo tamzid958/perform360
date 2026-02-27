@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAuth, requireAdminOrHR, isAuthError } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const questionSchema = z.object({
   id: z.string().min(1),
@@ -27,7 +28,10 @@ const createTemplateSchema = z.object({
   sections: z.array(sectionSchema).min(1, "At least one section is required"),
 });
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const rl = applyRateLimit(request);
+  if (rl) return rl;
+
   const authResult = await requireAuth();
   if (isAuthError(authResult)) return authResult;
 
@@ -49,6 +53,9 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const rl = applyRateLimit(request);
+  if (rl) return rl;
+
   const authResult = await requireAdminOrHR();
   if (isAuthError(authResult)) return authResult;
 

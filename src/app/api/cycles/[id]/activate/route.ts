@@ -3,6 +3,9 @@ import { requireAdminOrHR, isAuthError } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 import { createAssignmentsForCycle } from "@/lib/assignments";
 import { sendEmail, getEvaluationInviteHtml } from "@/lib/email";
+import { applyRateLimit } from "@/lib/rate-limit";
+import { validateCuidParam } from "@/lib/validation";
+import { writeAuditLog } from "@/lib/audit";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
@@ -15,9 +18,14 @@ function sleep(ms: number) {
 }
 
 export async function POST(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const rl = applyRateLimit(request);
+  if (rl) return rl;
+  const invalid = validateCuidParam(params.id);
+  if (invalid) return invalid;
+
   const authResult = await requireAdminOrHR();
   if (isAuthError(authResult)) return authResult;
 
@@ -133,6 +141,14 @@ export async function POST(
       await sleep(EMAIL_BATCH_DELAY_MS);
     }
   }
+
+  await writeAuditLog({
+    companyId: authResult.companyId,
+    userId: authResult.userId,
+    action: "cycle_activate",
+    target: `cycle:${updatedCycle.id}`,
+    metadata: { assignmentsCreated: count, emailsSent, emailsFailed },
+  });
 
   return NextResponse.json({
     success: true,

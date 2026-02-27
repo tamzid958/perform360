@@ -3,15 +3,23 @@ import { requireAdminOrHR, isAuthError } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 import { buildCycleReport } from "@/lib/reports";
 import type { CycleReport } from "@/types/report";
+import { applyRateLimit } from "@/lib/rate-limit";
+import { validateCuidParam } from "@/lib/validation";
+import { writeAuditLog } from "@/lib/audit";
 
 type ApiResponse<T> =
   | { success: true; data: T }
   | { success: false; error: string; code?: string };
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const rl = applyRateLimit(request);
+  if (rl) return rl;
+  const invalid = validateCuidParam(params.id);
+  if (invalid) return invalid;
+
   const authResult = await requireAdminOrHR();
   if (isAuthError(authResult)) return authResult;
 
@@ -33,6 +41,14 @@ export async function GET(
 
   try {
     const report = await buildCycleReport(cycleId, companyId);
+
+    await writeAuditLog({
+      companyId,
+      userId: authResult.userId,
+      action: "decryption",
+      target: `cycle:${cycleId}`,
+      metadata: { type: "cycle_report" },
+    });
 
     return NextResponse.json<ApiResponse<CycleReport>>({
       success: true,

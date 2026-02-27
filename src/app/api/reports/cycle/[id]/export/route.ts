@@ -3,6 +3,9 @@ import { requireAdminOrHR, isAuthError } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 import { buildIndividualReport, buildCycleReport } from "@/lib/reports";
 import { RELATIONSHIP_LABELS } from "@/lib/constants";
+import { applyRateLimit } from "@/lib/rate-limit";
+import { validateCuidParam } from "@/lib/validation";
+import { writeAuditLog } from "@/lib/audit";
 
 type ApiResponse<T> =
   | { success: true; data: T }
@@ -20,6 +23,11 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const rl = applyRateLimit(request);
+  if (rl) return rl;
+  const invalid = validateCuidParam(params.id);
+  if (invalid) return invalid;
+
   const authResult = await requireAdminOrHR();
   if (isAuthError(authResult)) return authResult;
 
@@ -57,6 +65,15 @@ export async function GET(
       }
 
       const report = await buildIndividualReport(cycleId, userId, companyId);
+
+      await writeAuditLog({
+        companyId,
+        userId: authResult.userId,
+        action: "decryption",
+        target: `cycle:${cycleId}`,
+        metadata: { type: "export", exportedUserId: userId },
+      });
+
       const html = renderIndividualReportHtml(report, cycle.name);
 
       return new NextResponse(html, {
@@ -68,6 +85,14 @@ export async function GET(
     }
 
     // Full cycle export — aggregate report
+    await writeAuditLog({
+      companyId,
+      userId: authResult.userId,
+      action: "decryption",
+      target: `cycle:${cycleId}`,
+      metadata: { type: "full_cycle_export" },
+    });
+
     const cycleReport = await buildCycleReport(cycleId, companyId);
 
     // Get all unique subjects in this cycle

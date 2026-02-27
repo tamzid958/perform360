@@ -10,12 +10,17 @@ import {
   hashRecoveryCode,
 } from "@/lib/encryption";
 import { ENCRYPTION_CONFIG } from "@/lib/constants";
+import { applyRateLimit } from "@/lib/rate-limit";
+import { writeAuditLog } from "@/lib/audit";
 
 const regenerateSchema = z.object({
   passphrase: z.string().min(1, "Passphrase is required"),
 });
 
 export async function POST(request: NextRequest) {
+  const rl = applyRateLimit(request);
+  if (rl) return rl;
+
   const authResult = await requireRole("ADMIN");
   if (isAuthError(authResult)) return authResult;
 
@@ -84,6 +89,12 @@ export async function POST(request: NextRequest) {
           encryptedDataKey: record.encryptedDataKey,
         })),
       });
+    });
+
+    await writeAuditLog({
+      companyId: authResult.companyId,
+      userId: authResult.userId,
+      action: "recovery_codes_regenerate",
     });
 
     return NextResponse.json({

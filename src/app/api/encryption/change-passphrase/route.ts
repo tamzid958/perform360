@@ -9,6 +9,8 @@ import {
   encryptDataKey,
 } from "@/lib/encryption";
 import { ENCRYPTION_CONFIG } from "@/lib/constants";
+import { applyRateLimit } from "@/lib/rate-limit";
+import { writeAuditLog } from "@/lib/audit";
 
 const changeSchema = z
   .object({
@@ -25,6 +27,9 @@ const changeSchema = z
   });
 
 export async function POST(request: NextRequest) {
+  const rl = applyRateLimit(request);
+  if (rl) return rl;
+
   const authResult = await requireRole("ADMIN");
   if (isAuthError(authResult)) return authResult;
 
@@ -81,6 +86,12 @@ export async function POST(request: NextRequest) {
         encryptionKeyEncrypted: newEncryptedDataKey,
         encryptionSalt: newSalt,
       },
+    });
+
+    await writeAuditLog({
+      companyId: authResult.companyId,
+      userId: authResult.userId,
+      action: "encryption_passphrase_change",
     });
 
     return NextResponse.json({ success: true, data: null });

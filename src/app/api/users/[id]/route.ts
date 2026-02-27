@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdminOrHR, isAuthError } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
+import { applyRateLimit } from "@/lib/rate-limit";
+import { validateCuidParam } from "@/lib/validation";
+import { writeAuditLog } from "@/lib/audit";
 
 const updateUserSchema = z.object({
   role: z.enum(["ADMIN", "HR", "MANAGER", "MEMBER"]).optional(),
@@ -12,6 +15,11 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const rl = applyRateLimit(request);
+  if (rl) return rl;
+  const invalid = validateCuidParam(params.id);
+  if (invalid) return invalid;
+
   const authResult = await requireAdminOrHR();
   if (isAuthError(authResult)) return authResult;
 
@@ -66,6 +74,16 @@ export async function PATCH(
       data: validated,
     });
 
+    if (validated.role && validated.role !== existing.role) {
+      await writeAuditLog({
+        companyId: authResult.companyId,
+        userId: authResult.userId,
+        action: "role_change",
+        target: `user:${params.id}`,
+        metadata: { oldRole: existing.role, newRole: validated.role },
+      });
+    }
+
     return NextResponse.json({
       success: true,
       data: user,
@@ -86,9 +104,14 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const rl = applyRateLimit(request);
+  if (rl) return rl;
+  const invalid = validateCuidParam(params.id);
+  if (invalid) return invalid;
+
   const authResult = await requireAdminOrHR();
   if (isAuthError(authResult)) return authResult;
 
