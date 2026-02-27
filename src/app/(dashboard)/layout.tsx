@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { Sidebar } from "@/components/layout/sidebar";
 import { TopNav } from "@/components/layout/top-nav";
 import { ToastProvider } from "@/components/ui/toast";
@@ -9,6 +10,22 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   if (!session?.user) {
     redirect("/login");
+  }
+
+  const appUser = await prisma.user.findFirst({
+    where: { email: session.user.email! },
+    select: { role: true, companyId: true },
+  });
+
+  if (appUser?.role === "ADMIN") {
+    const company = await prisma.company.findUnique({
+      where: { id: appUser.companyId },
+      select: { encryptionSetupAt: true },
+    });
+
+    if (company && !company.encryptionSetupAt) {
+      redirect("/setup-encryption");
+    }
   }
 
   return (

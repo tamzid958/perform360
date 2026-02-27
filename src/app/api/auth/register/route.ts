@@ -45,8 +45,8 @@ export async function POST(request: NextRequest) {
       slug = `${slug}-${randomBytes(2).toString("hex")}`;
     }
 
-    // Placeholder encryption key (admin sets real passphrase in settings after first login)
-    const placeholderKey = randomBytes(32).toString("hex");
+    // Placeholder — admin sets real passphrase via the encryption setup wizard after first login
+    const placeholderKey = "PLACEHOLDER_AWAITING_SETUP";
 
     // Create company, user, and auth user in a transaction
     await prisma.$transaction(async (tx) => {
@@ -55,7 +55,9 @@ export async function POST(request: NextRequest) {
           name: companyName,
           slug,
           encryptionKeyEncrypted: placeholderKey,
-          keyVersion: 1,
+          encryptionSalt: null,
+          encryptionSetupAt: null,
+          keyVersion: 0,
         },
       });
 
