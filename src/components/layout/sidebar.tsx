@@ -10,7 +10,6 @@ import {
   FileText,
   UserCircle,
   Settings,
-  BarChart3,
   ChevronLeft,
 } from "lucide-react";
 import { useState } from "react";
@@ -21,7 +20,6 @@ const navigation = [
   { name: "Teams", href: "/teams", icon: Users },
   { name: "Templates", href: "/templates", icon: FileText },
   { name: "People", href: "/people", icon: UserCircle },
-  { name: "Reports", href: "/cycles", icon: BarChart3 },
 ];
 
 const bottomNav = [
