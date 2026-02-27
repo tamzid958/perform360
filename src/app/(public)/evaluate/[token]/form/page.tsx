@@ -1,58 +1,102 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle2, ChevronLeft, ChevronRight, Send } from "lucide-react";
+import { CheckCircle2, ChevronLeft, ChevronRight, Send, Loader2, AlertCircle } from "lucide-react";
 
-// Demo data - in production, fetched from API
-const evaluationData = {
-  subjectName: "Alex Kim",
-  cycleName: "Q1 2026 Performance Review",
-  relationship: "Peer",
-  template: {
-    sections: [
-      {
-        title: "Communication Skills",
-        description: "Evaluate the individual's communication effectiveness",
-        questions: [
-          { id: "q1", text: "How effectively does this person communicate with team members?", type: "rating_scale" as const, required: true, scaleMin: 1, scaleMax: 5, scaleLabels: ["Poor", "Below Average", "Average", "Good", "Excellent"] },
-          { id: "q2", text: "Does this person actively listen to feedback?", type: "rating_scale" as const, required: true, scaleMin: 1, scaleMax: 5, scaleLabels: ["Never", "Rarely", "Sometimes", "Often", "Always"] },
-          { id: "q3", text: "Please provide examples of effective communication you've observed.", type: "text" as const, required: false },
-        ],
-      },
-      {
-        title: "Leadership & Initiative",
-        description: "Assess leadership qualities and initiative-taking",
-        questions: [
-          { id: "q4", text: "How well does this person take initiative on projects?", type: "rating_scale" as const, required: true, scaleMin: 1, scaleMax: 5, scaleLabels: ["Poor", "Below Average", "Average", "Good", "Excellent"] },
-          { id: "q5", text: "Does this person mentor or support team members?", type: "yes_no" as const, required: true },
-          { id: "q6", text: "What leadership qualities stand out?", type: "text" as const, required: false },
-        ],
-      },
-      {
-        title: "Overall Assessment",
-        description: "Provide your overall evaluation",
-        questions: [
-          { id: "q7", text: "Overall performance rating", type: "rating_scale" as const, required: true, scaleMin: 1, scaleMax: 5, scaleLabels: ["Needs Improvement", "Below Expectations", "Meets Expectations", "Exceeds Expectations", "Exceptional"] },
-          { id: "q8", text: "What are this person's greatest strengths?", type: "text" as const, required: true },
-          { id: "q9", text: "What areas could this person improve in?", type: "text" as const, required: true },
-          { id: "q10", text: "Any additional comments?", type: "text" as const, required: false },
-        ],
-      },
-    ],
-  },
-};
+interface TemplateQuestion {
+  id: string;
+  text: string;
+  type: "rating_scale" | "text" | "multiple_choice" | "yes_no" | "competency_matrix";
+  required: boolean;
+  options?: string[];
+  scaleMin?: number;
+  scaleMax?: number;
+  scaleLabels?: string[];
+}
+
+interface TemplateSection {
+  title: string;
+  description?: string;
+  questions: TemplateQuestion[];
+}
+
+interface FormData {
+  subjectName: string;
+  cycleName: string;
+  relationship: string;
+  sections: TemplateSection[];
+}
 
 export default function EvaluationFormPage({ params }: { params: { token: string } }) {
+  const router = useRouter();
+  const [formData, setFormData] = useState<FormData | null>(null);
+  const [isLoadingForm, setIsLoadingForm] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [currentSection, setCurrentSection] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string | number | boolean>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
-  const sections = evaluationData.template.sections;
+  // Load form data from API
+  useEffect(() => {
+    async function loadForm() {
+      try {
+        const res = await fetch(`/api/evaluate/${params.token}/form`);
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          if (data.code === "NO_SESSION" || data.code === "SESSION_EXPIRED") {
+            router.replace(`/evaluate/${params.token}`);
+            return;
+          }
+          setLoadError(data.error || "Failed to load evaluation form");
+          return;
+        }
+        setFormData(data.data);
+      } catch {
+        setLoadError("Failed to load evaluation form");
+      } finally {
+        setIsLoadingForm(false);
+      }
+    }
+    loadForm();
+  }, [params.token, router]);
+
+  if (isLoadingForm) {
+    return (
+      <div className="min-h-screen bg-[#f5f5f7] flex items-center justify-center p-4">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 size={24} className="text-brand-500 animate-spin" />
+          <p className="text-[14px] text-gray-500">Loading evaluation form...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-[#f5f5f7] flex items-center justify-center p-4">
+        <div className="w-full max-w-[420px] space-y-8">
+          <div className="text-center">
+            <div className="w-16 h-16 rounded-2xl bg-red-50 flex items-center justify-center mx-auto mb-6">
+              <AlertCircle size={28} strokeWidth={1.5} className="text-red-500" />
+            </div>
+            <h1 className="text-title text-gray-900">Unable to Load Form</h1>
+            <p className="text-body text-gray-500 mt-2">{loadError}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!formData) return null;
+
+  const { sections, subjectName, cycleName, relationship } = formData;
   const section = sections[currentSection];
   const totalQuestions = sections.reduce((acc, s) => acc + s.questions.length, 0);
   const answeredQuestions = Object.keys(answers).length;
@@ -64,15 +108,21 @@ export default function EvaluationFormPage({ params }: { params: { token: string
 
   async function handleSubmit() {
     setIsSubmitting(true);
+    setSubmitError("");
     try {
       const res = await fetch(`/api/evaluate/${params.token}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ answers }),
       });
-      if (res.ok) {
+      const data = await res.json();
+      if (res.ok && data.success) {
         setIsSubmitted(true);
+      } else {
+        setSubmitError(data.error || "Failed to submit evaluation");
       }
+    } catch {
+      setSubmitError("Failed to submit evaluation. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -88,7 +138,7 @@ export default function EvaluationFormPage({ params }: { params: { token: string
           <div>
             <h1 className="text-title text-gray-900">Thank You!</h1>
             <p className="text-body text-gray-500 mt-2">
-              Your evaluation for {evaluationData.subjectName} has been submitted successfully.
+              Your evaluation for {subjectName} has been submitted successfully.
             </p>
           </div>
           <Card padding="md">
@@ -107,8 +157,8 @@ export default function EvaluationFormPage({ params }: { params: { token: string
       <header className="sticky top-0 z-10 bg-white/80 backdrop-blur-xl border-b border-gray-200/50">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
           <div>
-            <p className="text-headline text-gray-900">Evaluating: {evaluationData.subjectName}</p>
-            <p className="text-[12px] text-gray-500">{evaluationData.cycleName} · {evaluationData.relationship}</p>
+            <p className="text-headline text-gray-900">Evaluating: {subjectName}</p>
+            <p className="text-[12px] text-gray-500">{cycleName} &middot; {relationship}</p>
           </div>
           <Badge variant="outline">{progressPercent}% complete</Badge>
         </div>
@@ -199,10 +249,35 @@ export default function EvaluationFormPage({ params }: { params: { token: string
                     ))}
                   </div>
                 )}
+
+                {q.type === "multiple_choice" && q.options && (
+                  <div className="flex flex-col gap-2">
+                    {q.options.map((option) => (
+                      <button
+                        key={option}
+                        onClick={() => setAnswer(q.id, option)}
+                        className={`w-full text-left px-4 py-3 rounded-xl text-[14px] font-medium transition-all ${
+                          answers[q.id] === option
+                            ? "bg-brand-500 text-white shadow-md"
+                            : "bg-gray-50 text-gray-600 hover:bg-gray-100"
+                        }`}
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>
         </Card>
+
+        {/* Submit Error */}
+        {submitError && (
+          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl">
+            <p className="text-[13px] text-red-600 text-center">{submitError}</p>
+          </div>
+        )}
 
         {/* Navigation */}
         <div className="flex items-center justify-between mt-6">

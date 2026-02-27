@@ -1,35 +1,75 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
-import { Shield, Loader2 } from "lucide-react";
+import { Shield, Loader2, AlertCircle } from "lucide-react";
+
+interface TokenData {
+  subjectName: string;
+  reviewerEmailMasked: string;
+  cycleName: string;
+  relationship: string;
+}
 
 export default function EvaluateOTPPage({ params }: { params: { token: string } }) {
   const router = useRouter();
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isSending, setIsSending] = useState(true);
+  const [isValidating, setIsValidating] = useState(true);
+  const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState("");
+  const [tokenError, setTokenError] = useState("");
   const [cooldown, setCooldown] = useState(0);
+  const [tokenData, setTokenData] = useState<TokenData | null>(null);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // Auto-send OTP on mount
+  const sendOTP = useCallback(async () => {
+    setIsSending(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/evaluate/${params.token}/otp/send`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Failed to send verification code");
+      }
+    } catch {
+      setError("Failed to send verification code");
+    } finally {
+      setIsSending(false);
+    }
+  }, [params.token]);
+
+  // Validate token on mount, then auto-send OTP
   useEffect(() => {
-    async function sendOTP() {
+    async function validateAndSend() {
       try {
-        const res = await fetch(`/api/evaluate/${params.token}/otp/send`, { method: "POST" });
-        if (!res.ok) {
-          const data = await res.json();
-          setError(data.error || "Failed to send verification code");
+        const res = await fetch(`/api/evaluate/${params.token}`);
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          setTokenError(data.error || "Invalid evaluation link");
+          return;
+        }
+        setTokenData(data.data);
+        setIsValidating(false);
+        // Auto-send OTP after token validation
+        setIsSending(true);
+        try {
+          const otpRes = await fetch(`/api/evaluate/${params.token}/otp/send`, { method: "POST" });
+          const otpData = await otpRes.json();
+          if (!otpRes.ok) {
+            setError(otpData.error || "Failed to send verification code");
+          }
+        } catch {
+          setError("Failed to send verification code");
+        } finally {
+          setIsSending(false);
         }
       } catch {
-        setError("Failed to send verification code");
-      } finally {
-        setIsSending(false);
+        setTokenError("Failed to validate evaluation link");
       }
     }
-    sendOTP();
+    validateAndSend();
   }, [params.token]);
 
   function handleChange(index: number, value: string) {
@@ -42,7 +82,6 @@ export default function EvaluateOTPPage({ params }: { params: { token: string } 
       inputRefs.current[index + 1]?.focus();
     }
 
-    // Auto-submit when all digits entered
     if (newOtp.every((d) => d !== "")) {
       handleVerify(newOtp.join(""));
     }
@@ -100,16 +139,33 @@ export default function EvaluateOTPPage({ params }: { params: { token: string } 
     }
   }
 
-  async function handleResend() {
-    setIsSending(true);
-    setError("");
-    try {
-      await fetch(`/api/evaluate/${params.token}/otp/send`, { method: "POST" });
-    } catch {
-      setError("Failed to resend code");
-    } finally {
-      setIsSending(false);
-    }
+  // Token validation error
+  if (tokenError) {
+    return (
+      <div className="min-h-screen bg-[#f5f5f7] flex items-center justify-center p-4">
+        <div className="w-full max-w-[420px] space-y-8">
+          <div className="text-center">
+            <div className="w-16 h-16 rounded-2xl bg-red-50 flex items-center justify-center mx-auto mb-6">
+              <AlertCircle size={28} strokeWidth={1.5} className="text-red-500" />
+            </div>
+            <h1 className="text-title text-gray-900">Evaluation Unavailable</h1>
+            <p className="text-body text-gray-500 mt-2">{tokenError}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Token still validating
+  if (isValidating) {
+    return (
+      <div className="min-h-screen bg-[#f5f5f7] flex items-center justify-center p-4">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 size={24} className="text-brand-500 animate-spin" />
+          <p className="text-[14px] text-gray-500">Validating evaluation link...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -120,10 +176,19 @@ export default function EvaluateOTPPage({ params }: { params: { token: string } 
             <Shield size={28} strokeWidth={1.5} className="text-brand-500" />
           </div>
           <h1 className="text-title text-gray-900">Verify Your Identity</h1>
-          <p className="text-body text-gray-500 mt-2">
-            Enter the 6-digit code sent to your email
-          </p>
+          {tokenData && (
+            <p className="text-body text-gray-500 mt-2">
+              Enter the 6-digit code sent to {tokenData.reviewerEmailMasked}
+            </p>
+          )}
         </div>
+
+        {tokenData && (
+          <div className="text-center text-[13px] text-gray-500">
+            <p>Evaluation for <span className="font-medium text-gray-700">{tokenData.subjectName}</span></p>
+            <p>{tokenData.cycleName} &middot; {tokenData.relationship}</p>
+          </div>
+        )}
 
         <Card padding="lg">
           {isSending ? (
@@ -133,7 +198,6 @@ export default function EvaluateOTPPage({ params }: { params: { token: string } 
             </div>
           ) : (
             <div className="space-y-6">
-              {/* OTP Input */}
               <div className="flex justify-center gap-3" onPaste={handlePaste}>
                 {otp.map((digit, index) => (
                   <input
@@ -164,7 +228,7 @@ export default function EvaluateOTPPage({ params }: { params: { token: string } 
 
               <div className="text-center">
                 <button
-                  onClick={handleResend}
+                  onClick={sendOTP}
                   disabled={isSending}
                   className="text-[14px] text-brand-500 hover:text-brand-600 font-medium transition-colors disabled:opacity-50"
                 >
