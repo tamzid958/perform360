@@ -61,20 +61,21 @@ export async function POST(request: NextRequest) {
         },
       });
 
+      // Upsert AuthUser for NextAuth adapter compatibility
+      const authUser = await tx.authUser.upsert({
+        where: { email },
+        create: { email, name },
+        update: {},
+      });
+
       await tx.user.create({
         data: {
           email,
           name,
           role: "ADMIN",
           companyId: company.id,
+          authUserId: authUser.id,
         },
-      });
-
-      // Upsert AuthUser for NextAuth adapter compatibility
-      await tx.authUser.upsert({
-        where: { email },
-        create: { email, name },
-        update: {},
       });
     });
 

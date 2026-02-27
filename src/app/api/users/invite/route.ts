@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdminOrHR, isAuthError } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
+import { applyRateLimit } from "@/lib/rate-limit";
+import { writeAuditLog } from "@/lib/audit";
 
 const inviteSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -10,6 +12,9 @@ const inviteSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  const rl = applyRateLimit(request);
+  if (rl) return rl;
+
   const authResult = await requireAdminOrHR();
   if (isAuthError(authResult)) return authResult;
 
@@ -46,31 +51,33 @@ export async function POST(request: NextRequest) {
 
     // Create User record and AuthUser in a transaction
     const result = await prisma.$transaction(async (tx) => {
-      // Create AuthUser if not exists (for NextAuth login)
-      const existingAuthUser = await tx.authUser.findUnique({
+      // Upsert AuthUser for NextAuth login
+      const authUser = await tx.authUser.upsert({
         where: { email: validated.email },
+        create: { email: validated.email, name: validated.name },
+        update: {},
       });
 
-      if (!existingAuthUser) {
-        await tx.authUser.create({
-          data: {
-            email: validated.email,
-            name: validated.name,
-          },
-        });
-      }
-
-      // Create company User record
+      // Create company User record linked to AuthUser
       const user = await tx.user.create({
         data: {
           email: validated.email,
           name: validated.name,
           role: validated.role,
           companyId: authResult.companyId,
+          authUserId: authUser.id,
         },
       });
 
       return user;
+    });
+
+    await writeAuditLog({
+      companyId: authResult.companyId,
+      userId: authResult.userId,
+      action: "user_invite",
+      target: `user:${result.id}`,
+      metadata: { email: validated.email, role: validated.role },
     });
 
     return NextResponse.json({

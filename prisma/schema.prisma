@@ -116,6 +116,7 @@ model Company {
   cycles        EvaluationCycle[]
   templates     EvaluationTemplate[]
   recoveryCodes RecoveryCode[]
+  auditLogs     AuditLog[]
 }
 
 enum UserRole {
@@ -126,14 +127,15 @@ enum UserRole {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String
-  name      String
-  avatar    String?
-  role      UserRole @default(MEMBER)
-  companyId String
-  company   Company  @relation(fields: [companyId], references: [id])
-  createdAt DateTime @default(now())
+  id         String   @id @default(cuid())
+  email      String
+  name       String
+  avatar     String?
+  role       UserRole @default(MEMBER)
+  companyId  String
+  company    Company  @relation(fields: [companyId], references: [id])
+  authUserId String?  // Links to AuthUser for NextAuth session resolution
+  createdAt  DateTime @default(now())
 
   // Relations
   teamMemberships  TeamMember[]
@@ -141,6 +143,7 @@ model User {
   receivedReviews  EvaluationResponse[] @relation("ReviewSubject")
 
   @@unique([email, companyId])
+  @@index([authUserId])
 }
 
 // ─────────────────────────────────────────────────────────
@@ -282,4 +285,23 @@ model RecoveryCode {
   createdAt        DateTime  @default(now())
 
   @@index([companyId])
+}
+
+// ─────────────────────────────────────────────────────────
+// AUDIT LOG
+// ─────────────────────────────────────────────────────────
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id])
+  userId    String?  // null for system events
+  action    String   // e.g., "decryption", "role_change", "user_invite", "cycle_activate"
+  target    String?  // e.g., "user:cuid123", "cycle:cuid456"
+  metadata  Json?    // Additional context
+  ip        String?
+  createdAt DateTime @default(now())
+
+  @@index([companyId, createdAt])
+  @@index([userId])
 }

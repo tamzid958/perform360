@@ -13,6 +13,7 @@ interface AuthResult {
 
 /**
  * Require authenticated session and return user info.
+ * Scopes User lookup by companyId from session to prevent cross-company leaks.
  * Returns NextResponse error if unauthenticated.
  */
 export async function requireAuth(): Promise<AuthResult | NextResponse> {
@@ -25,8 +26,13 @@ export async function requireAuth(): Promise<AuthResult | NextResponse> {
     );
   }
 
+  // Scope by companyId from session to handle same email in multiple companies
+  const whereClause = session.user.companyId
+    ? { email: session.user.email, companyId: session.user.companyId }
+    : { email: session.user.email };
+
   const user = await prisma.user.findFirst({
-    where: { email: session.user.email },
+    where: whereClause,
     select: { id: true, email: true, role: true, companyId: true },
   });
 

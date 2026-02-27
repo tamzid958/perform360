@@ -51,10 +51,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (session.user) {
         session.user.id = user.id;
 
-        // Fetch the user's role and companyId from the User table
+        // Resolve app User via authUserId link (handles multi-company correctly)
+        // Falls back to email lookup for legacy users without authUserId set
         const appUser = await prisma.user.findFirst({
-          where: { email: session.user.email },
-          select: { role: true, companyId: true },
+          where: {
+            OR: [
+              { authUserId: user.id },
+              { email: session.user.email },
+            ],
+          },
+          orderBy: { createdAt: "desc" },
+          select: { id: true, role: true, companyId: true },
         });
 
         if (appUser) {
