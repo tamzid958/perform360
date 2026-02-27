@@ -36,10 +36,13 @@ export async function GET(
     },
     include: {
       assignments: {
-        include: {
-          _count: {
-            select: { responses: true },
-          },
+        select: {
+          id: true,
+          subjectId: true,
+          reviewerId: true,
+          relationship: true,
+          status: true,
+          _count: { select: { responses: true } },
         },
       },
       _count: {
@@ -47,6 +50,26 @@ export async function GET(
       },
     },
   });
+
+  // Resolve subject/reviewer names for assignments
+  if (cycle) {
+    const userIds = new Set<string>();
+    for (const a of cycle.assignments) {
+      userIds.add(a.subjectId);
+      userIds.add(a.reviewerId);
+    }
+    const users = await prisma.user.findMany({
+      where: { id: { in: Array.from(userIds) } },
+      select: { id: true, name: true },
+    });
+    const nameMap = new Map(users.map((u) => [u.id, u.name]));
+    // Attach names to cycle object for response
+    (cycle as Record<string, unknown>).assignmentsWithNames = cycle.assignments.map((a) => ({
+      ...a,
+      subjectName: nameMap.get(a.subjectId) ?? "Unknown",
+      reviewerName: nameMap.get(a.reviewerId) ?? "Unknown",
+    }));
+  }
 
   if (!cycle) {
     return NextResponse.json({
@@ -60,18 +83,32 @@ export async function GET(
   const submittedAssignments = cycle.assignments.filter(
     (a) => a.status === "SUBMITTED"
   ).length;
+  const inProgressAssignments = cycle.assignments.filter(
+    (a) => a.status === "IN_PROGRESS"
+  ).length;
+  const pendingAssignments = cycle.assignments.filter(
+    (a) => a.status === "PENDING"
+  ).length;
   const completionRate = totalAssignments > 0
     ? Math.round((submittedAssignments / totalAssignments) * 100)
     : 0;
+
+  // Fetch template name
+  const template = await prisma.evaluationTemplate.findUnique({
+    where: { id: cycle.templateId },
+    select: { name: true },
+  });
 
   return NextResponse.json({
     success: true,
     data: {
       ...cycle,
+      templateName: template?.name ?? "Unknown Template",
       stats: {
         totalAssignments,
         submittedAssignments,
-        pendingAssignments: totalAssignments - submittedAssignments,
+        inProgressAssignments,
+        pendingAssignments,
         completionRate,
       },
     },
