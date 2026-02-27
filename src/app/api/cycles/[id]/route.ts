@@ -10,6 +10,18 @@ const updateCycleSchema = z.object({
   endDate: z.string().refine((d) => !isNaN(Date.parse(d)), "Invalid end date").optional(),
 });
 
+/** Valid cycle status transitions */
+const VALID_TRANSITIONS: Record<string, string[]> = {
+  DRAFT: ["ACTIVE"],
+  ACTIVE: ["CLOSED"],
+  CLOSED: ["ARCHIVED"],
+  ARCHIVED: [],
+};
+
+function isValidTransition(from: string, to: string): boolean {
+  return VALID_TRANSITIONS[from]?.includes(to) ?? false;
+}
+
 export async function GET(
   _request: NextRequest,
   { params }: { params: { id: string } }
@@ -90,6 +102,17 @@ export async function PATCH(
         error: "Cycle not found",
         code: "NOT_FOUND",
       }, { status: 404 });
+    }
+
+    // Validate status transition
+    if (validated.status && validated.status !== existing.status) {
+      if (!isValidTransition(existing.status, validated.status)) {
+        return NextResponse.json({
+          success: false,
+          error: `Cannot transition from ${existing.status} to ${validated.status}. Use the activate endpoint for DRAFT → ACTIVE.`,
+          code: "INVALID_STATUS",
+        }, { status: 400 });
+      }
     }
 
     const updateData: Record<string, unknown> = {};
