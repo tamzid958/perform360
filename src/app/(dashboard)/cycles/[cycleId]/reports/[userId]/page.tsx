@@ -38,9 +38,9 @@ export default function IndividualReportPage({ params }: { params: { cycleId: st
   return (
     <div>
       <div className="mb-6">
-        <Link href={`/cycles/${params.cycleId}/reports`} className="inline-flex items-center gap-1.5 text-[14px] text-gray-500 hover:text-gray-700 transition-colors mb-4">
+        <Link href={`/cycles/${params.cycleId}`} className="inline-flex items-center gap-1.5 text-[14px] text-gray-500 hover:text-gray-700 transition-colors mb-4">
           <ArrowLeft size={14} strokeWidth={1.5} />
-          Back to Reports
+          Back to Cycle
         </Link>
       </div>
 
