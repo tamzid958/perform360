@@ -56,3 +56,35 @@ export function decrypt(encrypted: string, iv: string, tag: string, key: Buffer)
 export function generateSalt(): string {
   return randomBytes(SALT_LENGTH).toString("base64");
 }
+
+// ─── Recovery Code Helpers ───
+
+const RECOVERY_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; // Excludes ambiguous: 0/O, 1/I/L
+
+export function generateRecoveryCodes(count: number = 8): string[] {
+  const codes: string[] = [];
+  for (let i = 0; i < count; i++) {
+    const bytes = randomBytes(10);
+    let code = "";
+    for (let j = 0; j < 10; j++) {
+      code += RECOVERY_ALPHABET[bytes[j] % RECOVERY_ALPHABET.length];
+      if (j === 4) code += "-";
+    }
+    codes.push(code);
+  }
+  return codes;
+}
+
+function normalizeRecoveryCode(code: string): string {
+  return code.toUpperCase().replace(/-/g, "").trim();
+}
+
+export async function hashRecoveryCode(code: string): Promise<string> {
+  const bcrypt = await import("bcryptjs");
+  return bcrypt.hash(normalizeRecoveryCode(code), 10);
+}
+
+export async function verifyRecoveryCode(code: string, hash: string): Promise<boolean> {
+  const bcrypt = await import("bcryptjs");
+  return bcrypt.compare(normalizeRecoveryCode(code), hash);
+}

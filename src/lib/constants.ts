@@ -42,3 +42,9 @@ export const RELATIONSHIP_LABELS: Record<string, string> = {
   peer: "Peer",
   self: "Self",
 };
+
+export const ENCRYPTION_CONFIG = {
+  recoveryCodeCount: 8,
+  minPassphraseLength: 12,
+  maxPassphraseLength: 128,
+} as const;
