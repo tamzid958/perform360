@@ -39,6 +39,14 @@ export interface TextFeedbackGroup {
   responses: string[];
 }
 
+export interface IndividualSummary {
+  subjectId: string;
+  subjectName: string;
+  overallScore: number;
+  reviewCount: number;
+  completedCount: number;
+}
+
 export interface CycleReport {
   cycleId: string;
   cycleName: string;
@@ -46,6 +54,7 @@ export interface CycleReport {
   teamCompletionRates: TeamCompletionRate[];
   scoreDistribution: number[];
   participationStats: ParticipationStats;
+  individualSummaries: IndividualSummary[];
 }
 
 export interface TeamCompletionRate {
