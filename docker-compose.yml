@@ -1,0 +1,38 @@
+# ─────────────────────────────────────────────────────────
+# Performs360 — Production Docker Compose
+# ─────────────────────────────────────────────────────────
+
+# NOTE: PostgreSQL is external. Set DATABASE_URL in your .env file
+# pointing to your existing PostgreSQL instance.
+
+services:
+  migrate:
+    build: .
+    container_name: performs360-migrate
+    env_file:
+      - .env
+    entrypoint: ["npx", "prisma", "db", "push", "--skip-generate"]
+    restart: "no"
+
+  app:
+    build: .
+    container_name: performs360-app
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    env_file:
+      - .env
+
+  worker:
+    build: .
+    container_name: performs360-worker
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    env_file:
+      - .env
+    entrypoint: ["node", "--import", "tsx", "scripts/worker.ts"]

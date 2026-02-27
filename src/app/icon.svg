@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- Dark background -->
+  <rect width="32" height="32" rx="4" fill="#111111"/>
+  <!-- Red accent — top edge -->
+  <rect x="0" y="0" width="32" height="2.5" rx="1" fill="#E63946"/>
+  <!-- Red accent — right edge -->
+  <rect x="29.5" y="0" width="2.5" height="32" rx="1" fill="#E63946"/>
+  <!-- Red triangle arrow -->
+  <polygon points="4,6 4,14 10,10" fill="#E63946"/>
+  <!-- White P letterform (path for cross-browser reliability) -->
+  <path d="M7,17 L7,30 L11,30 L11,25 L15,25 C19.5,25 19.5,17 15,17 Z M11,20 L14,20 C16,20 16,22.5 14,22.5 L11,22.5 Z" fill="#FFFFFF"/>
+</svg>

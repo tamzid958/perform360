@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Perform360 — Open Source 360° Performance Reviews</title>
+  <meta name="description" content="Open source, self-hosted 360-degree performance review platform with end-to-end encryption. Your server, your data, your rules.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Perform360 — Open Source 360° Performance Reviews">
+  <meta property="og:description" content="Self-hosted 360-degree performance reviews with end-to-end encryption. Deploy on your infrastructure. Free forever.">
+  <meta property="og:image" content="assets/image.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Perform360 — Open Source 360° Performance Reviews">
+  <meta name="twitter:description" content="Self-hosted 360° performance reviews with end-to-end encryption. Open source, free forever.">
+  <meta name="twitter:image" content="assets/image.png">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            bg: '#111111',
+            'bg-alt': '#0a0a0a',
+            accent: { DEFAULT: '#E63946', dark: '#C62828' },
+            gray: {
+              50: '#F5F5F5', 100: '#DDDDDD', 300: '#BBBBBB',
+              400: '#888888', 500: '#555555', 700: '#333333',
+              800: '#222222', 900: '#111111', 950: '#000000',
+            },
+          },
+          fontFamily: {
+            sans: ['"Helvetica Neue"', '"Arial Narrow"', 'Arial', 'sans-serif'],
+            serif: ['Georgia', '"Times New Roman"', 'serif'],
+            mono: ['ui-monospace', 'SFMono-Regular', 'monospace'],
+          },
+          letterSpacing: { caps: '0.15em' },
+          borderRadius: { none: '0', DEFAULT: '0' },
+        },
+      },
+    }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Perform360",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Web",
+    "description": "Open source, self-hosted 360-degree performance review platform with end-to-end encryption.",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+  }
+  </script>
+  <style>
+    /* Panel system */
+    .panel { position:fixed;inset:0;opacity:0;pointer-events:none;transition:opacity .5s ease;z-index:1;overflow-y:auto }
+    .panel.active { opacity:1;pointer-events:all;z-index:2 }
+    /* Reveal */
+    .reveal { opacity:0;transform:translateY(24px);transition:opacity .6s ease,transform .6s ease }
+    .reveal.visible { opacity:1;transform:none }
+    .d1{transition-delay:.06s}.d2{transition-delay:.12s}.d3{transition-delay:.18s}
+    .d4{transition-delay:.24s}.d5{transition-delay:.3s}.d6{transition-delay:.36s}
+    /* Dot nav */
+    .dot-nav button { width:8px;height:8px;border:1px solid #555;background:transparent;padding:0;transition:all .3s }
+    .dot-nav button.active { border-color:#E63946;background:#E63946 }
+    .dot-nav button:hover .dot-label { opacity:1 }
+    /* Top bar */
+    #topBar { transform:translateY(-100%);opacity:0;transition:all .35s ease;pointer-events:none }
+    #topBar.show { transform:none;opacity:1;pointer-events:all }
+    /* Accent rule animation */
+    .accent-rule { animation:ruleGrow .8s ease forwards }
+    @keyframes ruleGrow { from{width:0} to{width:80px} }
+    /* Scroll hint */
+    .scroll-line { animation:scrollPulse 2s ease-in-out infinite }
+    @keyframes scrollPulse { 0%,100%{opacity:.2;transform:scaleY(.5)} 50%{opacity:1;transform:scaleY(1)} }
+    /* Spinner */
+    .spinner { animation:spin .7s linear infinite }
+    @keyframes spin { to{transform:rotate(360deg)} }
+    /* Enc pulse */
+    .enc-pulse { animation:drop 2.5s ease infinite }
+    .enc-pulse-d2 { animation-delay:.4s }
+    .enc-pulse-d3 { animation-delay:.8s }
+    @keyframes drop { 0%{top:-6px;opacity:0} 20%{opacity:1} 80%{opacity:1} 100%{top:28px;opacity:0} }
+    /* Selection */
+    ::selection { background:rgba(230,57,70,.15) }
+  </style>
+</head>
+<body class="bg-bg text-gray-50 font-sans antialiased overflow-hidden h-screen">
+
+  <!-- Dot Nav -->
+  <nav class="dot-nav fixed right-6 top-1/2 -translate-y-1/2 z-[200] flex flex-col gap-5 md:right-8">
+    <button data-target="hero" class="active" aria-label="Home"><span class="dot-label absolute right-6 top-1/2 -translate-y-1/2 text-[10px] uppercase tracking-caps text-gray-400 whitespace-nowrap opacity-0 pointer-events-none transition-opacity">Home</span></button>
+    <button data-target="features" aria-label="Features"><span class="dot-label absolute right-6 top-1/2 -translate-y-1/2 text-[10px] uppercase tracking-caps text-gray-400 whitespace-nowrap opacity-0 pointer-events-none transition-opacity">Features</span></button>
+    <button data-target="security" aria-label="Security"><span class="dot-label absolute right-6 top-1/2 -translate-y-1/2 text-[10px] uppercase tracking-caps text-gray-400 whitespace-nowrap opacity-0 pointer-events-none transition-opacity">Security</span></button>
+    <button data-target="deploy" aria-label="Deploy"><span class="dot-label absolute right-6 top-1/2 -translate-y-1/2 text-[10px] uppercase tracking-caps text-gray-400 whitespace-nowrap opacity-0 pointer-events-none transition-opacity">Deploy</span></button>
+  </nav>
+
+  <!-- Top Bar -->
+  <header id="topBar" class="fixed top-0 left-0 right-0 z-[150] h-14 flex items-center justify-between px-6 md:px-10 bg-bg/90 backdrop-blur-lg border-b border-gray-800">
+    <a href="/"><img src="assets/logo.png" alt="Perform360" class="h-7 brightness-0 invert"></a>
+    <a href="https://github.com/tamzid958/perform360" target="_blank" rel="noopener" class="flex items-center gap-2 text-xs text-gray-400 border border-gray-700 px-3 py-1.5 hover:border-gray-500 transition-colors">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+      <span class="hidden sm:inline">GitHub</span>
+    </a>
+  </header>
+
+  <!-- ═══════ HERO ═══════ -->
+  <section class="panel bg-bg" id="hero">
+    <div class="flex flex-col justify-center items-start min-h-screen w-full max-w-[1080px] mx-auto px-6 md:px-10 relative">
+      <!-- Red top accent -->
+      <div class="absolute top-0 left-0 right-0 h-[3px] bg-accent"></div>
+
+      <p class="text-[11px] uppercase tracking-caps text-gray-400 mb-8 reveal">
+        Open Source &middot; Free Forever
+      </p>
+
+      <h1 class="font-serif text-[clamp(48px,8vw,96px)] font-bold leading-[1.0] tracking-tight reveal d1">
+        360° feedback<br>you <em class="italic text-accent">own.</em>
+      </h1>
+
+      <div class="accent-rule h-[2px] bg-accent mt-8 reveal d2"></div>
+
+      <p class="font-serif text-base md:text-lg text-gray-400 leading-relaxed mt-6 max-w-md reveal d3">
+        Self-hosted performance reviews with end-to-end encryption.
+        Deploy on your infrastructure in minutes.
+      </p>
+
+      <div class="flex gap-4 mt-10 reveal d4">
+        <a href="https://github.com/tamzid958/perform360" target="_blank" rel="noopener" class="flex items-center gap-2.5 bg-accent text-white text-sm font-medium px-6 py-3 hover:bg-accent-dark transition-colors">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+          Get Started
+        </a>
+        <button class="scroll-to flex items-center gap-2 text-sm text-gray-300 border border-gray-700 px-6 py-3 hover:border-gray-400 transition-colors" data-target="features">
+          Explore
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+      </div>
+
+      <!-- Stats strip -->
+      <div class="flex flex-wrap items-center gap-x-8 gap-y-4 mt-16 pt-8 border-t border-gray-800 reveal d5">
+        <div><span class="block text-sm font-bold">AES-256</span><span class="block text-[11px] uppercase tracking-caps text-gray-500 mt-0.5">Encryption</span></div>
+        <div class="w-px h-6 bg-gray-800 hidden sm:block"></div>
+        <div><span class="block text-sm font-bold">100%</span><span class="block text-[11px] uppercase tracking-caps text-gray-500 mt-0.5">Self-Hosted</span></div>
+        <div class="w-px h-6 bg-gray-800 hidden sm:block"></div>
+        <div><span class="block text-sm font-bold">$0</span><span class="block text-[11px] uppercase tracking-caps text-gray-500 mt-0.5">Forever</span></div>
+      </div>
+
+      <!-- Scroll hint -->
+      <div class="absolute bottom-8 left-1/2 -translate-x-1/2 transition-opacity" id="scrollHint">
+        <div class="scroll-line w-px h-10 bg-gradient-to-b from-accent to-transparent origin-top"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ FEATURES ═══════ -->
+  <section class="panel bg-bg-alt" id="features">
+    <div class="flex flex-col justify-center min-h-screen w-full max-w-[1080px] mx-auto px-6 md:px-10 py-20">
+      <div class="mb-12 reveal">
+        <p class="text-[11px] uppercase tracking-caps text-accent mb-4">Features</p>
+        <h2 class="font-serif text-[clamp(32px,5vw,48px)] font-bold leading-[1.1] tracking-tight">
+          Everything you need.<br>Nothing you don't.
+        </h2>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 border border-gray-800">
+        <div class="p-6 md:p-8 border-b sm:border-r border-gray-800 relative reveal d1">
+          <span class="absolute top-3 right-4 text-[40px] font-extrabold text-white/[.03] leading-none">01</span>
+          <h3 class="text-[13px] uppercase tracking-caps font-medium mb-2">360-Degree Cycles</h3>
+          <p class="text-sm text-gray-400 leading-relaxed">Collect feedback from managers, peers, and direct reports in structured review cycles.</p>
+        </div>
+        <div class="p-6 md:p-8 border-b lg:border-r border-gray-800 relative reveal d2">
+          <span class="absolute top-3 right-4 text-[40px] font-extrabold text-white/[.03] leading-none">02</span>
+          <h3 class="text-[13px] uppercase tracking-caps font-medium mb-2">Custom Templates</h3>
+          <p class="text-sm text-gray-400 leading-relaxed">Rating scales, open-text fields, and weighted categories tailored to your culture.</p>
+        </div>
+        <div class="p-6 md:p-8 border-b border-gray-800 sm:border-r lg:border-r-0 relative reveal d3">
+          <span class="absolute top-3 right-4 text-[40px] font-extrabold text-white/[.03] leading-none">03</span>
+          <h3 class="text-[13px] uppercase tracking-caps font-medium mb-2">OTP Email Access</h3>
+          <p class="text-sm text-gray-400 leading-relaxed">External reviewers get a secure link with one-time passcode. No sign-up required.</p>
+        </div>
+        <div class="p-6 md:p-8 border-b sm:border-b lg:border-b-0 sm:border-r border-gray-800 relative reveal d4">
+          <span class="absolute top-3 right-4 text-[40px] font-extrabold text-white/[.03] leading-none">04</span>
+          <h3 class="text-[13px] uppercase tracking-caps font-medium mb-2">Visual Reports</h3>
+          <p class="text-sm text-gray-400 leading-relaxed">Radar charts, score breakdowns, anonymized summaries. Export as PDF or HTML.</p>
+        </div>
+        <div class="p-6 md:p-8 border-b sm:border-b-0 lg:border-r border-gray-800 relative reveal d5">
+          <span class="absolute top-3 right-4 text-[40px] font-extrabold text-white/[.03] leading-none">05</span>
+          <h3 class="text-[13px] uppercase tracking-caps font-medium mb-2">Role-Based Access</h3>
+          <p class="text-sm text-gray-400 leading-relaxed">Separate permissions for admins, managers, and employees. Control who sees what.</p>
+        </div>
+        <div class="p-6 md:p-8 relative reveal d6">
+          <span class="absolute top-3 right-4 text-[40px] font-extrabold text-white/[.03] leading-none">06</span>
+          <h3 class="text-[13px] uppercase tracking-caps font-medium mb-2">AI Summaries</h3>
+          <p class="text-sm text-gray-400 leading-relaxed">Optional local LLM via Ollama. Feedback summaries generated on your server.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ SECURITY ═══════ -->
+  <section class="panel bg-bg" id="security">
+    <div class="flex flex-col justify-center min-h-screen w-full max-w-[1080px] mx-auto px-6 md:px-10 py-20">
+
+      <!-- Header -->
+      <div class="grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-12 lg:gap-20 items-end reveal">
+        <div>
+          <p class="text-[11px] uppercase tracking-caps text-accent mb-4">Security</p>
+          <h2 class="font-serif text-[clamp(36px,6vw,56px)] font-bold leading-[1.05] tracking-tight">
+            Zero-knowledge<br>by design.
+          </h2>
+        </div>
+        <p class="text-base text-gray-400 leading-relaxed max-w-md lg:pb-1">
+          Your passphrase derives an encryption key via Argon2id. Feedback is encrypted with AES-256-GCM before it reaches the database. Even with server access, the data is unreadable without the passphrase.
+        </p>
+      </div>
+
+      <!-- Encryption pipeline — horizontal flow -->
+      <div class="mt-14 reveal d2">
+        <div class="border border-gray-800 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4">
+          <div class="p-6 md:p-8 border-b md:border-b-0 sm:border-r border-gray-800 relative group">
+            <div class="absolute top-0 left-0 right-0 h-[2px] bg-accent"></div>
+            <span class="text-[11px] uppercase tracking-caps text-gray-500 block mb-4">Step 01</span>
+            <div class="w-10 h-10 border border-gray-700 flex items-center justify-center text-accent mb-4 group-hover:border-accent/40 transition-colors">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+            <h3 class="text-sm font-medium mb-1">Passphrase</h3>
+            <p class="text-xs text-gray-500 leading-relaxed">Admin sets a company passphrase during setup. Never stored, never transmitted.</p>
+          </div>
+          <div class="p-6 md:p-8 border-b md:border-b-0 md:border-r border-gray-800 relative group">
+            <div class="absolute top-0 left-0 right-0 h-[2px] bg-accent"></div>
+            <span class="text-[11px] uppercase tracking-caps text-gray-500 block mb-4">Step 02</span>
+            <div class="w-10 h-10 border border-gray-700 flex items-center justify-center text-accent mb-4 group-hover:border-accent/40 transition-colors">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+            </div>
+            <h3 class="text-sm font-medium mb-1">Key Derivation</h3>
+            <p class="text-xs text-gray-500 leading-relaxed">Argon2id stretches the passphrase into a cryptographic master key. Memory-hard, brute-force resistant.</p>
+          </div>
+          <div class="p-6 md:p-8 border-b sm:border-b-0 sm:border-r md:border-r border-gray-800 relative group">
+            <div class="absolute top-0 left-0 right-0 h-[2px] bg-accent"></div>
+            <span class="text-[11px] uppercase tracking-caps text-gray-500 block mb-4">Step 03</span>
+            <div class="w-10 h-10 border border-gray-700 flex items-center justify-center text-accent mb-4 group-hover:border-accent/40 transition-colors">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </div>
+            <h3 class="text-sm font-medium mb-1">Encrypt</h3>
+            <p class="text-xs text-gray-500 leading-relaxed">AES-256-GCM encrypts all evaluation responses before they touch the database.</p>
+          </div>
+          <div class="p-6 md:p-8 relative group">
+            <div class="absolute top-0 left-0 right-0 h-[2px] bg-accent"></div>
+            <span class="text-[11px] uppercase tracking-caps text-gray-500 block mb-4">Step 04</span>
+            <div class="w-10 h-10 border border-gray-700 flex items-center justify-center text-accent mb-4 group-hover:border-accent/40 transition-colors">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+            </div>
+            <h3 class="text-sm font-medium mb-1">Store</h3>
+            <p class="text-xs text-gray-500 leading-relaxed">Ciphertext at rest on your server. No escrow, no backdoors. Full GDPR export on demand.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom facts -->
+      <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 mt-10 text-[11px] uppercase tracking-caps text-gray-500 reveal d3">
+        <span>Open Source &mdash; audit the code yourself</span>
+        <span class="text-gray-800 hidden sm:inline">|</span>
+        <span>Data never leaves your infrastructure</span>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ═══════ DEPLOY ═══════ -->
+  <section class="panel bg-bg-alt" id="deploy">
+    <div class="flex flex-col justify-center min-h-screen w-full max-w-[1080px] mx-auto px-6 md:px-10 py-20">
+
+      <!-- Header -->
+      <div class="reveal">
+        <p class="text-[11px] uppercase tracking-caps text-accent mb-4">Get Started</p>
+        <h2 class="font-serif text-[clamp(36px,6vw,56px)] font-bold leading-[1.05] tracking-tight">
+          One command.<br>You're live.
+        </h2>
+      </div>
+
+      <!-- Command bar -->
+      <div class="mt-10 border border-gray-800 flex items-center justify-between gap-4 px-4 md:px-5 py-4 reveal d1 overflow-x-auto">
+        <div class="flex items-center gap-3 font-mono text-[12px] md:text-[13px] min-w-0">
+          <span class="text-accent font-bold select-none shrink-0">$</span>
+          <span class="text-gray-400 break-all md:whitespace-nowrap">curl -fsSL https://raw.githubusercontent.com/tamzid-performs360/performs360/production/deploy.sh | bash</span>
+        </div>
+        <button id="copyBtn" class="text-gray-500 hover:text-gray-300 transition-colors shrink-0" aria-label="Copy">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        </button>
+      </div>
+
+      <!-- What the script does — 3-column grid -->
+      <div class="grid grid-cols-1 md:grid-cols-3 border border-t-0 border-gray-800 reveal d2">
+        <div class="p-6 md:p-8 border-b md:border-b-0 md:border-r border-gray-800">
+          <span class="text-[11px] uppercase tracking-caps text-gray-500 block mb-3">01</span>
+          <h3 class="text-sm font-medium mb-1.5">Detect &amp; Install</h3>
+          <p class="text-xs text-gray-500 leading-relaxed">Checks your OS, installs Docker and dependencies if missing. Works on Ubuntu, Debian, macOS.</p>
+        </div>
+        <div class="p-6 md:p-8 border-b md:border-b-0 md:border-r border-gray-800">
+          <span class="text-[11px] uppercase tracking-caps text-gray-500 block mb-3">02</span>
+          <h3 class="text-sm font-medium mb-1.5">Configure</h3>
+          <p class="text-xs text-gray-500 leading-relaxed">Interactive wizard sets up your database URL, encryption passphrase, email, and domain.</p>
+        </div>
+        <div class="p-6 md:p-8">
+          <span class="text-[11px] uppercase tracking-caps text-gray-500 block mb-3">03</span>
+          <h3 class="text-sm font-medium mb-1.5">Build &amp; Launch</h3>
+          <p class="text-xs text-gray-500 leading-relaxed">Pulls containers, runs migrations, starts the app and background worker. Ready at port 3000.</p>
+        </div>
+      </div>
+
+      <!-- CTAs -->
+      <div class="flex gap-3 mt-10 reveal d3">
+        <a href="https://github.com/tamzid958/perform360" target="_blank" rel="noopener" class="flex items-center gap-2.5 bg-accent text-white text-sm font-medium px-6 py-3 hover:bg-accent-dark transition-colors">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+          View on GitHub
+        </a>
+        <a href="https://github.com/tamzid958/perform360#readme" target="_blank" rel="noopener" class="flex items-center gap-2 text-sm text-gray-300 border border-gray-700 px-6 py-3 hover:border-gray-400 transition-colors">
+          Documentation
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
+        </a>
+      </div>
+
+    </div>
+    <footer class="absolute bottom-0 left-0 right-0 flex justify-center items-center gap-1.5 py-5 text-[13px] text-gray-400">
+      <span>Crafted by</span>
+      <a href="https://github.com/tamzid958" target="_blank" rel="noopener" class="text-white font-medium hover:text-accent transition-colors">tamzid958</a>
+      <span class="text-gray-600 mx-1">&middot;</span>
+      <span>BSL 1.1</span>
+    </footer>
+  </section>
+
+  <script>
+    const dots = document.querySelectorAll('.dot-nav button');
+    const panels = document.querySelectorAll('.panel');
+    const topBar = document.getElementById('topBar');
+    const hint = document.getElementById('scrollHint');
+    let current = 0, transitioning = false;
+
+    function goTo(i) {
+      if (i < 0 || i >= panels.length || i === current || transitioning) return;
+      transitioning = true;
+      panels[current].classList.remove('active');
+      panels[i].classList.add('active');
+      dots.forEach((d, j) => d.classList.toggle('active', j === i));
+      topBar.classList.toggle('show', i > 0);
+      hint.style.opacity = i === 0 ? '1' : '0';
+      current = i;
+      panels[i].querySelectorAll('.reveal').forEach(el => el.classList.add('visible'));
+      setTimeout(() => { transitioning = false }, 600);
+    }
+
+    panels[0].classList.add('active');
+    panels[0].querySelectorAll('.reveal').forEach(el => el.classList.add('visible'));
+
+    dots.forEach((d, i) => d.addEventListener('click', () => goTo(i)));
+
+    let wa = 0;
+    window.addEventListener('wheel', e => { e.preventDefault(); wa += e.deltaY; if (Math.abs(wa) >= 50) { goTo(current + (wa > 0 ? 1 : -1)); wa = 0; } }, { passive: false });
+
+    let ty = 0;
+    window.addEventListener('touchstart', e => { ty = e.touches[0].clientY }, { passive: true });
+    window.addEventListener('touchend', e => { const d = ty - e.changedTouches[0].clientY; if (Math.abs(d) > 60) goTo(current + (d > 0 ? 1 : -1)); }, { passive: true });
+
+    window.addEventListener('keydown', e => {
+      if (['ArrowDown',' ','PageDown'].includes(e.key)) { e.preventDefault(); goTo(current+1); }
+      if (['ArrowUp','PageUp'].includes(e.key)) { e.preventDefault(); goTo(current-1); }
+      if (e.key==='Home') { e.preventDefault(); goTo(0); }
+      if (e.key==='End') { e.preventDefault(); goTo(panels.length-1); }
+    });
+
+    document.querySelectorAll('.scroll-to').forEach(b => b.addEventListener('click', e => {
+      e.preventDefault();
+      const t = b.dataset.target || b.getAttribute('href')?.replace('#','');
+      const idx = [...panels].findIndex(p => p.id === t);
+      if (idx >= 0) goTo(idx);
+    }));
+
+    document.getElementById('copyBtn').addEventListener('click', function() {
+      navigator.clipboard.writeText('curl -fsSL https://raw.githubusercontent.com/tamzid-performs360/performs360/production/deploy.sh | bash');
+      this.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>';
+      setTimeout(() => { this.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>'; }, 2000);
+    });
+  </script>
+</body>
+</html>

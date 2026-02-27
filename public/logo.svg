@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -6 136 56" width="136" height="56">
+  <!-- Border rectangle with gap at top-left for arrow + 360 -->
+  <!-- Left edge -->
+  <rect x="0" y="0" width="2" height="50" fill="#E63946"/>
+  <!-- Bottom edge -->
+  <rect x="0" y="48" width="136" height="2" fill="#E63946"/>
+  <!-- Right edge -->
+  <rect x="134" y="0" width="2" height="50" fill="#E63946"/>
+  <!-- Top edge — left stub -->
+  <rect x="0" y="0" width="6" height="2" fill="#E63946"/>
+  <!-- Top edge — after 360 label -->
+  <rect x="52" y="0" width="84" height="2" fill="#E63946"/>
+
+  <!-- Arrow pointing right, centered on top border -->
+  <polygon points="8,-1 8,3 13,1" fill="#E63946"/>
+
+  <!-- 360 text on top border -->
+  <text x="16" y="4" font-family="Helvetica Neue, Arial, sans-serif" font-weight="700" font-size="9" letter-spacing="1.5" fill="#E63946">360</text>
+
+  <!-- Performs text -->
+  <text x="8" y="34" font-family="Georgia, Times New Roman, serif" font-weight="700" font-size="28" letter-spacing="-0.5" fill="#111111">Performs</text>
+</svg>

@@ -1,0 +1,40 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc -l /c/perform360/src/app/\\\\\\(dashboard\\\\\\)/cycles/[cycleId]/page.tsx)",
+      "Bash(grep -n \"activate\\\\|Activate\" /c/perform360/src/app/\\\\\\(dashboard\\\\\\)/cycles/[cycleId]/page.tsx)",
+      "Bash(node -e \"const p = require\\(''/c/perform360/package.json''\\); console.log\\(''next:'', p.dependencies.next\\)\")",
+      "Bash(rm /c/perform360/src/middleware.ts)",
+      "Bash(grep -A 20 \"const handleActivate\" /c/perform360/src/app/\\\\\\(dashboard\\\\\\)/cycles/[cycleId]/page.tsx)",
+      "Bash(npx next build)",
+      "Bash(node -e \"console.log\\(/^c[a-z0-9]{20,28}$/.test\\(''cmm8splxp0001qg9lroqols1b''\\)\\)\")",
+      "Bash(npx vitest run tests/lib/reports.test.ts tests/lib/reports-edge-cases.test.ts)",
+      "Bash(grep -r \"export const\\\\|export function\\\\|export interface\" /home/tamzid-ahmed/Documents/perform360/src/lib/*.ts)",
+      "Bash(npx tsc:*)",
+      "Bash(while read:*)",
+      "Bash(do echo:*)",
+      "Read(//home/tamzid-ahmed/Documents/perform360/**)",
+      "Bash(done)",
+      "Bash(node -e \"const sharp = require\\(''sharp''\\); console.log\\(''sharp available''\\)\")",
+      "Bash(node -e \":*)",
+      "Bash(node -e \"const sharp = require\\(''sharp''\\); sharp\\(''public/logo.png''\\).metadata\\(\\).then\\(m => console.log\\(m.width, m.height\\)\\)\")",
+      "Bash(do sed:*)",
+      "Bash(dpkg -l)",
+      "Bash(apt list:*)",
+      "Bash(npm list:*)",
+      "Bash(grep -oP '\\(fill|stroke|color|stop-color\\)[=:]#?[0-9a-fA-F]{3,8}' public/logo.svg)",
+      "Bash(grep -oP '\\(rgb|#[0-9a-fA-F]{3,8}\\)' public/logo.svg)",
+      "Bash(identify /tmp/logo_embedded_0_recolored.png)",
+      "Bash(git checkout:*)",
+      "Bash(git merge:*)",
+      "Bash(find /home/tamzid-ahmed/Documents/perform360/src -type f \\\\\\(-name *email* -o -name *mail* \\\\\\))",
+      "Bash(find /home/tamzid-ahmed/Documents/perform360/src -type f -path *lib/email*)",
+      "Bash(find /home/tamzid-ahmed/Documents/perform360/src -type f \\\\\\(-name *constants* -o -name *config* -o -name *styles* \\\\\\))",
+      "Bash(grep -r \"Swiss\\\\|Bauhaus\\\\|design.system\" /home/tamzid-ahmed/Documents/perform360/src --include=*.ts --include=*.tsx --include=*.css)",
+      "Bash(find /home/tamzid-ahmed/Documents/perform360 -maxdepth 2 -name *.config.* -o -name *.env*)",
+      "Bash(npx vitest:*)",
+      "Bash(npx tailwindcss:*)",
+      "Bash(identify /home/tamzid-ahmed/Documents/perform360/public/logo.png)"
+    ]
+  }
+}

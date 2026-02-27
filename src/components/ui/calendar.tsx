@@ -1,0 +1,66 @@
+"use client";
+
+import { DayPicker, type DayPickerProps } from "react-day-picker";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+function Calendar({ className, classNames, ...props }: DayPickerProps) {
+  return (
+    <DayPicker
+      className={cn("p-3", className)}
+      classNames={{
+        months: "relative flex flex-col sm:flex-row gap-4",
+        month: "flex flex-col gap-4",
+        month_caption: "flex items-center justify-center h-7",
+        caption_label: "text-[15px] font-semibold text-gray-900",
+        nav: "absolute top-3 flex w-full items-center justify-between px-1 z-10",
+        button_previous: cn(
+          "inline-flex h-8 w-8 items-center justify-center",
+          "text-gray-500 hover:text-gray-900 hover:bg-gray-50",
+          "focus:outline-none"
+        ),
+        button_next: cn(
+          "inline-flex h-8 w-8 items-center justify-center",
+          "text-gray-500 hover:text-gray-900 hover:bg-gray-50",
+          "focus:outline-none"
+        ),
+        weekdays: "flex",
+        weekday:
+          "w-9 text-[11px] font-medium text-gray-400 uppercase tracking-wider text-center",
+        week: "flex mt-1",
+        day: cn(
+          "relative h-9 w-9 flex items-center justify-center text-[14px]",
+          "cursor-pointer",
+          "hover:bg-gray-50 focus:outline-none"
+        ),
+        day_button: cn(
+          "h-9 w-9 inline-flex items-center justify-center",
+          "text-[14px] font-normal",
+          "focus:outline-none cursor-pointer"
+        ),
+        selected: "!bg-gray-900 !text-white !font-medium",
+        today: "font-semibold text-accent",
+        outside: "text-gray-300",
+        disabled: "text-gray-200 pointer-events-none",
+        range_middle: "bg-gray-100",
+        range_start: "",
+        range_end: "",
+        hidden: "invisible",
+        ...classNames,
+      }}
+      components={{
+        Chevron: ({ orientation }) =>
+          orientation === "left" ? (
+            <ChevronLeft size={16} strokeWidth={2} />
+          ) : (
+            <ChevronRight size={16} strokeWidth={2} />
+          ),
+      }}
+      {...props}
+    />
+  );
+}
+
+Calendar.displayName = "Calendar";
+
+export { Calendar };
