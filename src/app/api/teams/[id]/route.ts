@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { requireAuth, requireAdminOrHR, isAuthError } from "@/lib/api-auth";
+import { prisma } from "@/lib/prisma";
+
+const updateTeamSchema = z.object({
+  name: z.string().min(1).optional(),
+  description: z.string().optional(),
+});
 
 export async function GET(
   _request: NextRequest,
@@ -8,9 +15,33 @@ export async function GET(
   const authResult = await requireAuth();
   if (isAuthError(authResult)) return authResult;
 
+  const team = await prisma.team.findFirst({
+    where: {
+      id: params.id,
+      companyId: authResult.companyId,
+    },
+    include: {
+      members: {
+        include: {
+          user: {
+            select: { id: true, name: true, email: true, avatar: true, role: true },
+          },
+        },
+      },
+    },
+  });
+
+  if (!team) {
+    return NextResponse.json({
+      success: false,
+      error: "Team not found",
+      code: "NOT_FOUND",
+    }, { status: 404 });
+  }
+
   return NextResponse.json({
     success: true,
-    data: { id: params.id },
+    data: team,
   });
 }
 
@@ -21,19 +52,91 @@ export async function PATCH(
   const authResult = await requireAdminOrHR();
   if (isAuthError(authResult)) return authResult;
 
-  const body = await request.json();
-  return NextResponse.json({
-    success: true,
-    data: { id: params.id, ...body },
-  });
+  try {
+    const body = await request.json();
+    const validated = updateTeamSchema.parse(body);
+
+    const existing = await prisma.team.findFirst({
+      where: {
+        id: params.id,
+        companyId: authResult.companyId,
+      },
+    });
+
+    if (!existing) {
+      return NextResponse.json({
+        success: false,
+        error: "Team not found",
+        code: "NOT_FOUND",
+      }, { status: 404 });
+    }
+
+    const team = await prisma.team.update({
+      where: { id: params.id },
+      data: validated,
+      include: {
+        members: {
+          include: {
+            user: {
+              select: { id: true, name: true, email: true, avatar: true, role: true },
+            },
+          },
+        },
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      data: team,
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({
+        success: false,
+        error: "Validation failed",
+        code: "VALIDATION_ERROR",
+      }, { status: 400 });
+    }
+    return NextResponse.json({
+      success: false,
+      error: "Internal server error",
+    }, { status: 500 });
+  }
 }
 
 export async function DELETE(
   _request: NextRequest,
-  { params: _params }: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
   const authResult = await requireAdminOrHR();
   if (isAuthError(authResult)) return authResult;
 
-  return NextResponse.json({ success: true, data: { deleted: true } });
+  const team = await prisma.team.findFirst({
+    where: {
+      id: params.id,
+      companyId: authResult.companyId,
+    },
+  });
+
+  if (!team) {
+    return NextResponse.json({
+      success: false,
+      error: "Team not found",
+      code: "NOT_FOUND",
+    }, { status: 404 });
+  }
+
+  await prisma.$transaction([
+    prisma.teamMember.deleteMany({
+      where: { teamId: params.id },
+    }),
+    prisma.team.delete({
+      where: { id: params.id },
+    }),
+  ]);
+
+  return NextResponse.json({
+    success: true,
+    data: { deleted: true },
+  });
 }
