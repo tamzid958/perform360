@@ -103,16 +103,19 @@ model Company {
 
   // Encryption (company-owned, SaaS owner cannot access)
   encryptionKeyEncrypted String
+  encryptionSalt         String?   // base64-encoded salt for scrypt key derivation
+  encryptionSetupAt      DateTime? // null = setup not complete, timestamp = setup done
   keyVersion             Int    @default(1)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relations
-  users     User[]
-  teams     Team[]
-  cycles    EvaluationCycle[]
-  templates EvaluationTemplate[]
+  users         User[]
+  teams         Team[]
+  cycles        EvaluationCycle[]
+  templates     EvaluationTemplate[]
+  recoveryCodes RecoveryCode[]
 }
 
 enum UserRole {
@@ -263,4 +266,20 @@ model EvaluationResponse {
   submittedAt DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+// ─────────────────────────────────────────────────────────
+// RECOVERY CODES (Encryption Key Recovery)
+// ─────────────────────────────────────────────────────────
+
+model RecoveryCode {
+  id               String    @id @default(cuid())
+  companyId        String
+  company          Company   @relation(fields: [companyId], references: [id])
+  codeHash         String    // bcrypt hash of the recovery code
+  encryptedDataKey String    // data key encrypted with scrypt(code, salt)
+  usedAt           DateTime? // null = available, timestamp = consumed
+  createdAt        DateTime  @default(now())
+
+  @@index([companyId])
 }
