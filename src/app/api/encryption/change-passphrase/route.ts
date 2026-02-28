@@ -80,12 +80,21 @@ export async function POST(request: NextRequest) {
     const newMasterKey = deriveKey(newPassphrase, newSaltBuffer);
     const newEncryptedDataKey = encryptDataKey(dataKey, newMasterKey);
 
-    await prisma.company.update({
-      where: { id: authResult.companyId },
-      data: {
-        encryptionKeyEncrypted: newEncryptedDataKey,
-        encryptionSalt: newSalt,
-      },
+    await prisma.$transaction(async (tx) => {
+      await tx.company.update({
+        where: { id: authResult.companyId },
+        data: {
+          encryptionKeyEncrypted: newEncryptedDataKey,
+          encryptionSalt: newSalt,
+        },
+      });
+
+      // Recovery codes are encrypted with scrypt(code, old_salt).
+      // After salt rotation they become unrecoverable — delete them
+      // so the admin is forced to regenerate.
+      await tx.recoveryCode.deleteMany({
+        where: { companyId: authResult.companyId },
+      });
     });
 
     await writeAuditLog({
@@ -94,7 +103,10 @@ export async function POST(request: NextRequest) {
       action: "encryption_passphrase_change",
     });
 
-    return NextResponse.json({ success: true, data: null });
+    return NextResponse.json({
+      success: true,
+      data: { recoveryCodesInvalidated: true },
+    });
   } catch (error) {
     console.error("Change passphrase error:", error);
     return NextResponse.json(

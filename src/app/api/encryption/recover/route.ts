@@ -8,8 +8,6 @@ import {
   decryptDataKey,
   encryptDataKey,
   verifyRecoveryCode,
-  hashRecoveryCode,
-  generateRecoveryCodes,
 } from "@/lib/encryption";
 import { ENCRYPTION_CONFIG } from "@/lib/constants";
 import { applyRateLimit } from "@/lib/rate-limit";
