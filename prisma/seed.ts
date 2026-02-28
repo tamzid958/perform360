@@ -1,0 +1,1002 @@
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
+
+const SUPER_ADMIN_EMAIL =
+  process.env.SUPER_ADMIN_EMAIL ?? "admin@perform360.com";
+const SUPER_ADMIN_NAME = process.env.SUPER_ADMIN_NAME ?? "Perform360 Admin";
+
+// ─────────────────────────────────────────────────────────
+// Global Evaluation Templates
+// Adapted from github.com/thijsdezoete/blik
+// ─────────────────────────────────────────────────────────
+
+const GLOBAL_TEMPLATES = [
+  {
+    name: "360 Degree Feedback",
+    description:
+      "Comprehensive 360 degree feedback questionnaire for professional development. A concise 12-question assessment covering technical skills, collaboration, work approach, and overall feedback.",
+    sections: [
+      {
+        title: "Technical Skills",
+        description: "Problem solving and technical abilities",
+        questions: [
+          {
+            id: "simple-q1",
+            text: "Problem solving ability",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Needs guidance", "", "Works independently", "", "Exceptional"],
+          },
+          {
+            id: "simple-q2",
+            text: "Code quality and clarity",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Needs improvement", "", "Good quality", "", "Excellent"],
+          },
+          {
+            id: "simple-q3",
+            text: "Technical expertise level",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Beginner", "Learning", "Competent", "Proficient", "Expert"],
+          },
+        ],
+      },
+      {
+        title: "Collaboration",
+        description: "Teamwork and communication",
+        questions: [
+          {
+            id: "simple-q4",
+            text: "Teamwork and collaboration",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Prefers solo work", "", "Good team player", "", "Outstanding collaborator"],
+          },
+          {
+            id: "simple-q5",
+            text: "This person communicates clearly and effectively",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree"],
+          },
+          {
+            id: "simple-q6",
+            text: "Helps and mentors others",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Rarely helps", "", "Helpful", "", "Great mentor"],
+          },
+        ],
+      },
+      {
+        title: "Work Approach",
+        description: "Initiative and attitude",
+        questions: [
+          {
+            id: "simple-q7",
+            text: "Initiative and motivation",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Waits for tasks", "", "Self-motivated", "", "Highly proactive"],
+          },
+          {
+            id: "simple-q8",
+            text: "This person is flexible and adapts well to change",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree"],
+          },
+          {
+            id: "simple-q9",
+            text: "Delivers quality work on time",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Often delayed", "", "Reliable", "", "Consistently excellent"],
+          },
+        ],
+      },
+      {
+        title: "Overall Feedback",
+        description: "Summary and suggestions",
+        questions: [
+          { id: "simple-q10", text: "What are their main strengths?", type: "text", required: true },
+          { id: "simple-q11", text: "What could they improve?", type: "text", required: true },
+          { id: "simple-q12", text: "Any additional comments?", type: "text", required: false },
+        ],
+      },
+    ],
+  },
+
+  {
+    name: "Software Engineering 360 Review",
+    description:
+      "Comprehensive 360-degree feedback for software engineers covering technical competencies, collaboration, and professional development with Dreyfus skill level assessment.",
+    sections: [
+      {
+        title: "Industry Fit & Problem Solving",
+        description: "Technical competency and approach to solving computational problems",
+        questions: [
+          {
+            id: "swe-q1",
+            text: "Understanding customer problems",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Needs clear instructions", "Handles basic problems", "Works independently", "Sees bigger picture", "Solves complex issues"],
+          },
+          {
+            id: "swe-q2",
+            text: "Rate their ability to translate ideas into clear, readable code",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Code is difficult to understand and follow", "Code is functional but lacks clarity", "Code is generally clear and maintainable", "Code is exemplary and serves as reference", "Code quality sets team standards"],
+          },
+          { id: "swe-q3", text: "Additional comments on their problem-solving approach and code quality", type: "text", required: false },
+        ],
+      },
+      {
+        title: "Collaboration & Personality",
+        description: "Teamwork, approachability, and interpersonal skills",
+        questions: [
+          {
+            id: "swe-q4",
+            text: "How well does this person work with the team to solve complex problems?",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Struggles to collaborate, often works in isolation", "Can work with team but requires significant coordination", "Collaborates effectively as a team member", "Actively facilitates team problem-solving", "First person others turn to, brings out the best in team"],
+          },
+          {
+            id: "swe-q5",
+            text: "This person is friendly, approachable, and creates a positive team environment",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree"],
+          },
+          { id: "swe-q6", text: "Additional comments on their collaboration and team dynamics", type: "text", required: false },
+        ],
+      },
+      {
+        title: "Technical Expertise & Skill Level",
+        description: "Breadth and depth of technical knowledge assessed through Dreyfus skill acquisition model",
+        questions: [
+          {
+            id: "swe-q7",
+            text: "How do they approach solving technical problems in their domain?",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Needs step-by-step instructions and close guidance", "Can handle familiar problems with some guidance", "Independently solves standard problems and plans work", "Sees patterns quickly and handles complex situations", "Intuitively finds solutions and creates novel approaches"],
+          },
+          {
+            id: "swe-q8",
+            text: "Rate their familiarity with the full technology stack",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Very specialized, heavily dependent on others", "Familiar with narrow slice of stack", "Competent across most of stack", "Can work independently across entire stack", "Expert with broad experience across domains and platforms"],
+          },
+          {
+            id: "swe-q9",
+            text: "How well do they identify emerging technologies and industry trends?",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Unaware of current trends", "Follows trends after they become mainstream", "Stays current with established technologies", "Identifies promising technologies early", "Recognized expert who spots emerging trends before mainstream"],
+          },
+          { id: "swe-q10", text: "Additional comments on their technical expertise and knowledge breadth", type: "text", required: false },
+        ],
+      },
+      {
+        title: "Motivation & Passion",
+        description: "Enthusiasm, dedication, and intrinsic interest in the work",
+        questions: [
+          {
+            id: "swe-q11",
+            text: "How would you describe their enthusiasm for the work?",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Shows little interest", "Meets basic requirements without extra effort", "Shows genuine care and interest in their work", "Demonstrates passion that extends beyond work hours", "Clear love for programming, implements ideas in spare time"],
+          },
+          {
+            id: "swe-q12",
+            text: "Do they demonstrate initiative in solving problems or improving processes?",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Waits for explicit instructions", "Takes initiative when prompted", "Proactively identifies and addresses problems", "Regularly proposes improvements", "Self-driven achiever who consistently improves systems"],
+          },
+          { id: "swe-q13", text: "Additional comments on their motivation and passion", type: "text", required: false },
+        ],
+      },
+      {
+        title: "Maturity & Best Practices",
+        description: "Application of software development principles and professional practices",
+        questions: [
+          {
+            id: "swe-q14",
+            text: "Rate their application of sound software development principles (Agile, design patterns, testing)",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Rarely applies best practices", "Inconsistently applies basic principles", "Regularly uses appropriate practices", "Exemplifies best practices, mentors others", "Expert practitioner, sets team standards"],
+          },
+          {
+            id: "swe-q15",
+            text: "How frequently do they refactor and improve existing code?",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Rarely touches existing code", "Refactors only when required", "Regular refactoring as part of work", "Proactively improves codebase quality", "Continuously elevates code quality across system"],
+          },
+          {
+            id: "swe-q16",
+            text: "Do they demonstrate awareness of their limitations and display humility?",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Overconfident, dismisses feedback", "Occasionally acknowledges limitations", "Realistic about capabilities", "Openly seeks feedback and improvement", "Exemplary humility, actively learns from others"],
+          },
+          { id: "swe-q17", text: "Additional comments on their professional maturity and practices", type: "text", required: false },
+        ],
+      },
+      {
+        title: "Pragmatism & Execution",
+        description: "Practical approach to solving real-world problems",
+        questions: [
+          {
+            id: "swe-q18",
+            text: "How well do they balance technical excellence with practical business goals?",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Ignores business context or over-engineers solutions", "Occasionally considers business goals", "Generally balances technical and business needs", "Consistently delivers pragmatic solutions", "Expert at finding simple solutions to complex problems"],
+          },
+          {
+            id: "swe-q19",
+            text: "Do they appreciate simplicity and avoid over-engineering?",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Frequently over-complicates solutions", "Sometimes adds unnecessary complexity", "Generally keeps solutions appropriately simple", "Consistently favors simple, maintainable solutions", "Master of elegant simplicity"],
+          },
+          { id: "swe-q20", text: "Additional comments on their pragmatic approach", type: "text", required: false },
+        ],
+      },
+      {
+        title: "Knowledge Sharing & Mentorship",
+        description: "Ability to share knowledge and develop others",
+        questions: [
+          {
+            id: "swe-q21",
+            text: "How effectively do they listen and accept that others might have better ideas?",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Dismissive of others' ideas", "Occasionally considers alternative approaches", "Generally receptive to feedback and ideas", "Actively seeks and incorporates others' input", "Exemplary listener who elevates team thinking"],
+          },
+          {
+            id: "swe-q22",
+            text: "Do they share knowledge and mentor less experienced team members?",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Hoards knowledge, avoids helping others", "Shares knowledge when directly asked", "Regularly helps team members", "Actively mentors and develops others", "Team coach who consistently elevates others' skills"],
+          },
+          {
+            id: "swe-q23",
+            text: "How clearly can they explain technical decisions and system architecture?",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Unable to explain decisions clearly", "Explanations are often confusing", "Can explain most decisions adequately", "Provides clear, well-justified explanations", "System expert who quickly brings others up to speed"],
+          },
+          { id: "swe-q24", text: "Additional comments on their knowledge sharing and mentorship", type: "text", required: false },
+        ],
+      },
+      {
+        title: "Growth Potential & Adaptability",
+        description: "Capacity for learning and professional development",
+        questions: [
+          {
+            id: "swe-q25",
+            text: "How quickly do they learn and adopt new technologies?",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Resists change, slow to learn new approaches", "Learns new technologies with significant support", "Picks up new technologies at reasonable pace", "Quick learner who adapts easily", "Exceptionally fast learner, eagerly explores new tools"],
+          },
+          {
+            id: "swe-q26",
+            text: "Do they show curiosity for new languages, frameworks, or specifications?",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Prefers to stay with known tools only", "Occasionally explores new technologies", "Shows healthy interest in learning", "Actively seeks out new knowledge", "Voracious learner, constantly expanding expertise"],
+          },
+          {
+            id: "swe-q27",
+            text: "How well do they adapt to changing requirements or circumstances?",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Struggles with change", "Adapts with difficulty", "Generally adaptable", "Embraces change effectively", "Thrives on change, shows constant self-correction"],
+          },
+          { id: "swe-q28", text: "Additional comments on their growth potential and adaptability", type: "text", required: false },
+        ],
+      },
+      {
+        title: "Strategic Vision & Leadership",
+        description: "Ability to see the bigger picture and contribute to strategic direction",
+        questions: [
+          {
+            id: "swe-q29",
+            text: "How well do they understand the broader product and business context?",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Only interested in immediate coding tasks", "Basic awareness of product context", "Understands product goals and aligns work accordingly", "Considers broader business implications", "Product visionary who shapes strategic direction"],
+          },
+          {
+            id: "swe-q30",
+            text: "Do they demonstrate foresight for problems not yet encountered?",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Rarely anticipates future issues", "Occasionally identifies potential problems", "Generally considers future implications", "Consistently anticipates and plans for challenges", "Exceptional foresight, prevents problems before they occur"],
+          },
+          {
+            id: "swe-q31",
+            text: "How well do they contribute to and align with the shared team vision?",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Works independently without considering team goals", "Aware of team goals but inconsistent alignment", "Generally supports team vision", "Actively contributes to shaping team direction", "Team leader who defines and drives shared vision"],
+          },
+          { id: "swe-q32", text: "Additional comments on their strategic vision and leadership", type: "text", required: false },
+        ],
+      },
+      {
+        title: "Overall Assessment",
+        description: "Summary feedback and areas for improvement",
+        questions: [
+          { id: "swe-q33", text: "What are their greatest strengths?", type: "text", required: true },
+          { id: "swe-q34", text: "What areas would benefit most from development or improvement?", type: "text", required: true },
+          { id: "swe-q35", text: "Any additional feedback or characteristics not covered in this review?", type: "text", required: false },
+        ],
+      },
+    ],
+  },
+
+  {
+    name: "Professional Skills 360 Review",
+    description:
+      "Universal 360-degree feedback questionnaire for all professional roles. Assesses core competencies including communication, problem-solving, collaboration, and leadership.",
+    sections: [
+      {
+        title: "Problem Solving & Decision Making",
+        description: "Ability to analyze situations, make decisions, and solve problems effectively",
+        questions: [
+          {
+            id: "pro-q1",
+            text: "How effectively does this person analyze and solve problems?",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Needs clear direction", "Handles routine problems", "Solves problems independently", "Handles complex situations", "Expert problem solver"],
+          },
+          {
+            id: "pro-q2",
+            text: "How well does this person make decisions under pressure or with incomplete information?",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Struggles with uncertainty", "Needs support for tough calls", "Makes sound decisions", "Confident under pressure", "Exceptional judgment"],
+          },
+          { id: "pro-q3", text: "Additional comments on their problem-solving and decision-making abilities", type: "text", required: false },
+        ],
+      },
+      {
+        title: "Communication & Collaboration",
+        description: "Effectiveness in communicating ideas and working with others",
+        questions: [
+          {
+            id: "pro-q4",
+            text: "How clearly and effectively does this person communicate?",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Often unclear", "Basic communication", "Communicates clearly", "Very articulate", "Exceptional communicator"],
+          },
+          {
+            id: "pro-q5",
+            text: "How well does this person collaborate and work with others?",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Prefers working alone", "Collaborates when needed", "Good team player", "Builds strong partnerships", "Exceptional collaborator"],
+          },
+          {
+            id: "pro-q6",
+            text: "This person actively listens to and considers others' perspectives",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree"],
+          },
+          { id: "pro-q7", text: "Additional comments on their communication and collaboration", type: "text", required: false },
+        ],
+      },
+      {
+        title: "Initiative & Ownership",
+        description: "Drive to take action and accountability for outcomes",
+        questions: [
+          {
+            id: "pro-q8",
+            text: "How proactively does this person identify and address opportunities or challenges?",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Waits for direction", "Acts when prompted", "Takes initiative", "Highly proactive", "Drives change"],
+          },
+          {
+            id: "pro-q9",
+            text: "This person consistently takes ownership and follows through on commitments",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree"],
+          },
+          { id: "pro-q10", text: "Additional comments on their initiative and ownership", type: "text", required: false },
+        ],
+      },
+      {
+        title: "Adaptability & Learning",
+        description: "Capacity to learn, grow, and adapt to change",
+        questions: [
+          {
+            id: "pro-q11",
+            text: "How quickly does this person learn new skills and concepts?",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Slow to adapt", "Learns with support", "Learns independently", "Quick learner", "Exceptionally adaptive"],
+          },
+          {
+            id: "pro-q12",
+            text: "How well does this person adapt to change and handle ambiguity?",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Resists change", "Adapts reluctantly", "Handles change well", "Thrives in change", "Champions change"],
+          },
+          { id: "pro-q13", text: "Additional comments on their adaptability and learning capacity", type: "text", required: false },
+        ],
+      },
+      {
+        title: "Quality & Excellence",
+        description: "Commitment to delivering high-quality work and continuous improvement",
+        questions: [
+          {
+            id: "pro-q14",
+            text: "What is the quality of work this person delivers?",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Often needs rework", "Meets basic standards", "Consistently good quality", "High quality work", "Exceptional quality"],
+          },
+          {
+            id: "pro-q15",
+            text: "How well does this person balance quality with practical deadlines and constraints?",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Struggles with balance", "Sometimes over/under delivers", "Good balance", "Excellent pragmatism", "Masters the balance"],
+          },
+          { id: "pro-q16", text: "Additional comments on their work quality and standards", type: "text", required: false },
+        ],
+      },
+      {
+        title: "Leadership & Influence",
+        description: "Ability to guide, influence, and develop others",
+        questions: [
+          {
+            id: "pro-q17",
+            text: "How effectively does this person influence and guide others?",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Limited influence", "Influences peers occasionally", "Influences effectively", "Strong influencer", "Natural leader"],
+          },
+          {
+            id: "pro-q18",
+            text: "How well does this person develop and support the growth of others?",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Rarely helps others", "Helps when asked", "Supportive colleague", "Active mentor", "Exceptional developer of talent"],
+          },
+          {
+            id: "pro-q19",
+            text: "How well does this person understand and contribute to broader organizational goals?",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Narrow focus", "Aware of goals", "Aligns with strategy", "Strategic thinker", "Shapes strategy"],
+          },
+          { id: "pro-q20", text: "Additional comments on their leadership and influence", type: "text", required: false },
+        ],
+      },
+      {
+        title: "Professionalism & Attitude",
+        description: "Professional conduct, reliability, and work ethic",
+        questions: [
+          {
+            id: "pro-q21",
+            text: "How would you describe this person's professionalism and work ethic?",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Needs improvement", "Generally professional", "Consistently professional", "Highly professional", "Exemplary professional"],
+          },
+          {
+            id: "pro-q22",
+            text: "How well does this person handle feedback and demonstrate self-awareness?",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Defensive", "Sometimes receptive", "Accepts feedback well", "Actively seeks feedback", "Exceptional self-awareness"],
+          },
+          {
+            id: "pro-q23",
+            text: "How positive and constructive is this person's attitude?",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Often negative", "Neutral attitude", "Generally positive", "Very positive", "Inspires positivity"],
+          },
+          { id: "pro-q24", text: "Additional comments on their professionalism and attitude", type: "text", required: false },
+        ],
+      },
+      {
+        title: "Overall Assessment",
+        description: "Summary feedback and development priorities",
+        questions: [
+          { id: "pro-q25", text: "What are this person's greatest strengths?", type: "text", required: false },
+          { id: "pro-q26", text: "What areas would benefit most from development or improvement?", type: "text", required: false },
+          { id: "pro-q27", text: "Any additional feedback or observations?", type: "text", required: false },
+        ],
+      },
+    ],
+  },
+
+  {
+    name: "Agency & Initiative Assessment",
+    description:
+      "Quick assessment focused on problem-solving maturity, initiative, and ownership based on a 5-level agency framework.",
+    sections: [
+      {
+        title: "Problem Identification",
+        description: "How effectively does this person spot and communicate issues?",
+        questions: [
+          {
+            id: "agency-q1",
+            text: "How effectively does this person identify problems before they escalate?",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Misses problems", "Identifies obvious issues", "Catches most problems", "Proactively identifies risks", "Exceptional foresight"],
+          },
+          {
+            id: "agency-q2",
+            text: "When this person raises a problem, they typically:",
+            type: "multiple_choice",
+            required: true,
+            options: [
+              "Just mentions the problem exists",
+              "Describes the problem with context",
+              "Explains problem and explores causes",
+              "Presents thorough root cause analysis",
+            ],
+          },
+        ],
+      },
+      {
+        title: "Solution Thinking",
+        description: "Does this person bring solutions, not just problems?",
+        questions: [
+          {
+            id: "agency-q3",
+            text: "This person proactively suggests solutions when raising issues",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree"],
+          },
+          {
+            id: "agency-q4",
+            text: "Quality of solutions this person proposes",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Impractical", "Somewhat practical", "Reasonable", "Well thought-out", "Highly practical"],
+          },
+        ],
+      },
+      {
+        title: "Decision Making",
+        description: "How well does this person make and communicate recommendations?",
+        questions: [
+          {
+            id: "agency-q5",
+            text: "This person clearly recommends their preferred solution with reasoning",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree"],
+          },
+          {
+            id: "agency-q6",
+            text: "When presenting options, this person:",
+            type: "multiple_choice",
+            required: true,
+            options: [
+              "Lists options without preference",
+              "Leans toward one informally",
+              "Recommends with basic reasoning",
+              "Provides clear recommendation with thorough analysis",
+            ],
+          },
+        ],
+      },
+      {
+        title: "Ownership & Execution",
+        description: "Does this person take initiative and follow through?",
+        questions: [
+          {
+            id: "agency-q7",
+            text: "How often does this person independently implement solutions?",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Never", "Rarely", "Sometimes", "Often", "Always (highly autonomous)"],
+          },
+          {
+            id: "agency-q8",
+            text: "This person keeps stakeholders appropriately informed when taking initiative",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree"],
+          },
+          {
+            id: "agency-q9",
+            text: "This person's typical approach to problems is:",
+            type: "multiple_choice",
+            required: true,
+            options: [
+              "Waits for direction before acting",
+              "Takes action after getting approval",
+              "Often acts independently then reports",
+              "Consistently acts independently with proper communication",
+            ],
+          },
+        ],
+      },
+      {
+        title: "Examples & Development",
+        description: "Specific examples and growth opportunities",
+        questions: [
+          { id: "agency-q10", text: "Provide an example of this person demonstrating high agency", type: "text", required: false },
+          { id: "agency-q11", text: "What could help this person operate with more agency and initiative?", type: "text", required: false },
+        ],
+      },
+    ],
+  },
+
+  {
+    name: "Manager 360 Review",
+    description:
+      "Assessment tool for evaluating leadership effectiveness across multiple dimensions including direction, feedback, development, and impact.",
+    sections: [
+      {
+        title: "Leadership",
+        description: "Visibility, trust, and communication",
+        questions: [
+          {
+            id: "mgr-q1",
+            text: "Manager visibility and engagement with the team",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Rarely available", "Occasionally present", "Regularly available", "Highly engaged", "Exceptionally present and engaged"],
+          },
+          {
+            id: "mgr-q2",
+            text: "Trust in manager's intentions and decisions",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Low trust", "Some trust", "Generally trusted", "Highly trusted", "Complete trust"],
+          },
+          {
+            id: "mgr-q3",
+            text: "Communication clarity about decisions and their rationale",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Often unclear", "Sometimes unclear", "Generally clear", "Very clear", "Exceptionally clear and transparent"],
+          },
+        ],
+      },
+      {
+        title: "Direction",
+        description: "Goal setting, clarity, and problem-solving",
+        questions: [
+          {
+            id: "mgr-q4",
+            text: "Goal and priority definition for the team",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Goals unclear", "Basic goal-setting", "Clear goals", "Well-defined priorities", "Exceptional strategic clarity"],
+          },
+          {
+            id: "mgr-q5",
+            text: "Provides direction while maintaining appropriate autonomy",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Micromanages or absent", "Inconsistent balance", "Good balance", "Empowers effectively", "Masters delegation and autonomy"],
+          },
+          {
+            id: "mgr-q6",
+            text: "Timeliness and effectiveness in addressing problems",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Slow to address issues", "Addresses some issues", "Generally timely", "Proactive problem-solver", "Prevents problems before they occur"],
+          },
+        ],
+      },
+      {
+        title: "Expertise & Judgment",
+        description: "Domain knowledge and decision-making quality",
+        questions: [
+          {
+            id: "mgr-q7",
+            text: "Manager's understanding of the team's work and domain",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Limited understanding", "Basic familiarity", "Good understanding", "Deep knowledge", "Expert-level understanding"],
+          },
+          {
+            id: "mgr-q8",
+            text: "Quality of informed decision-making",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Poor decisions", "Inconsistent quality", "Generally sound", "Consistently strong", "Exceptional judgment"],
+          },
+        ],
+      },
+      {
+        title: "Impact",
+        description: "Contribution to team performance and results",
+        questions: [
+          {
+            id: "mgr-q9",
+            text: "Leadership's visible effect on team performance",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Negative impact", "Minimal impact", "Positive impact", "Strong positive impact", "Transformative impact"],
+          },
+          {
+            id: "mgr-q10",
+            text: "Encourages results-oriented and high-quality work",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Rarely", "Sometimes", "Usually", "Consistently", "Always — inspires excellence"],
+          },
+        ],
+      },
+      {
+        title: "Feedback & Recognition",
+        description: "Quality of feedback and acknowledgment",
+        questions: [
+          {
+            id: "mgr-q11",
+            text: "Provides regular, useful feedback",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["No feedback", "Rare feedback", "Regular feedback", "Frequent, actionable feedback", "Exceptional coaching and feedback"],
+          },
+          {
+            id: "mgr-q12",
+            text: "Recognition of good work and contributions",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Never recognizes", "Rarely recognizes", "Sometimes recognizes", "Regularly recognizes", "Consistently celebrates and amplifies achievements"],
+          },
+        ],
+      },
+      {
+        title: "Development",
+        description: "Support for growth and skill development",
+        questions: [
+          {
+            id: "mgr-q13",
+            text: "Encouragement of personal and professional growth",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["No support", "Minimal support", "Supportive", "Actively invests in growth", "Champion of development"],
+          },
+          {
+            id: "mgr-q14",
+            text: "Recognition of individual strengths and how to leverage them",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["Unaware of strengths", "Basic awareness", "Recognizes strengths", "Leverages strengths well", "Maximizes team potential through strengths"],
+          },
+          {
+            id: "mgr-q15",
+            text: "Support for developing new skills and capabilities",
+            type: "rating_scale",
+            required: true,
+            scaleMin: 1,
+            scaleMax: 5,
+            scaleLabels: ["No opportunities", "Limited support", "Provides opportunities", "Actively creates growth paths", "Transforms careers through development"],
+          },
+        ],
+      },
+      {
+        title: "Overall Feedback",
+        description: "Open-ended feedback on management effectiveness",
+        questions: [
+          { id: "mgr-q16", text: "What should this person keep doing?", type: "text", required: true },
+          { id: "mgr-q17", text: "What should this person do differently?", type: "text", required: true },
+        ],
+      },
+    ],
+  },
+];
+
+// ─────────────────────────────────────────────────────────
+// Seed runner
+// ─────────────────────────────────────────────────────────
+
+async function main() {
+  console.log("Seeding super admin...");
+  await prisma.superAdmin.upsert({
+    where: { email: SUPER_ADMIN_EMAIL },
+    update: { name: SUPER_ADMIN_NAME },
+    create: { email: SUPER_ADMIN_EMAIL, name: SUPER_ADMIN_NAME },
+  });
+  console.log(`  Super admin: ${SUPER_ADMIN_EMAIL}`);
+
+  console.log("Seeding global evaluation templates...");
+  for (const tpl of GLOBAL_TEMPLATES) {
+    const existing = await prisma.evaluationTemplate.findFirst({
+      where: { name: tpl.name, isGlobal: true },
+    });
+
+    if (existing) {
+      await prisma.evaluationTemplate.update({
+        where: { id: existing.id },
+        data: { description: tpl.description, sections: tpl.sections },
+      });
+      console.log(`  Updated: ${tpl.name}`);
+    } else {
+      await prisma.evaluationTemplate.create({
+        data: {
+          name: tpl.name,
+          description: tpl.description,
+          sections: tpl.sections,
+          isGlobal: true,
+          createdBy: SUPER_ADMIN_EMAIL,
+        },
+      });
+      console.log(`  Created: ${tpl.name}`);
+    }
+  }
+
+  console.log("Seed complete.");
+}
+
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(() => prisma.$disconnect());
