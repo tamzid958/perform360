@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAuth, requireAdminOrHR, isAuthError } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
+import { createAssignmentsForCycle } from "@/lib/assignments";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { validateCuidParam } from "@/lib/validation";
 
@@ -22,7 +23,7 @@ const updateCycleSchema = z.object({
 const VALID_TRANSITIONS: Record<string, string[]> = {
   DRAFT: ["ACTIVE"],
   ACTIVE: ["CLOSED"],
-  CLOSED: ["ARCHIVED"],
+  CLOSED: ["ACTIVE", "ARCHIVED"],
   ARCHIVED: [],
 };
 
@@ -280,8 +281,9 @@ export async function PATCH(
         data: updateData,
       });
 
-      // Replace CycleTeam entries if teamTemplates provided
+      // Replace CycleTeam entries and regenerate assignments if teamTemplates changed
       if (validated.teamTemplates) {
+        await tx.evaluationAssignment.deleteMany({ where: { cycleId: params.id } });
         await tx.cycleTeam.deleteMany({ where: { cycleId: params.id } });
         await tx.cycleTeam.createMany({
           data: validated.teamTemplates.map((tt) => ({
@@ -292,23 +294,34 @@ export async function PATCH(
         });
       }
 
-      return tx.evaluationCycle.findUniqueOrThrow({
-        where: { id: updated.id },
-        include: {
-          _count: { select: { assignments: true } },
-          cycleTeams: {
-            include: {
-              team: { select: { id: true, name: true } },
-              template: { select: { id: true, name: true } },
-            },
+      return updated;
+    });
+
+    // Regenerate assignments outside the transaction if teamTemplates changed
+    if (validated.teamTemplates) {
+      await createAssignmentsForCycle(
+        params.id,
+        authResult.companyId,
+        validated.teamTemplates
+      );
+    }
+
+    const cycleWithRelations = await prisma.evaluationCycle.findUniqueOrThrow({
+      where: { id: params.id },
+      include: {
+        _count: { select: { assignments: true } },
+        cycleTeams: {
+          include: {
+            team: { select: { id: true, name: true } },
+            template: { select: { id: true, name: true } },
           },
         },
-      });
+      },
     });
 
     return NextResponse.json({
       success: true,
-      data: cycle,
+      data: cycleWithRelations,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {

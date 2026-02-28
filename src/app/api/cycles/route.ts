@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAuth, requireAdminOrHR, isAuthError } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
+import { createAssignmentsForCycle } from "@/lib/assignments";
 import { applyRateLimit } from "@/lib/rate-limit";
 
 const teamTemplateSchema = z.object({
@@ -136,23 +137,32 @@ export async function POST(request: NextRequest) {
         })),
       });
 
-      return tx.evaluationCycle.findUniqueOrThrow({
-        where: { id: created.id },
-        include: {
-          _count: { select: { assignments: true } },
-          cycleTeams: {
-            include: {
-              team: { select: { id: true, name: true } },
-              template: { select: { id: true, name: true } },
-            },
+      return created;
+    });
+
+    // Generate assignments from team structure while still in DRAFT
+    const { count } = await createAssignmentsForCycle(
+      cycle.id,
+      authResult.companyId,
+      validated.teamTemplates
+    );
+
+    const cycleWithRelations = await prisma.evaluationCycle.findUniqueOrThrow({
+      where: { id: cycle.id },
+      include: {
+        _count: { select: { assignments: true } },
+        cycleTeams: {
+          include: {
+            team: { select: { id: true, name: true } },
+            template: { select: { id: true, name: true } },
           },
         },
-      });
+      },
     });
 
     return NextResponse.json({
       success: true,
-      data: cycle,
+      data: { ...cycleWithRelations, assignmentsCreated: count },
     }, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {

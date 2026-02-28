@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/layout/page-header";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   Select,
   SelectTrigger,
@@ -122,20 +123,21 @@ export default function NewCyclePage() {
           />
 
           <div className="grid grid-cols-2 gap-4">
-            <Input
+            <DatePicker
               id="startDate"
               label="Start Date"
-              type="date"
               value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
+              onChange={setStartDate}
+              placeholder="Pick start date"
               required
             />
-            <Input
+            <DatePicker
               id="endDate"
               label="End Date"
-              type="date"
               value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
+              onChange={setEndDate}
+              placeholder="Pick end date"
+              minDate={startDate ? new Date(startDate) : undefined}
               required
             />
           </div>
@@ -155,7 +157,7 @@ export default function NewCyclePage() {
 
             <div className="space-y-3">
               {teamTemplates.map((row, index) => (
-                <div key={index} className="flex items-start gap-3">
+                <div key={index} className="flex items-center gap-3">
                   <div className="flex-1">
                     <Select
                       value={row.teamId}
@@ -203,7 +205,7 @@ export default function NewCyclePage() {
                     size="sm"
                     onClick={() => removeRow(index)}
                     disabled={teamTemplates.length === 1}
-                    className="mt-0.5 px-2"
+                    className="shrink-0 px-2"
                   >
                     <Trash2 size={16} strokeWidth={1.5} />
                   </Button>

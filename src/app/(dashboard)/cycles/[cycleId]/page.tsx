@@ -8,6 +8,13 @@ import { Progress } from "@/components/ui/progress";
 import { Avatar } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/layout/page-header";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Select,
@@ -24,6 +31,13 @@ import { RelationshipScoreChart } from "@/components/reports/relationship-score-
 import { SubmissionTrendChart } from "@/components/reports/submission-trend-chart";
 import { UnlockGate, useEncryptionUnlock } from "@/components/encryption/unlock-gate";
 import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import {
   Play,
   Send,
   Download,
@@ -38,9 +52,14 @@ import {
   TrendingUp,
   TrendingDown,
   Trophy,
+  AlertTriangle,
+  Trash2,
+  XCircle,
+  RotateCcw,
+  MoreHorizontal,
 } from "lucide-react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/toast";
 import type { CycleReport } from "@/types/report";
 
@@ -136,6 +155,7 @@ function ScoreBadge({ score }: { score: number }) {
 // ─── Page ───
 
 export default function CycleDetailPage() {
+  const router = useRouter();
   const { cycleId } = useParams<{ cycleId: string }>();
   const [cycle, setCycle] = useState<CycleApiData | null>(null);
   const [cycleReport, setCycleReport] = useState<CycleReport | null>(null);
@@ -152,6 +172,14 @@ export default function CycleDetailPage() {
   const [reportLoading, setReportLoading] = useState(false);
   const [reminding, setReminding] = useState(false);
   const [remindingId, setRemindingId] = useState<string | null>(null);
+  const [showActivateDialog, setShowActivateDialog] = useState(false);
+  const [activating, setActivating] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [showCloseDialog, setShowCloseDialog] = useState(false);
+  const [closing, setClosing] = useState(false);
+  const [showReopenDialog, setShowReopenDialog] = useState(false);
+  const [reopening, setReopening] = useState(false);
   const { locked, handleApiResponse, handleUnlocked } = useEncryptionUnlock();
   const { addToast } = useToast();
 
@@ -336,6 +364,98 @@ export default function CycleDetailPage() {
     }
   }
 
+  async function handleActivate() {
+    setActivating(true);
+    try {
+      const res = await fetch(`/api/cycles/${cycleId}/activate`, {
+        method: "POST",
+      });
+      const json = await res.json();
+      if (json.success) {
+        setShowActivateDialog(false);
+        addToast(
+          `Cycle activated — ${json.data.emailsSent} invitation${json.data.emailsSent !== 1 ? "s" : ""} sent to reviewers`,
+          "success"
+        );
+        fetchCycle();
+      } else {
+        if (handleApiResponse(json)) {
+          setShowActivateDialog(false);
+          return;
+        }
+        addToast(json.error ?? "Failed to activate cycle", "error");
+      }
+    } catch {
+      addToast("Failed to activate cycle", "error");
+    } finally {
+      setActivating(false);
+    }
+  }
+
+  async function handleDelete() {
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/cycles/${cycleId}`, { method: "DELETE" });
+      const json = await res.json();
+      if (json.success) {
+        addToast("Cycle deleted", "success");
+        router.push("/cycles");
+      } else {
+        addToast(json.error ?? "Failed to delete cycle", "error");
+      }
+    } catch {
+      addToast("Failed to delete cycle", "error");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  async function handleClose() {
+    setClosing(true);
+    try {
+      const res = await fetch(`/api/cycles/${cycleId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "CLOSED" }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setShowCloseDialog(false);
+        addToast("Cycle closed", "success");
+        fetchCycle();
+      } else {
+        addToast(json.error ?? "Failed to close cycle", "error");
+      }
+    } catch {
+      addToast("Failed to close cycle", "error");
+    } finally {
+      setClosing(false);
+    }
+  }
+
+  async function handleReopen() {
+    setReopening(true);
+    try {
+      const res = await fetch(`/api/cycles/${cycleId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "ACTIVE" }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setShowReopenDialog(false);
+        addToast("Cycle reopened", "success");
+        fetchCycle();
+      } else {
+        addToast(json.error ?? "Failed to reopen cycle", "error");
+      }
+    } catch {
+      addToast("Failed to reopen cycle", "error");
+    } finally {
+      setReopening(false);
+    }
+  }
+
   function clearFilters() {
     setStatusFilter("all");
     setRelationshipFilter("all");
@@ -363,14 +483,8 @@ export default function CycleDetailPage() {
         <Badge variant={statusBadgeVariant[cycle.status]}>
           {cycle.status.charAt(0) + cycle.status.slice(1).toLowerCase()}
         </Badge>
-        {activeTab === "reports" && (
-          <Button variant="secondary" onClick={handleExport}>
-            <Download size={16} strokeWidth={1.5} className="mr-1.5" />
-            Export PDF
-          </Button>
-        )}
         {cycle.status === "DRAFT" && (
-          <Button>
+          <Button onClick={() => setShowActivateDialog(true)}>
             <Play size={16} strokeWidth={1.5} className="mr-1.5" />
             Activate
           </Button>
@@ -384,6 +498,50 @@ export default function CycleDetailPage() {
             <Send size={16} strokeWidth={1.5} className="mr-1.5" />
             {reminding ? "Sending\u2026" : "Send Reminders"}
           </Button>
+        )}
+        {(cycle.status === "DRAFT" || cycle.status === "ACTIVE" || cycle.status === "CLOSED" || activeTab === "reports") && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-9 w-9 p-0">
+                <MoreHorizontal size={18} strokeWidth={1.5} />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {activeTab === "reports" && (
+                <DropdownMenuItem onClick={handleExport}>
+                  <Download size={15} strokeWidth={1.5} className="mr-2" />
+                  Export PDF
+                </DropdownMenuItem>
+              )}
+              {cycle.status === "ACTIVE" && (
+                <>
+                  {activeTab === "reports" && <DropdownMenuSeparator />}
+                  <DropdownMenuItem
+                    onClick={() => setShowCloseDialog(true)}
+                    className="text-red-500 focus:text-red-600"
+                  >
+                    <XCircle size={15} strokeWidth={1.5} className="mr-2" />
+                    End Cycle
+                  </DropdownMenuItem>
+                </>
+              )}
+              {cycle.status === "CLOSED" && (
+                <DropdownMenuItem onClick={() => setShowReopenDialog(true)}>
+                  <RotateCcw size={15} strokeWidth={1.5} className="mr-2" />
+                  Reopen Cycle
+                </DropdownMenuItem>
+              )}
+              {cycle.status === "DRAFT" && (
+                <DropdownMenuItem
+                  onClick={() => setShowDeleteDialog(true)}
+                  className="text-red-500 focus:text-red-600"
+                >
+                  <Trash2 size={15} strokeWidth={1.5} className="mr-2" />
+                  Delete
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </PageHeader>
 
@@ -1005,6 +1163,246 @@ export default function CycleDetailPage() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* ─── Activate Confirmation Dialog ─── */}
+      <Dialog open={showActivateDialog} onOpenChange={setShowActivateDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Activate this cycle?</DialogTitle>
+            <DialogDescription>
+              This action cannot be undone. Please review the consequences below.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 my-4">
+            <div className="flex items-start gap-3 rounded-xl bg-amber-50 border border-amber-200/60 px-4 py-3">
+              <AlertTriangle
+                size={18}
+                strokeWidth={1.5}
+                className="text-amber-500 mt-0.5 shrink-0"
+              />
+              <ul className="text-[13px] text-amber-900 space-y-1.5">
+                <li>
+                  <strong>Invitation emails</strong> will be sent immediately to
+                  all assigned reviewers.
+                </li>
+                <li>
+                  The cycle will move from <strong>Draft to Active</strong> — you
+                  will no longer be able to edit teams, templates, or delete the
+                  cycle.
+                </li>
+                <li>
+                  Unique evaluation links will become <strong>live</strong> and
+                  accessible to reviewers.
+                </li>
+                <li>
+                  Assignments are <strong>locked</strong> and cannot be modified
+                  after activation.
+                </li>
+              </ul>
+            </div>
+            <p className="text-[13px] text-gray-500">
+              {cycle.stats.totalAssignments} assignment
+              {cycle.stats.totalAssignments !== 1 ? "s" : ""} across{" "}
+              {cycle.teamTemplates.length} team
+              {cycle.teamTemplates.length !== 1 ? "s" : ""} will be activated.
+            </p>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="secondary"
+              onClick={() => setShowActivateDialog(false)}
+              disabled={activating}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleActivate} disabled={activating}>
+              {activating ? (
+                "Activating\u2026"
+              ) : (
+                <>
+                  <Play size={16} strokeWidth={1.5} className="mr-1.5" />
+                  Activate Cycle
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── Delete Confirmation Dialog ─── */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete this cycle?</DialogTitle>
+            <DialogDescription>
+              This will permanently delete the cycle and all its assignments.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-start gap-3 rounded-xl bg-red-50 border border-red-200/60 px-4 py-3 my-4">
+            <AlertTriangle
+              size={18}
+              strokeWidth={1.5}
+              className="text-red-500 mt-0.5 shrink-0"
+            />
+            <p className="text-[13px] text-red-900">
+              <strong>{cycle.stats.totalAssignments} assignment
+              {cycle.stats.totalAssignments !== 1 ? "s" : ""}</strong> across{" "}
+              {cycle.teamTemplates.length} team
+              {cycle.teamTemplates.length !== 1 ? "s" : ""} will be permanently
+              removed. This action cannot be undone.
+            </p>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="secondary"
+              onClick={() => setShowDeleteDialog(false)}
+              disabled={deleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              {deleting ? (
+                "Deleting\u2026"
+              ) : (
+                <>
+                  <Trash2 size={16} strokeWidth={1.5} className="mr-1.5" />
+                  Delete Cycle
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── Close Cycle Confirmation Dialog ─── */}
+      <Dialog open={showCloseDialog} onOpenChange={setShowCloseDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>End this cycle?</DialogTitle>
+            <DialogDescription>
+              This will close the cycle and stop accepting new submissions.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 my-4">
+            <div className="flex items-start gap-3 rounded-xl bg-red-50 border border-red-200/60 px-4 py-3">
+              <AlertTriangle
+                size={18}
+                strokeWidth={1.5}
+                className="text-red-500 mt-0.5 shrink-0"
+              />
+              <ul className="text-[13px] text-red-900 space-y-1.5">
+                <li>
+                  All <strong>evaluation links will be deactivated</strong> —
+                  reviewers will no longer be able to submit responses.
+                </li>
+                <li>
+                  <strong>
+                    {cycle.stats.pendingAssignments + cycle.stats.inProgressAssignments} pending/in-progress
+                  </strong>{" "}
+                  assignment
+                  {cycle.stats.pendingAssignments + cycle.stats.inProgressAssignments !== 1 ? "s" : ""}{" "}
+                  will remain incomplete and cannot be submitted after closing.
+                </li>
+                <li>
+                  Only <strong>{cycle.stats.submittedAssignments}</strong> of{" "}
+                  <strong>{cycle.stats.totalAssignments}</strong> assignment
+                  {cycle.stats.totalAssignments !== 1 ? "s" : ""} have been
+                  submitted ({cycle.stats.completionRate}% complete).
+                </li>
+                <li>
+                  You can <strong>reopen</strong> the cycle later if needed.
+                </li>
+              </ul>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="secondary"
+              onClick={() => setShowCloseDialog(false)}
+              disabled={closing}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleClose}
+              disabled={closing}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              {closing ? (
+                "Closing\u2026"
+              ) : (
+                <>
+                  <XCircle size={16} strokeWidth={1.5} className="mr-1.5" />
+                  End Cycle
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── Reopen Cycle Confirmation Dialog ─── */}
+      <Dialog open={showReopenDialog} onOpenChange={setShowReopenDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reopen this cycle?</DialogTitle>
+            <DialogDescription>
+              This will reactivate the cycle and allow reviewers to submit
+              responses again.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 my-4">
+            <div className="flex items-start gap-3 rounded-xl bg-amber-50 border border-amber-200/60 px-4 py-3">
+              <AlertTriangle
+                size={18}
+                strokeWidth={1.5}
+                className="text-amber-500 mt-0.5 shrink-0"
+              />
+              <ul className="text-[13px] text-amber-900 space-y-1.5">
+                <li>
+                  All evaluation links will become <strong>active again</strong>{" "}
+                  — reviewers with pending assignments can submit responses.
+                </li>
+                <li>
+                  <strong>
+                    {cycle.stats.pendingAssignments + cycle.stats.inProgressAssignments} incomplete
+                  </strong>{" "}
+                  assignment
+                  {cycle.stats.pendingAssignments + cycle.stats.inProgressAssignments !== 1 ? "s" : ""}{" "}
+                  will be reopened for submission.
+                </li>
+                <li>
+                  Already submitted responses ({cycle.stats.submittedAssignments})
+                  will <strong>not be affected</strong>.
+                </li>
+              </ul>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="secondary"
+              onClick={() => setShowReopenDialog(false)}
+              disabled={reopening}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleReopen} disabled={reopening}>
+              {reopening ? (
+                "Reopening\u2026"
+              ) : (
+                <>
+                  <RotateCcw size={16} strokeWidth={1.5} className="mr-1.5" />
+                  Reopen Cycle
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
