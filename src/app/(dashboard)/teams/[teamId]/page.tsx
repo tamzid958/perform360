@@ -16,7 +16,6 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectTrigger,
@@ -30,6 +29,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
+import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { UserPlus, MoreHorizontal, Mail, Trash2, AlertCircle, ArrowDown, ArrowUp, ArrowLeftRight } from "lucide-react";
 
 interface TeamMember {
@@ -63,7 +63,10 @@ export default function TeamDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const [addEmail, setAddEmail] = useState("");
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [userSearchQuery, setUserSearchQuery] = useState("");
+  const [userOptions, setUserOptions] = useState<ComboboxOption[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
   const [addRole, setAddRole] = useState("MEMBER");
   const [addLoading, setAddLoading] = useState(false);
   const { addToast } = useToast();
@@ -88,30 +91,62 @@ export default function TeamDetailPage() {
     fetchTeam();
   }, [fetchTeam]);
 
+  // Fetch users for combobox when dialog is open
+  useEffect(() => {
+    if (!showAddDialog) return;
+
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      setUsersLoading(true);
+      try {
+        const params = new URLSearchParams({ limit: "20" });
+        if (userSearchQuery.trim()) params.set("search", userSearchQuery.trim());
+        const res = await fetch(`/api/users?${params}`, { signal: controller.signal });
+        const json = await res.json();
+        if (json.success) {
+          const existingIds = new Set(team?.members.map((m) => m.user.id) ?? []);
+          setUserOptions(
+            json.data.map((u: { id: string; name: string; email: string; avatar: string | null }) => ({
+              value: u.id,
+              label: u.name,
+              sublabel: u.email,
+              disabled: existingIds.has(u.id),
+              disabledReason: "Already in team",
+              icon: <Avatar name={u.name} src={u.avatar} size="sm" />,
+            }))
+          );
+        }
+      } catch (err) {
+        if (!(err instanceof DOMException && err.name === "AbortError")) {
+          /* silently handle */
+        }
+      } finally {
+        setUsersLoading(false);
+      }
+    }, userSearchQuery ? 300 : 0);
+
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [showAddDialog, userSearchQuery, team?.members]);
+
   const handleAddMember = async () => {
-    if (!addEmail.trim()) return;
+    if (!selectedUserId) return;
     setAddLoading(true);
     try {
-      const usersRes = await fetch("/api/users");
-      const usersJson = await usersRes.json();
-      if (!usersJson.success) throw new Error("Failed to find users");
-
-      const user = usersJson.data.find(
-        (u: { email: string }) => u.email.toLowerCase() === addEmail.trim().toLowerCase()
-      );
-      if (!user) throw new Error("No user found with that email in your company");
-
       const res = await fetch(`/api/teams/${params.teamId}/members`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.id, role: addRole }),
+        body: JSON.stringify({ userId: selectedUserId, role: addRole }),
       });
       const json = await res.json();
       if (!json.success) throw new Error(json.error || "Failed to add member");
 
       addToast("Member added", "success");
       setShowAddDialog(false);
-      setAddEmail("");
+      setSelectedUserId(null);
+      setUserSearchQuery("");
       setAddRole("MEMBER");
       fetchTeam();
     } catch (err) {
@@ -276,27 +311,33 @@ export default function TeamDetailPage() {
       </Card>
 
       {/* Add Member Dialog */}
-      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+      <Dialog
+        open={showAddDialog}
+        onOpenChange={(open) => {
+          setShowAddDialog(open);
+          if (!open) {
+            setSelectedUserId(null);
+            setUserSearchQuery("");
+            setAddRole("MEMBER");
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add Team Member</DialogTitle>
             <DialogDescription>Add an existing user to this team</DialogDescription>
           </DialogHeader>
-          <form
-            className="space-y-4 mt-4"
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleAddMember();
-            }}
-          >
-            <Input
-              id="member-email"
-              label="Email Address"
-              type="email"
-              placeholder="member@company.com"
-              value={addEmail}
-              onChange={(e) => setAddEmail(e.target.value)}
-              required
+          <div className="space-y-4 mt-4">
+            <Combobox
+              id="member-select"
+              label="Select Person"
+              placeholder="Search by name or email..."
+              value={selectedUserId}
+              onChange={setSelectedUserId}
+              options={userOptions}
+              onSearchChange={setUserSearchQuery}
+              loading={usersLoading}
+              emptyMessage="No matching users found"
             />
             <div className="space-y-1.5">
               <label className="block text-[13px] font-medium text-gray-700">Team Role</label>
@@ -311,12 +352,12 @@ export default function TeamDetailPage() {
               </Select>
             </div>
             <div className="flex gap-3 pt-2">
-              <Button type="submit" disabled={addLoading}>
+              <Button disabled={addLoading || !selectedUserId} onClick={handleAddMember}>
                 {addLoading ? "Adding..." : "Add Member"}
               </Button>
-              <Button type="button" variant="ghost" onClick={() => setShowAddDialog(false)}>Cancel</Button>
+              <Button variant="ghost" onClick={() => setShowAddDialog(false)}>Cancel</Button>
             </div>
-          </form>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
