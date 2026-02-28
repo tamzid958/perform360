@@ -15,7 +15,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { Users, Plus, AlertCircle, Inbox, Search, MoreHorizontal, Eye, Trash2, ArrowDown, ArrowUp, ArrowLeftRight, RotateCcw, Upload } from "lucide-react";
+import { Users, Plus, AlertCircle, Inbox, Search, MoreHorizontal, Eye, Trash2, Archive, ArchiveRestore, ArrowDown, ArrowUp, ArrowLeftRight, RotateCcw, Upload } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { PaginationMeta } from "@/types/pagination";
@@ -32,6 +32,7 @@ interface Team {
   id: string;
   name: string;
   description: string | null;
+  archivedAt: string | null;
   members: TeamMember[];
   _count: { members: number };
 }
@@ -60,6 +61,7 @@ export default function TeamsPage() {
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showArchived, setShowArchived] = useState(false);
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
   const { addToast } = useToast();
   const router = useRouter();
@@ -70,6 +72,7 @@ export default function TeamsPage() {
     try {
       const params = new URLSearchParams({ page: String(page), limit: "12" });
       if (searchQuery.trim()) params.set("search", searchQuery.trim());
+      if (showArchived) params.set("archived", "true");
       const res = await fetch(`/api/teams?${params}`);
       const json = await res.json();
       if (!json.success) throw new Error(json.error || "Failed to load teams");
@@ -82,7 +85,7 @@ export default function TeamsPage() {
     } finally {
       setLoading(false);
     }
-  }, [addToast, page, searchQuery]);
+  }, [addToast, page, searchQuery, showArchived]);
 
   useEffect(() => {
     const timer = setTimeout(fetchTeams, searchQuery ? 300 : 0);
@@ -99,6 +102,22 @@ export default function TeamsPage() {
       fetchTeams();
     } catch (err) {
       addToast(err instanceof Error ? err.message : "Failed to delete team", "error");
+    }
+  };
+
+  const handleArchive = async (team: Team, archived: boolean) => {
+    try {
+      const res = await fetch(`/api/teams/${team.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ archived }),
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || "Failed to update team");
+      addToast(`"${team.name}" ${archived ? "archived" : "restored"}`, "success");
+      fetchTeams();
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : "Failed to update team", "error");
     }
   };
 
@@ -132,7 +151,20 @@ export default function TeamsPage() {
       </PageHeader>
 
       <div className="flex items-center justify-between gap-4 mb-4">
-        <div />
+        <div className="flex items-center gap-1 rounded-xl bg-gray-100 p-1">
+          <button
+            onClick={() => { setShowArchived(false); setPage(1); }}
+            className={`px-3 py-1.5 rounded-lg text-[13px] font-medium transition-all ${!showArchived ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+          >
+            Active
+          </button>
+          <button
+            onClick={() => { setShowArchived(true); setPage(1); }}
+            className={`px-3 py-1.5 rounded-lg text-[13px] font-medium transition-all ${showArchived ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+          >
+            Archived
+          </button>
+        </div>
         <div className="relative max-w-xs">
           <Search size={16} strokeWidth={1.5} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
@@ -153,9 +185,9 @@ export default function TeamsPage() {
         <div className="flex flex-col items-center gap-3 py-16 text-center">
           <Inbox size={32} strokeWidth={1.5} className="text-gray-300" />
           <p className="text-[14px] text-gray-500">
-            {searchQuery ? "No teams match your search" : "No teams yet"}
+            {searchQuery ? "No teams match your search" : showArchived ? "No archived teams" : "No teams yet"}
           </p>
-          {!searchQuery && (
+          {!searchQuery && !showArchived && (
             <Link href="/teams/new">
               <Button variant="secondary" size="sm">Create Team</Button>
             </Link>
@@ -173,7 +205,7 @@ export default function TeamsPage() {
               const totalMembers = managerCount + memberCount;
               const hasSelf = totalMembers > 0;
               return (
-                <Card key={team.id} className="h-full flex flex-col hover:shadow-md transition-all duration-200 group">
+                <Card key={team.id} className={`h-full flex flex-col hover:shadow-md transition-all duration-200 group ${team.archivedAt ? "opacity-70" : ""}`}>
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div className="p-2.5 rounded-xl bg-brand-50">
@@ -194,13 +226,26 @@ export default function TeamsPage() {
                             View
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="text-red-600"
-                            onClick={() => handleDelete(team)}
-                          >
-                            <Trash2 size={14} strokeWidth={1.5} className="mr-2" />
-                            Delete
-                          </DropdownMenuItem>
+                          {team.archivedAt ? (
+                            <DropdownMenuItem onClick={() => handleArchive(team, false)}>
+                              <ArchiveRestore size={14} strokeWidth={1.5} className="mr-2" />
+                              Unarchive
+                            </DropdownMenuItem>
+                          ) : (
+                            <DropdownMenuItem onClick={() => handleArchive(team, true)}>
+                              <Archive size={14} strokeWidth={1.5} className="mr-2" />
+                              Archive
+                            </DropdownMenuItem>
+                          )}
+                          {!team.archivedAt && (
+                            <DropdownMenuItem
+                              className="text-red-600"
+                              onClick={() => handleDelete(team)}
+                            >
+                              <Trash2 size={14} strokeWidth={1.5} className="mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>

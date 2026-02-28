@@ -23,7 +23,7 @@ interface ComboboxProps {
   value: string | null;
   onChange: (value: string | null) => void;
   options: ComboboxOption[];
-  onSearchChange: (query: string) => void;
+  onSearchChange?: (query: string) => void;
   loading?: boolean;
 }
 
@@ -45,17 +45,37 @@ export function Combobox({
   const listRef = React.useRef<HTMLDivElement>(null);
   const listboxId = React.useId();
 
-  const selectedOption = options.find((o) => o.value === value);
+  // Cache the selected option so it survives option list changes during search
+  const selectedOptionRef = React.useRef<ComboboxOption | null>(null);
+  const liveMatch = options.find((o) => o.value === value);
+  if (liveMatch) {
+    selectedOptionRef.current = liveMatch;
+  } else if (!value) {
+    selectedOptionRef.current = null;
+  }
+  const selectedOption = selectedOptionRef.current;
+
+  const filteredOptions = React.useMemo(() => {
+    // When onSearchChange is provided, the parent handles filtering (server-side search)
+    if (onSearchChange) return options;
+    if (!search.trim()) return options;
+    const q = search.toLowerCase();
+    return options.filter(
+      (o) =>
+        o.label.toLowerCase().includes(q) ||
+        o.sublabel?.toLowerCase().includes(q)
+    );
+  }, [options, search, onSearchChange]);
 
   const enabledOptions = React.useMemo(
-    () => options.filter((o) => !o.disabled),
-    [options]
+    () => filteredOptions.filter((o) => !o.disabled),
+    [filteredOptions]
   );
 
   const handleSearchChange = (query: string) => {
     setSearch(query);
     setHighlightedIndex(-1);
-    onSearchChange(query);
+    onSearchChange?.(query);
   };
 
   const handleSelect = (option: ComboboxOption) => {
@@ -63,7 +83,7 @@ export function Combobox({
     onChange(option.value);
     setOpen(false);
     setSearch("");
-    onSearchChange("");
+    onSearchChange?.("");
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -114,6 +134,7 @@ export function Combobox({
           if (!nextOpen) {
             setSearch("");
             setHighlightedIndex(-1);
+            onSearchChange?.("");
           }
         }}
       >
@@ -144,7 +165,7 @@ export function Combobox({
           </button>
         </PopoverTrigger>
         <PopoverContent
-          className="flex flex-col p-0 w-[var(--radix-popover-trigger-width)] max-h-[280px] overflow-hidden"
+          className="flex flex-col p-0 w-[var(--radix-popover-trigger-width)] min-w-[200px] max-h-[280px] overflow-hidden"
           align="start"
           onOpenAutoFocus={(e) => {
             e.preventDefault();
@@ -188,12 +209,12 @@ export function Combobox({
                   </div>
                 ))}
               </div>
-            ) : options.length === 0 ? (
+            ) : filteredOptions.length === 0 ? (
               <p className="text-center text-[13px] text-gray-400 py-6">
                 {emptyMessage}
               </p>
             ) : (
-              options.map((option) => {
+              filteredOptions.map((option) => {
                 const isSelected = option.value === value;
                 const enabledIndex = enabledOptions.indexOf(option);
                 const isHighlighted = enabledIndex === highlightedIndex;

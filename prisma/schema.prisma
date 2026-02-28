@@ -158,6 +158,7 @@ model Team {
   companyId   String
   company     Company  @relation(fields: [companyId], references: [id])
   createdAt   DateTime @default(now())
+  archivedAt  DateTime?
 
   members    TeamMember[]
   cycleTeams CycleTeam[]

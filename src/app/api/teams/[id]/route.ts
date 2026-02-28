@@ -8,6 +8,7 @@ import { validateCuidParam } from "@/lib/validation";
 const updateTeamSchema = z.object({
   name: z.string().min(1).optional(),
   description: z.string().optional(),
+  archived: z.boolean().optional(),
 });
 
 export async function GET(
@@ -83,9 +84,14 @@ export async function PATCH(
       }, { status: 404 });
     }
 
+    const { archived, ...fields } = validated;
+    const data: Record<string, unknown> = { ...fields };
+    if (archived === true) data.archivedAt = new Date();
+    if (archived === false) data.archivedAt = null;
+
     const team = await prisma.team.update({
       where: { id: params.id },
-      data: validated,
+      data,
       include: {
         members: {
           include: {

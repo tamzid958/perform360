@@ -19,9 +19,53 @@ import {
   Link2,
   ChevronDown,
   ChevronUp,
+  Download,
 } from "lucide-react";
 import Link from "next/link";
 import type { CsvRow, ParsedRow, ImportResult } from "@/types/import";
+
+const SAMPLE_CSV = `Name,Team,Manager,Email
+James Carter,Executive / Leadership Team,,james.carter@techcorp.com
+Sarah Chen,Executive / Leadership Team,James Carter,sarah.chen@techcorp.com
+Robert Hayes,Executive / Leadership Team,James Carter,robert.hayes@techcorp.com
+Emily Tran,Executive / Leadership Team,James Carter,emily.tran@techcorp.com
+Maria Santos,Executive / Leadership Team,James Carter,maria.santos@techcorp.com
+David Liu,Executive / Leadership Team,James Carter,david.liu@techcorp.com
+Sarah Chen,Engineering Management,,sarah.chen@techcorp.com
+Alex Rivera,Engineering Management,Sarah Chen,alex.rivera@techcorp.com
+Priya Sharma,Engineering Management,Sarah Chen,priya.sharma@techcorp.com
+Dan Kim,Engineering Management,Sarah Chen,dan.kim@techcorp.com
+Alex Rivera,Platform Team,,alex.rivera@techcorp.com
+Jordan Lee,Platform Team,Alex Rivera,jordan.lee@techcorp.com
+Maya Patel,Platform Team,Alex Rivera,maya.patel@techcorp.com
+Chris Wu,Platform Team,Alex Rivera,chris.wu@techcorp.com
+Priya Sharma,Frontend Team,,priya.sharma@techcorp.com
+Tom Zhang,Frontend Team,Priya Sharma,tom.zhang@techcorp.com
+Nina Costa,Frontend Team,Priya Sharma,nina.costa@techcorp.com
+Dan Kim,DevOps Team,,dan.kim@techcorp.com
+Sam Ali,DevOps Team,Dan Kim,sam.ali@techcorp.com
+Robert Hayes,Finance Team,,robert.hayes@techcorp.com
+Lisa Park,Finance Team,Robert Hayes,lisa.park@techcorp.com
+Mark Jensen,Finance Team,Robert Hayes,mark.jensen@techcorp.com
+Emily Tran,Accounts Team,,emily.tran@techcorp.com
+James Wong,Accounts Team,Emily Tran,james.wong@techcorp.com
+Aisha Khan,Accounts Team,Emily Tran,aisha.khan@techcorp.com
+Maria Santos,HR Team,,maria.santos@techcorp.com
+Kevin Brown,HR Team,Maria Santos,kevin.brown@techcorp.com
+Rachel Adams,HR Team,Maria Santos,rachel.adams@techcorp.com
+David Liu,Admin Team,,david.liu@techcorp.com
+Sophie Martin,Admin Team,David Liu,sophie.martin@techcorp.com
+Omar Farooq,Admin Team,David Liu,omar.farooq@techcorp.com`;
+
+function downloadSampleCsv() {
+  const blob = new Blob([SAMPLE_CSV], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "sample-teams.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 type WizardStep = 1 | 2 | 3 | 4;
 type FilterType = "all" | "valid" | "skipped" | "warning";
@@ -356,6 +400,57 @@ export default function TeamsImportPage() {
               {parseError}
             </div>
           )}
+
+          <div className="mt-5 pt-5 border-t border-gray-100">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-callout font-medium text-gray-700">
+                Sample CSV — TechCorp Inc.
+              </p>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  downloadSampleCsv();
+                }}
+                className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[#0071e3] hover:text-[#0058b9] transition-colors"
+              >
+                <Download size={14} strokeWidth={1.5} />
+                Download sample
+              </button>
+            </div>
+            <div className="rounded-xl border border-gray-200 overflow-hidden">
+              <table className="w-full text-[12px]">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-200">
+                    <th className="text-left py-2 px-3 text-gray-500 font-medium">Name</th>
+                    <th className="text-left py-2 px-3 text-gray-500 font-medium">Team</th>
+                    <th className="text-left py-2 px-3 text-gray-500 font-medium">Manager</th>
+                    <th className="text-left py-2 px-3 text-gray-500 font-medium">Email</th>
+                  </tr>
+                </thead>
+                <tbody className="text-gray-600">
+                  {[
+                    ["Sarah Chen", "Engineering Management", "", "sarah.chen@techcorp.com"],
+                    ["Alex Rivera", "Engineering Management", "Sarah Chen", "alex.rivera@techcorp.com"],
+                    ["Jordan Lee", "Platform Team", "Alex Rivera", "jordan.lee@techcorp.com"],
+                    ["Robert Hayes", "Finance Team", "", "robert.hayes@techcorp.com"],
+                    ["Lisa Park", "Finance Team", "Robert Hayes", "lisa.park@techcorp.com"],
+                  ].map(([name, team, manager, email], i) => (
+                    <tr key={i} className="border-b border-gray-50 last:border-0">
+                      <td className="py-1.5 px-3 font-medium text-gray-900">{name}</td>
+                      <td className="py-1.5 px-3">{team}</td>
+                      <td className="py-1.5 px-3">{manager || <span className="text-gray-300">—</span>}</td>
+                      <td className="py-1.5 px-3">{email}</td>
+                    </tr>
+                  ))}
+                  <tr>
+                    <td colSpan={4} className="py-1.5 px-3 text-gray-400 text-center">
+                      ... 32 rows total across 9 teams
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </Card>
       )}
 

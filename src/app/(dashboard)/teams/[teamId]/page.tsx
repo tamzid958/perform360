@@ -30,7 +30,7 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
-import { UserPlus, MoreHorizontal, Mail, Trash2, AlertCircle, ArrowDown, ArrowUp, ArrowLeftRight, RotateCcw } from "lucide-react";
+import { UserPlus, MoreHorizontal, Mail, Trash2, AlertCircle, ArrowDown, ArrowUp, ArrowLeftRight, RotateCcw, Archive, ArchiveRestore } from "lucide-react";
 
 interface TeamMember {
   id: string;
@@ -44,6 +44,7 @@ interface Team {
   id: string;
   name: string;
   description: string | null;
+  archivedAt: string | null;
   members: TeamMember[];
 }
 
@@ -156,6 +157,22 @@ export default function TeamDetailPage() {
     }
   };
 
+  const handleArchive = async (archived: boolean) => {
+    try {
+      const res = await fetch(`/api/teams/${params.teamId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ archived }),
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || "Failed to update team");
+      addToast(`Team ${archived ? "archived" : "restored"}`, "success");
+      fetchTeam();
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : "Failed to update team", "error");
+    }
+  };
+
   const handleRemoveMember = async (userId: string, name: string) => {
     try {
       const res = await fetch(`/api/teams/${params.teamId}/members/${userId}`, {
@@ -225,11 +242,31 @@ export default function TeamDetailPage() {
   return (
     <div>
       <PageHeader title={team.name} description={team.description ?? ""}>
-        <Button onClick={() => setShowAddDialog(true)}>
-          <UserPlus size={16} strokeWidth={1.5} className="mr-1.5" />
-          Add Member
-        </Button>
+        {team.archivedAt ? (
+          <Button variant="secondary" onClick={() => handleArchive(false)}>
+            <ArchiveRestore size={16} strokeWidth={1.5} className="mr-1.5" />
+            Unarchive
+          </Button>
+        ) : (
+          <>
+            <Button variant="secondary" onClick={() => handleArchive(true)}>
+              <Archive size={16} strokeWidth={1.5} className="mr-1.5" />
+              Archive
+            </Button>
+            <Button onClick={() => setShowAddDialog(true)}>
+              <UserPlus size={16} strokeWidth={1.5} className="mr-1.5" />
+              Add Member
+            </Button>
+          </>
+        )}
       </PageHeader>
+
+      {team.archivedAt && (
+        <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 mb-6">
+          <Archive size={16} strokeWidth={1.5} className="text-amber-600 shrink-0" />
+          <p className="text-[13px] text-amber-700">This team is archived and hidden from the active teams list.</p>
+        </div>
+      )}
 
       {/* Evaluation Direction Stats */}
       <div className="grid grid-cols-4 gap-3 mb-6 max-w-2xl">
