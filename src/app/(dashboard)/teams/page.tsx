@@ -114,8 +114,8 @@ export default function TeamsPage() {
             const managerCount = team.members.filter((m) => m.role === "MANAGER").length;
             const reportCount = team.members.filter((m) => m.role === "DIRECT_REPORT").length;
             return (
-              <Link key={team.id} href={`/teams/${team.id}`}>
-                <Card className="hover:shadow-md transition-all duration-200 cursor-pointer group">
+              <Link key={team.id} href={`/teams/${team.id}`} className="h-full">
+                <Card className="h-full flex flex-col hover:shadow-md transition-all duration-200 cursor-pointer group">
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div className="p-2.5 rounded-xl bg-brand-50">
@@ -125,8 +125,8 @@ export default function TeamsPage() {
                     </div>
                   </CardHeader>
                   <CardTitle>{team.name}</CardTitle>
-                  <CardDescription>{team.description ?? "No description"}</CardDescription>
-                  <div className="flex items-center gap-2 mt-4 flex-wrap">
+                  <CardDescription className="line-clamp-2">{team.description ?? "No description"}</CardDescription>
+                  <div className="flex items-center gap-2 mt-auto pt-4 flex-wrap">
                     <Badge variant="default">{team._count.members} members</Badge>
                     <Badge variant="info">{managerCount} managers</Badge>
                     <Badge variant="outline">{reportCount} reports</Badge>

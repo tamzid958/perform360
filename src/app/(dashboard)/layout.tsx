@@ -14,7 +14,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const appUser = await prisma.user.findFirst({
     where: { email: session.user.email! },
-    select: { role: true, companyId: true },
+    select: { name: true, email: true, avatar: true, role: true, companyId: true },
   });
 
   if (appUser?.role === "ADMIN") {
@@ -33,7 +33,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <div className="flex h-screen overflow-hidden">
         <Sidebar />
         <div className="flex-1 flex flex-col overflow-hidden">
-          <TopNav />
+          <TopNav
+            userName={appUser?.name}
+            userEmail={appUser?.email}
+            userAvatar={appUser?.avatar}
+          />
           <main className="flex-1 overflow-y-auto p-6 lg:p-8">
             {children}
           </main>

@@ -53,9 +53,6 @@ export function TopNav({ userName = "User", userEmail = "", userAvatar }: TopNav
               <div className="text-[12px] text-gray-500">{userEmail}</div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Profile</DropdownMenuItem>
-            <DropdownMenuItem>Settings</DropdownMenuItem>
-            <DropdownMenuSeparator />
             <DropdownMenuItem className="text-red-600" onClick={() => signOut({ redirectTo: "/login" })}>Sign out</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
