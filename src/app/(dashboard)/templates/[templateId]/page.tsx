@@ -1,72 +1,129 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import { useParams } from "next/navigation";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/layout/page-header";
-import { Edit, Copy, Globe, Building2 } from "lucide-react";
+import { Edit, Copy, Globe, Building2, AlertCircle } from "lucide-react";
+import Link from "next/link";
 
-const template = {
-  id: "1",
-  name: "Standard 360° Review",
-  description: "Comprehensive evaluation covering leadership, communication, and technical skills",
-  isGlobal: true,
-  createdAt: "2025-12-15",
-  sections: [
-    {
-      title: "Communication Skills",
-      questions: [
-        { text: "How effectively does this person communicate with team members?", type: "rating_scale", required: true },
-        { text: "Does this person actively listen to feedback?", type: "rating_scale", required: true },
-        { text: "Please provide examples of effective communication you've observed.", type: "text", required: false },
-      ],
-    },
-    {
-      title: "Leadership & Initiative",
-      questions: [
-        { text: "How well does this person take initiative on projects?", type: "rating_scale", required: true },
-        { text: "Does this person mentor or support team members?", type: "yes_no", required: true },
-        { text: "Rate this person's decision-making ability.", type: "rating_scale", required: true },
-        { text: "What leadership qualities stand out?", type: "text", required: false },
-      ],
-    },
-    {
-      title: "Technical Skills",
-      questions: [
-        { text: "How would you rate this person's technical expertise?", type: "rating_scale", required: true },
-        { text: "Does this person stay current with industry trends?", type: "rating_scale", required: true },
-        { text: "Select the areas where this person excels.", type: "multiple_choice", required: true },
-      ],
-    },
-    {
-      title: "Overall Assessment",
-      questions: [
-        { text: "Overall performance rating", type: "rating_scale", required: true },
-        { text: "What are this person's greatest strengths?", type: "text", required: true },
-        { text: "What areas could this person improve in?", type: "text", required: true },
-        { text: "Any additional comments?", type: "text", required: false },
-      ],
-    },
-  ],
-};
+interface Question {
+  id?: string;
+  text: string;
+  type: string;
+  required: boolean;
+  options?: string[];
+}
+
+interface Section {
+  title: string;
+  description?: string;
+  questions: Question[];
+}
+
+interface Template {
+  id: string;
+  name: string;
+  description: string | null;
+  isGlobal: boolean;
+  sections: Section[];
+  createdAt: string;
+}
 
 const typeLabels: Record<string, string> = {
   rating_scale: "Rating Scale",
   text: "Text Response",
   multiple_choice: "Multiple Choice",
   yes_no: "Yes / No",
+  competency_matrix: "Competency Matrix",
 };
 
 export default function TemplateDetailPage() {
+  const params = useParams<{ templateId: string }>();
+  const [template, setTemplate] = useState<Template | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchTemplate = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/templates/${params.templateId}`);
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || "Failed to load template");
+      setTemplate(json.data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load template");
+    } finally {
+      setLoading(false);
+    }
+  }, [params.templateId]);
+
+  useEffect(() => {
+    fetchTemplate();
+  }, [fetchTemplate]);
+
+  if (error) {
+    return (
+      <div>
+        <PageHeader title="Template" description="" />
+        <Card className="max-w-lg mx-auto mt-12 text-center">
+          <div className="flex flex-col items-center gap-3 py-4">
+            <AlertCircle size={32} strokeWidth={1.5} className="text-red-400" />
+            <p className="text-[14px] text-gray-600">{error}</p>
+            <Button variant="secondary" size="sm" onClick={fetchTemplate}>Retry</Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  if (loading || !template) {
+    return (
+      <div>
+        <PageHeader title="" description="">
+          <Skeleton className="h-9 w-24" />
+          <Skeleton className="h-9 w-20" />
+        </PageHeader>
+        <div className="flex items-center gap-3 mb-8">
+          <Skeleton className="h-5 w-28 rounded-full" />
+          <Skeleton className="h-4 w-40" />
+        </div>
+        <div className="space-y-4 max-w-4xl">
+          {[1, 2].map((i) => (
+            <Card key={i}>
+              <CardHeader><Skeleton className="h-5 w-40" /></CardHeader>
+              <div className="space-y-2">
+                {[1, 2, 3].map((j) => <Skeleton key={j} className="h-14 rounded-xl" />)}
+              </div>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  const sections: Section[] = Array.isArray(template.sections) ? template.sections : [];
+  const totalQuestions = sections.reduce((acc, s) => acc + s.questions.length, 0);
+
   return (
     <div>
-      <PageHeader title={template.name} description={template.description}>
+      <PageHeader title={template.name} description={template.description ?? ""}>
         <Button variant="ghost" size="sm">
           <Copy size={16} strokeWidth={1.5} className="mr-1.5" />
           Duplicate
         </Button>
-        <Button variant="secondary">
-          <Edit size={16} strokeWidth={1.5} className="mr-1.5" />
-          Edit
-        </Button>
+        {!template.isGlobal && (
+          <Link href={`/templates/${template.id}/edit`}>
+            <Button variant="secondary">
+              <Edit size={16} strokeWidth={1.5} className="mr-1.5" />
+              Edit
+            </Button>
+          </Link>
+        )}
       </PageHeader>
 
       {/* Meta */}
@@ -86,13 +143,13 @@ export default function TemplateDetailPage() {
           Created {new Date(template.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
         </span>
         <span className="text-[12px] text-gray-400">
-          · {template.sections.length} sections · {template.sections.reduce((acc, s) => acc + s.questions.length, 0)} questions
+          &middot; {sections.length} sections &middot; {totalQuestions} questions
         </span>
       </div>
 
       {/* Sections */}
       <div className="space-y-4 max-w-4xl">
-        {template.sections.map((section, sIndex) => (
+        {sections.map((section, sIndex) => (
           <Card key={sIndex}>
             <CardHeader>
               <div className="flex items-center gap-2">
@@ -108,7 +165,7 @@ export default function TemplateDetailPage() {
                     <div>
                       <p className="text-[14px] text-gray-700">{q.text}</p>
                       <div className="flex items-center gap-2 mt-1.5">
-                        <Badge variant="outline">{typeLabels[q.type]}</Badge>
+                        <Badge variant="outline">{typeLabels[q.type] ?? q.type}</Badge>
                         {q.required && <Badge variant="default">Required</Badge>}
                       </div>
                     </div>

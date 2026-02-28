@@ -1,6 +1,10 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/layout/page-header";
 import {
   RefreshCcw,
@@ -9,25 +13,85 @@ import {
   TrendingUp,
   ArrowRight,
   Clock,
+  AlertCircle,
 } from "lucide-react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
-const stats = [
-  { label: "Active Cycles", value: "2", icon: RefreshCcw, change: "+1 this month" },
-  { label: "Total Teams", value: "8", icon: Users, change: "3 new members" },
-  { label: "Pending Reviews", value: "24", icon: ClipboardCheck, change: "12 completed" },
-  { label: "Completion Rate", value: "67%", icon: TrendingUp, change: "+5% this week" },
-];
+interface DashboardStats {
+  activeCycles: number;
+  totalTeams: number;
+  pendingReviews: number;
+  completionRate: number;
+}
 
-const recentActivity = [
-  { user: "Sarah Chen", action: "submitted evaluation for", target: "Alex Kim", time: "2 hours ago" },
-  { user: "Mike Johnson", action: "was assigned to evaluate", target: "Lisa Park", time: "4 hours ago" },
-  { user: "Emily Davis", action: "completed self-evaluation in", target: "Q1 Review", time: "Yesterday" },
-  { user: "James Wilson", action: "submitted evaluation for", target: "Sarah Chen", time: "Yesterday" },
-  { user: "Admin", action: "created new cycle", target: "Q1 2026 Review", time: "2 days ago" },
-];
+interface Cycle {
+  id: string;
+  name: string;
+  status: string;
+  startDate: string;
+  endDate: string;
+  templateId: string;
+  _count: { assignments: number };
+}
 
 export default function DashboardPage() {
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [activeCycle, setActiveCycle] = useState<Cycle | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [statsRes, cyclesRes] = await Promise.all([
+        fetch("/api/dashboard/stats"),
+        fetch("/api/cycles?status=ACTIVE"),
+      ]);
+
+      const statsJson = await statsRes.json();
+      const cyclesJson = await cyclesRes.json();
+
+      if (!statsJson.success) throw new Error(statsJson.error || "Failed to load stats");
+      if (!cyclesJson.success) throw new Error(cyclesJson.error || "Failed to load cycles");
+
+      setStats(statsJson.data);
+      const activeCycles = cyclesJson.data as Cycle[];
+      setActiveCycle(activeCycles.length > 0 ? activeCycles[0] : null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load dashboard");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  if (error) {
+    return (
+      <div>
+        <PageHeader title="Dashboard" description="Overview of your organization's evaluation activity" />
+        <Card className="max-w-lg mx-auto mt-12 text-center">
+          <div className="flex flex-col items-center gap-3 py-4">
+            <AlertCircle size={32} strokeWidth={1.5} className="text-red-400" />
+            <p className="text-[14px] text-gray-600">{error}</p>
+            <Button variant="secondary" size="sm" onClick={fetchData}>Retry</Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  const statItems = [
+    { label: "Active Cycles", value: stats?.activeCycles ?? 0, icon: RefreshCcw },
+    { label: "Total Teams", value: stats?.totalTeams ?? 0, icon: Users },
+    { label: "Pending Reviews", value: stats?.pendingReviews ?? 0, icon: ClipboardCheck },
+    { label: "Completion Rate", value: `${stats?.completionRate ?? 0}%`, icon: TrendingUp },
+  ];
+
   return (
     <div>
       <PageHeader
@@ -37,15 +101,18 @@ export default function DashboardPage() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {stats.map((stat) => {
+        {statItems.map((stat) => {
           const Icon = stat.icon;
           return (
             <Card key={stat.label} padding="md">
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-callout text-gray-500">{stat.label}</p>
-                  <p className="text-title-small text-gray-900 mt-1">{stat.value}</p>
-                  <p className="text-[12px] text-gray-400 mt-1">{stat.change}</p>
+                  {loading ? (
+                    <Skeleton className="h-7 w-16 mt-1" />
+                  ) : (
+                    <p className="text-title-small text-gray-900 mt-1">{stat.value}</p>
+                  )}
                 </div>
                 <div className="p-2.5 rounded-xl bg-gray-50">
                   <Icon size={20} strokeWidth={1.5} className="text-gray-400" />
@@ -59,71 +126,94 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Active Cycle */}
         <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
+          {loading ? (
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-6 w-64 mb-2" />
+                <Skeleton className="h-4 w-48" />
+              </CardHeader>
+              <div className="space-y-4">
+                <Skeleton className="h-2 w-full rounded-full" />
+                <div className="grid grid-cols-3 gap-4 pt-2">
+                  {[1, 2, 3].map((i) => (
+                    <Skeleton key={i} className="h-16 rounded-xl" />
+                  ))}
+                </div>
+              </div>
+            </Card>
+          ) : activeCycle ? (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>{activeCycle.name}</CardTitle>
+                    <CardDescription>
+                      Active cycle ending{" "}
+                      {new Date(activeCycle.endDate).toLocaleDateString("en-US", {
+                        month: "long",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </CardDescription>
+                  </div>
+                  <Badge variant="success">Active</Badge>
+                </div>
+              </CardHeader>
+              <div className="space-y-4">
                 <div>
-                  <CardTitle>Q1 2026 Performance Review</CardTitle>
-                  <CardDescription>Active cycle ending March 31, 2026</CardDescription>
+                  <div className="flex justify-between text-[13px] mb-2">
+                    <span className="text-gray-500">Overall Progress</span>
+                    <span className="font-medium text-gray-700">{stats?.completionRate ?? 0}%</span>
+                  </div>
+                  <Progress value={stats?.completionRate ?? 0} />
                 </div>
-                <Badge variant="success">Active</Badge>
+                <div className="grid grid-cols-3 gap-4 pt-2">
+                  <div className="text-center p-3 rounded-xl bg-gray-50">
+                    <p className="text-title-small text-gray-900">
+                      {activeCycle._count.assignments}
+                    </p>
+                    <p className="text-[12px] text-gray-500">Total</p>
+                  </div>
+                  <div className="text-center p-3 rounded-xl bg-green-50">
+                    <p className="text-title-small text-green-700">
+                      {(activeCycle._count.assignments) - (stats?.pendingReviews ?? 0)}
+                    </p>
+                    <p className="text-[12px] text-green-600">Completed</p>
+                  </div>
+                  <div className="text-center p-3 rounded-xl bg-amber-50">
+                    <p className="text-title-small text-amber-700">{stats?.pendingReviews ?? 0}</p>
+                    <p className="text-[12px] text-amber-600">Pending</p>
+                  </div>
+                </div>
+                <Link
+                  href="/cycles"
+                  className="inline-flex items-center gap-1.5 text-[14px] font-medium text-brand-500 hover:text-brand-600 transition-colors mt-2"
+                >
+                  View all cycles <ArrowRight size={14} strokeWidth={2} />
+                </Link>
               </div>
-            </CardHeader>
-            <div className="space-y-4">
-              <div>
-                <div className="flex justify-between text-[13px] mb-2">
-                  <span className="text-gray-500">Overall Progress</span>
-                  <span className="font-medium text-gray-700">67%</span>
-                </div>
-                <Progress value={67} />
+            </Card>
+          ) : (
+            <Card>
+              <div className="flex flex-col items-center gap-3 py-8 text-center">
+                <Clock size={32} strokeWidth={1.5} className="text-gray-300" />
+                <p className="text-[14px] text-gray-500">No active evaluation cycles</p>
+                <Link href="/cycles/new">
+                  <Button variant="secondary" size="sm">Create Cycle</Button>
+                </Link>
               </div>
-              <div className="grid grid-cols-3 gap-4 pt-2">
-                <div className="text-center p-3 rounded-xl bg-gray-50">
-                  <p className="text-title-small text-gray-900">48</p>
-                  <p className="text-[12px] text-gray-500">Total</p>
-                </div>
-                <div className="text-center p-3 rounded-xl bg-green-50">
-                  <p className="text-title-small text-green-700">32</p>
-                  <p className="text-[12px] text-green-600">Completed</p>
-                </div>
-                <div className="text-center p-3 rounded-xl bg-amber-50">
-                  <p className="text-title-small text-amber-700">16</p>
-                  <p className="text-[12px] text-amber-600">Pending</p>
-                </div>
-              </div>
-              <Link
-                href="/cycles"
-                className="inline-flex items-center gap-1.5 text-[14px] font-medium text-brand-500 hover:text-brand-600 transition-colors mt-2"
-              >
-                View all cycles <ArrowRight size={14} strokeWidth={2} />
-              </Link>
-            </div>
-          </Card>
+            </Card>
+          )}
         </div>
 
-        {/* Recent Activity */}
+        {/* Recent Activity Placeholder */}
         <Card>
           <CardHeader>
             <CardTitle>Recent Activity</CardTitle>
           </CardHeader>
-          <div className="space-y-4">
-            {recentActivity.map((activity, i) => (
-              <div key={i} className="flex gap-3">
-                <div className="mt-0.5">
-                  <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
-                    <Clock size={14} strokeWidth={1.5} className="text-gray-400" />
-                  </div>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[13px] text-gray-700 leading-relaxed">
-                    <span className="font-medium">{activity.user}</span>{" "}
-                    {activity.action}{" "}
-                    <span className="font-medium">{activity.target}</span>
-                  </p>
-                  <p className="text-[12px] text-gray-400 mt-0.5">{activity.time}</p>
-                </div>
-              </div>
-            ))}
+          <div className="flex flex-col items-center gap-2 py-6 text-center">
+            <Clock size={24} strokeWidth={1.5} className="text-gray-300" />
+            <p className="text-[13px] text-gray-400">Activity feed coming soon</p>
           </div>
         </Card>
       </div>

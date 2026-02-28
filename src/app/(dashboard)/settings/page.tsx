@@ -1,16 +1,69 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/layout/page-header";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { useToast } from "@/components/ui/toast";
 import Link from "next/link";
 
+interface Company {
+  id: string;
+  name: string;
+  slug: string;
+  logo: string | null;
+}
+
 export default function SettingsPage() {
-  const [companyName, setCompanyName] = useState("Acme Corp");
-  const [companySlug, setCompanySlug] = useState("acme-corp");
+  const [, setCompany] = useState<Company | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [companyName, setCompanyName] = useState("");
+  const [companySlug, setCompanySlug] = useState("");
+  const { addToast } = useToast();
+
+  const fetchCompany = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/company");
+      const json = await res.json();
+      if (json.success) {
+        setCompany(json.data);
+        setCompanyName(json.data.name);
+        setCompanySlug(json.data.slug);
+      }
+    } catch {
+      addToast("Failed to load company settings", "error");
+    } finally {
+      setLoading(false);
+    }
+  }, [addToast]);
+
+  useEffect(() => {
+    fetchCompany();
+  }, [fetchCompany]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const res = await fetch("/api/company", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: companyName, slug: companySlug }),
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || "Failed to save");
+      setCompany(json.data);
+      addToast("Settings saved", "success");
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : "Failed to save settings", "error");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div>
@@ -28,30 +81,48 @@ export default function SettingsPage() {
               <CardTitle>Company Profile</CardTitle>
               <CardDescription>Basic information about your organization</CardDescription>
             </CardHeader>
-            <form className="space-y-4">
-              <Input
-                id="company-name"
-                label="Company Name"
-                value={companyName}
-                onChange={(e) => setCompanyName(e.target.value)}
-              />
-              <Input
-                id="company-slug"
-                label="URL Slug"
-                value={companySlug}
-                onChange={(e) => setCompanySlug(e.target.value)}
-              />
-              <div className="space-y-1.5">
-                <label className="block text-[13px] font-medium text-gray-700">Logo</label>
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center text-[24px] font-bold text-gray-300">A</div>
-                  <Button variant="secondary" type="button" size="sm">Upload Logo</Button>
+            {loading ? (
+              <div className="space-y-4">
+                <Skeleton className="h-10 w-full rounded-xl" />
+                <Skeleton className="h-10 w-full rounded-xl" />
+                <Skeleton className="h-9 w-32" />
+              </div>
+            ) : (
+              <form
+                className="space-y-4"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSave();
+                }}
+              >
+                <Input
+                  id="company-name"
+                  label="Company Name"
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                />
+                <Input
+                  id="company-slug"
+                  label="URL Slug"
+                  value={companySlug}
+                  onChange={(e) => setCompanySlug(e.target.value)}
+                />
+                <div className="space-y-1.5">
+                  <label className="block text-[13px] font-medium text-gray-700">Logo</label>
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center text-[24px] font-bold text-gray-300">
+                      {companyName.charAt(0).toUpperCase() || "?"}
+                    </div>
+                    <Button variant="secondary" type="button" size="sm">Upload Logo</Button>
+                  </div>
                 </div>
-              </div>
-              <div className="pt-2">
-                <Button type="button">Save Changes</Button>
-              </div>
-            </form>
+                <div className="pt-2">
+                  <Button type="submit" disabled={saving}>
+                    {saving ? "Saving..." : "Save Changes"}
+                  </Button>
+                </div>
+              </form>
+            )}
           </Card>
 
           {/* Quick links to other settings */}
