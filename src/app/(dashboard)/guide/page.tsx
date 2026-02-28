@@ -167,7 +167,7 @@ const techCompanyHierarchy: OrgNode[] = [
               { title: "Sarah Chen", role: "Engineering Manager", badge: { label: "Manager", variant: "warning" } },
               { title: "Alex Rivera", role: "Solution Architect — Platform", badge: { label: "Direct Report", variant: "info" } },
               { title: "Priya Sharma", role: "Solution Architect — Frontend", badge: { label: "Direct Report", variant: "info" } },
-              { title: "Dan Kim", role: "Solution Architect", badge: { label: "Direct Report", variant: "info" } },
+              { title: "Dan Kim", role: "Solution Architect - DevOps", badge: { label: "Direct Report", variant: "info" } },
             ],
           },
           {

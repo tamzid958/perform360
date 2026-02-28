@@ -8,8 +8,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/layout/page-header";
 import { Pagination } from "@/components/ui/pagination";
 import { useToast } from "@/components/ui/toast";
-import { Users, Plus, ChevronRight, AlertCircle, Inbox, Search } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { Users, Plus, AlertCircle, Inbox, Search, MoreHorizontal, Eye, Trash2 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { PaginationMeta } from "@/types/pagination";
 
 interface TeamMember {
@@ -54,6 +62,7 @@ export default function TeamsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
   const { addToast } = useToast();
+  const router = useRouter();
 
   const fetchTeams = useCallback(async () => {
     setLoading(true);
@@ -80,6 +89,19 @@ export default function TeamsPage() {
     return () => clearTimeout(timer);
   }, [fetchTeams, searchQuery]);
 
+  const handleDelete = async (team: Team) => {
+    try {
+      const res = await fetch(`/api/teams/${team.id}`, { method: "DELETE" });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || "Failed to delete team");
+      addToast(`"${team.name}" deleted`, "success");
+      setPage(1);
+      fetchTeams();
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : "Failed to delete team", "error");
+    }
+  };
+
   if (error && teams.length === 0) {
     return (
       <div>
@@ -105,15 +127,18 @@ export default function TeamsPage() {
         </Link>
       </PageHeader>
 
-      <div className="relative max-w-md mb-6">
-        <Search size={16} strokeWidth={1.5} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-        <input
-          type="text"
-          placeholder="Search teams..."
-          value={searchQuery}
-          onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
-          className="w-full h-10 pl-9 pr-4 rounded-xl bg-white border border-gray-200 text-[14px] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
-        />
+      <div className="flex items-center justify-between gap-4 mb-4">
+        <div />
+        <div className="relative max-w-xs">
+          <Search size={16} strokeWidth={1.5} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search teams..."
+            value={searchQuery}
+            onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
+            className="w-full h-9 pl-9 pr-4 rounded-xl bg-white border border-gray-200 text-[14px] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
+          />
+        </div>
       </div>
 
       {loading ? (
@@ -139,16 +164,39 @@ export default function TeamsPage() {
               const managerCount = team.members.filter((m) => m.role === "MANAGER").length;
               const reportCount = team.members.filter((m) => m.role === "DIRECT_REPORT").length;
               return (
-                <Link key={team.id} href={`/teams/${team.id}`} className="h-full">
-                  <Card className="h-full flex flex-col hover:shadow-md transition-all duration-200 cursor-pointer group">
-                    <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <div className="p-2.5 rounded-xl bg-brand-50">
-                          <Users size={20} strokeWidth={1.5} className="text-brand-500" />
-                        </div>
-                        <ChevronRight size={16} strokeWidth={1.5} className="text-gray-300 group-hover:text-gray-500 transition-colors" />
+                <Card key={team.id} className="h-full flex flex-col hover:shadow-md transition-all duration-200 group">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="p-2.5 rounded-xl bg-brand-50">
+                        <Users size={20} strokeWidth={1.5} className="text-brand-500" />
                       </div>
-                    </CardHeader>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <MoreHorizontal size={16} strokeWidth={1.5} className="text-gray-400" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => router.push(`/teams/${team.id}`)}>
+                            <Eye size={14} strokeWidth={1.5} className="mr-2" />
+                            View
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-red-600"
+                            onClick={() => handleDelete(team)}
+                          >
+                            <Trash2 size={14} strokeWidth={1.5} className="mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </CardHeader>
+                  <Link href={`/teams/${team.id}`} className="flex-1 flex flex-col">
                     <CardTitle>{team.name}</CardTitle>
                     <CardDescription className="line-clamp-2">{team.description ?? "No description"}</CardDescription>
                     <div className="flex items-center gap-2 mt-auto pt-4 flex-wrap">
@@ -156,8 +204,8 @@ export default function TeamsPage() {
                       <Badge variant="info">{managerCount} managers</Badge>
                       <Badge variant="outline">{reportCount} reports</Badge>
                     </div>
-                  </Card>
-                </Link>
+                  </Link>
+                </Card>
               );
             })}
           </div>
