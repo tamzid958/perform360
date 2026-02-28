@@ -1,36 +1,130 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Perform360
 
-## Getting Started
+Perform360 is a 360-degree performance evaluation platform built with Next.js, Prisma, and PostgreSQL.
 
-First, run the development server:
+## Production Deployment (Docker Compose + External Postgres)
+
+This repository is configured to run production with:
+- `app` service (Next.js server)
+- `worker` service (background jobs, optional profile)
+- `migrate` service (Prisma migrations, one-off profile)
+- external PostgreSQL (not inside Docker)
+
+## Prerequisites
+
+- Docker + Docker Compose installed
+- A reachable PostgreSQL instance
+- SMTP credentials for email login/invites
+- A public domain (recommended for production)
+
+## 1) Configure Environment
+
+Create production env file:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.production.example .env.production
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Edit `.env.production` with real values:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```env
+DATABASE_URL=postgresql://USER:PASSWORD@DB_HOST:5432/perform360?schema=public
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+NEXTAUTH_SECRET=replace-with-a-strong-random-secret
+NEXTAUTH_URL=https://app.example.com
+NEXT_PUBLIC_APP_URL=https://app.example.com
 
-## Learn More
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=smtp-user
+SMTP_PASSWORD=smtp-password
+SMTP_FROM=noreply@example.com
 
-To learn more about Next.js, take a look at the following resources:
+SUPER_ADMIN_EMAIL=admin@perform360.com
+SUPER_ADMIN_NAME=Perform360 Admin
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Notes:
+- `NEXTAUTH_SECRET` must be strong and random.
+- `NEXTAUTH_URL` and `NEXT_PUBLIC_APP_URL` should be your production URL.
+- `DATABASE_URL` must point to your external PostgreSQL.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 2) Build and Start App
 
-## Deploy on Vercel
+```bash
+docker compose up -d --build
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+This starts the `app` service on port `3000`.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 3) Run Database Migrations
+
+```bash
+docker compose --profile migrate run --rm migrate
+```
+
+Run this after first deploy and on schema changes.
+
+## 4) Start Worker (Recommended)
+
+```bash
+docker compose --profile worker up -d worker
+```
+
+The worker processes async jobs (reminders, cleanup, key rotation jobs, etc.).
+
+## 5) Verify
+
+Check containers:
+
+```bash
+docker compose ps
+```
+
+Check logs:
+
+```bash
+docker compose logs -f app
+docker compose logs -f worker
+```
+
+App health endpoint check (current healthcheck target):
+- `http://YOUR_HOST:3000/login`
+
+## Common Operations
+
+Redeploy after code changes:
+
+```bash
+docker compose up -d --build
+docker compose --profile migrate run --rm migrate
+```
+
+Restart services:
+
+```bash
+docker compose restart app
+docker compose --profile worker restart worker
+```
+
+Stop everything:
+
+```bash
+docker compose down
+```
+
+## Security Recommendations
+
+- Keep `.env.production` out of git.
+- Use a long random `NEXTAUTH_SECRET`.
+- Restrict database network access to trusted hosts.
+- Terminate TLS at a reverse proxy (Nginx/Caddy/Cloud LB) in front of port `3000`.
+
+## Local Development
+
+```bash
+npm install
+npm run dev
+```
+
+Open `http://localhost:3000`.
