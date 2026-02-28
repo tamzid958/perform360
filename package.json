@@ -12,7 +12,8 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
-    "db:clean": "prisma db push --force-reset --accept-data-loss"
+    "db:clean": "prisma db push --force-reset --accept-data-loss",
+    "worker": "npx tsx scripts/worker.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
