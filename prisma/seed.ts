@@ -232,6 +232,26 @@ function globalAnswers(variant: number): Record<string, unknown> {
       "of-1": "Strong mentor who invests time in developing junior team members.",
       "of-2": "Sometimes over-delegates without enough context.",
     },
+    {
+      "lc-1": 5, "lc-2": 5, "lc-3": 4,
+      "of-1": "Natural leader who inspires confidence and drives results consistently.",
+      "of-2": "Could involve the team earlier in strategic decisions.",
+    },
+    {
+      "lc-1": 4, "lc-2": 3, "lc-3": 5,
+      "of-1": "Handles difficult conversations with grace and always follows through.",
+      "of-2": "Would benefit from delegating more to develop others.",
+    },
+    {
+      "lc-1": 3, "lc-2": 5, "lc-3": 3,
+      "of-1": "Deeply invested in team growth, one of the best mentors I have worked with.",
+      "of-2": "Communication of strategic vision could be clearer.",
+    },
+    {
+      "lc-1": 4, "lc-2": 4, "lc-3": 4,
+      "of-1": "Well-rounded leader who balances people skills with execution.",
+      "of-2": "Could take more initiative in cross-functional collaboration.",
+    },
   ];
   return variants[variant % variants.length];
 }
@@ -245,6 +265,7 @@ async function main() {
   await prisma.otpSession.deleteMany();
   await prisma.evaluationResponse.deleteMany();
   await prisma.evaluationAssignment.deleteMany();
+  await prisma.cycleTeam.deleteMany();
   await prisma.evaluationCycle.deleteMany();
   await prisma.evaluationTemplate.deleteMany();
   await prisma.recoveryCode.deleteMany();
@@ -318,28 +339,31 @@ async function main() {
     )
   );
 
-  // ─── 4. Users ───
+  // Map email → authUser.id for linking
+  const authUserMap = new Map(authUsers.map((au) => [au.email, au.id]));
+
+  // ─── 4. Users (linked to AuthUsers via authUserId) ───
   console.log("Creating Users...");
   const sarah = await prisma.user.create({
-    data: { email: "sarah@acme.com", name: "Sarah Chen", role: "ADMIN", companyId: acme.id },
+    data: { email: "sarah@acme.com", name: "Sarah Chen", role: "ADMIN", companyId: acme.id, authUserId: authUserMap.get("sarah@acme.com") },
   });
   const mike = await prisma.user.create({
-    data: { email: "mike@acme.com", name: "Mike Johnson", role: "HR", companyId: acme.id },
+    data: { email: "mike@acme.com", name: "Mike Johnson", role: "HR", companyId: acme.id, authUserId: authUserMap.get("mike@acme.com") },
   });
   const emily = await prisma.user.create({
-    data: { email: "emily@acme.com", name: "Emily Davis", role: "MANAGER", companyId: acme.id },
+    data: { email: "emily@acme.com", name: "Emily Davis", role: "MANAGER", companyId: acme.id, authUserId: authUserMap.get("emily@acme.com") },
   });
   const james = await prisma.user.create({
-    data: { email: "james@acme.com", name: "James Wilson", role: "MEMBER", companyId: acme.id },
+    data: { email: "james@acme.com", name: "James Wilson", role: "MEMBER", companyId: acme.id, authUserId: authUserMap.get("james@acme.com") },
   });
   const lisa = await prisma.user.create({
-    data: { email: "lisa@acme.com", name: "Lisa Park", role: "MEMBER", companyId: acme.id },
+    data: { email: "lisa@acme.com", name: "Lisa Park", role: "MEMBER", companyId: acme.id, authUserId: authUserMap.get("lisa@acme.com") },
   });
   const tom = await prisma.user.create({
-    data: { email: "tom@globex.com", name: "Tom Brown", role: "ADMIN", companyId: globex.id },
+    data: { email: "tom@globex.com", name: "Tom Brown", role: "ADMIN", companyId: globex.id, authUserId: authUserMap.get("tom@globex.com") },
   });
   const anna = await prisma.user.create({
-    data: { email: "anna@globex.com", name: "Anna White", role: "MEMBER", companyId: globex.id },
+    data: { email: "anna@globex.com", name: "Anna White", role: "MEMBER", companyId: globex.id, authUserId: authUserMap.get("anna@globex.com") },
   });
 
   // ─── 5. Teams + TeamMembers ───
@@ -473,17 +497,21 @@ async function main() {
   console.log("Creating Assignments...");
 
   // Acme Q4 (CLOSED) — all SUBMITTED
-  const q4Assignments = [
+  // Engineering team uses acmeTemplate
+  const q4EngineeringAssignments = [
     { subjectId: james.id, reviewerId: emily.id, relationship: "manager" },
     { subjectId: emily.id, reviewerId: james.id, relationship: "direct_report" },
+    { subjectId: lisa.id, reviewerId: emily.id, relationship: "manager" },
     { subjectId: james.id, reviewerId: lisa.id, relationship: "peer" },
     { subjectId: emily.id, reviewerId: lisa.id, relationship: "peer" },
+    { subjectId: lisa.id, reviewerId: james.id, relationship: "peer" },
     { subjectId: james.id, reviewerId: james.id, relationship: "self" },
     { subjectId: emily.id, reviewerId: emily.id, relationship: "self" },
+    { subjectId: lisa.id, reviewerId: lisa.id, relationship: "self" },
   ];
 
-  const createdQ4Assignments = await Promise.all(
-    q4Assignments.map((a) =>
+  const createdQ4EngineeringAssignments = await Promise.all(
+    q4EngineeringAssignments.map((a) =>
       prisma.evaluationAssignment.create({
         data: {
           cycleId: acmeQ4Cycle.id,
@@ -498,18 +526,70 @@ async function main() {
     )
   );
 
-  // Acme Q1 (ACTIVE) — mixed statuses
-  const q1Assignments = [
-    { subjectId: james.id, reviewerId: emily.id, relationship: "manager", status: "SUBMITTED" as const },
-    { subjectId: emily.id, reviewerId: james.id, relationship: "direct_report", status: "IN_PROGRESS" as const },
-    { subjectId: james.id, reviewerId: lisa.id, relationship: "peer", status: "PENDING" as const },
-    { subjectId: emily.id, reviewerId: lisa.id, relationship: "peer", status: "PENDING" as const },
-    { subjectId: james.id, reviewerId: james.id, relationship: "self", status: "PENDING" as const },
-    { subjectId: emily.id, reviewerId: emily.id, relationship: "self", status: "SUBMITTED" as const },
+  // Product team uses globalTemplate
+  const q4ProductAssignments = [
+    { subjectId: mike.id, reviewerId: sarah.id, relationship: "manager" },
+    { subjectId: sarah.id, reviewerId: mike.id, relationship: "peer" },
+    { subjectId: sarah.id, reviewerId: sarah.id, relationship: "self" },
+    { subjectId: mike.id, reviewerId: mike.id, relationship: "self" },
   ];
 
-  const createdQ1Assignments = await Promise.all(
-    q1Assignments.map((a) =>
+  const createdQ4ProductAssignments = await Promise.all(
+    q4ProductAssignments.map((a) =>
+      prisma.evaluationAssignment.create({
+        data: {
+          cycleId: acmeQ4Cycle.id,
+          templateId: globalTemplate.id,
+          subjectId: a.subjectId,
+          reviewerId: a.reviewerId,
+          relationship: a.relationship,
+          status: "SUBMITTED",
+          token: generateToken(),
+        },
+      })
+    )
+  );
+
+  // Acme Q1 (ACTIVE) — mixed statuses
+  // Engineering team uses globalTemplate
+  const q1EngineeringAssignments = [
+    { subjectId: james.id, reviewerId: emily.id, relationship: "manager", status: "SUBMITTED" as const },
+    { subjectId: emily.id, reviewerId: james.id, relationship: "direct_report", status: "IN_PROGRESS" as const },
+    { subjectId: lisa.id, reviewerId: emily.id, relationship: "manager", status: "SUBMITTED" as const },
+    { subjectId: james.id, reviewerId: lisa.id, relationship: "peer", status: "PENDING" as const },
+    { subjectId: emily.id, reviewerId: lisa.id, relationship: "peer", status: "PENDING" as const },
+    { subjectId: lisa.id, reviewerId: james.id, relationship: "peer", status: "PENDING" as const },
+    { subjectId: james.id, reviewerId: james.id, relationship: "self", status: "PENDING" as const },
+    { subjectId: emily.id, reviewerId: emily.id, relationship: "self", status: "SUBMITTED" as const },
+    { subjectId: lisa.id, reviewerId: lisa.id, relationship: "self", status: "PENDING" as const },
+  ];
+
+  const createdQ1EngineeringAssignments = await Promise.all(
+    q1EngineeringAssignments.map((a) =>
+      prisma.evaluationAssignment.create({
+        data: {
+          cycleId: acmeQ1Cycle.id,
+          templateId: globalTemplate.id,
+          subjectId: a.subjectId,
+          reviewerId: a.reviewerId,
+          relationship: a.relationship,
+          status: a.status,
+          token: generateToken(),
+        },
+      })
+    )
+  );
+
+  // Product team uses globalTemplate
+  const q1ProductAssignments = [
+    { subjectId: mike.id, reviewerId: sarah.id, relationship: "manager", status: "SUBMITTED" as const },
+    { subjectId: sarah.id, reviewerId: mike.id, relationship: "peer", status: "PENDING" as const },
+    { subjectId: sarah.id, reviewerId: sarah.id, relationship: "self", status: "SUBMITTED" as const },
+    { subjectId: mike.id, reviewerId: mike.id, relationship: "self", status: "PENDING" as const },
+  ];
+
+  const createdQ1ProductAssignments = await Promise.all(
+    q1ProductAssignments.map((a) =>
       prisma.evaluationAssignment.create({
         data: {
           cycleId: acmeQ1Cycle.id,
@@ -530,7 +610,7 @@ async function main() {
     { subjectId: tom.id, reviewerId: anna.id, relationship: "direct_report" },
   ];
 
-  const createdGlobexAssignments = await Promise.all(
+  await Promise.all(
     globexAssignments.map((a) =>
       prisma.evaluationAssignment.create({
         data: {
@@ -549,14 +629,14 @@ async function main() {
   // ─── 9. EvaluationResponses (encrypted) ───
   console.log("Creating Responses (encrypted)...");
 
-  // All Q4 assignments get responses (CLOSED cycle, all SUBMITTED)
+  // Q4 Engineering responses (acmeTemplate → acmeAnswers)
   await Promise.all(
-    createdQ4Assignments.map((assignment, i) =>
+    createdQ4EngineeringAssignments.map((assignment, i) =>
       prisma.evaluationResponse.create({
         data: {
           assignmentId: assignment.id,
-          reviewerId: q4Assignments[i].reviewerId,
-          subjectId: q4Assignments[i].subjectId,
+          reviewerId: q4EngineeringAssignments[i].reviewerId,
+          subjectId: q4EngineeringAssignments[i].subjectId,
           ...encryptAnswers(acmeAnswers(i), acmeEncryption.dataKey, 1),
           submittedAt: new Date("2025-12-20"),
         },
@@ -564,18 +644,52 @@ async function main() {
     )
   );
 
-  // Q1 SUBMITTED assignments get responses
-  const q1SubmittedIndices = q1Assignments
-    .map((a, i) => (a.status === "SUBMITTED" ? i : -1))
-    .filter((i) => i !== -1);
-
+  // Q4 Product responses (globalTemplate → globalAnswers)
   await Promise.all(
-    q1SubmittedIndices.map((i) =>
+    createdQ4ProductAssignments.map((assignment, i) =>
       prisma.evaluationResponse.create({
         data: {
-          assignmentId: createdQ1Assignments[i].id,
-          reviewerId: q1Assignments[i].reviewerId,
-          subjectId: q1Assignments[i].subjectId,
+          assignmentId: assignment.id,
+          reviewerId: q4ProductAssignments[i].reviewerId,
+          subjectId: q4ProductAssignments[i].subjectId,
+          ...encryptAnswers(globalAnswers(i), acmeEncryption.dataKey, 1),
+          submittedAt: new Date("2025-12-20"),
+        },
+      })
+    )
+  );
+
+  // Q1 Engineering SUBMITTED assignments get responses
+  const q1EngSubmittedIndices = q1EngineeringAssignments
+    .map((a, i) => (a.status === "SUBMITTED" ? i : -1))
+    .filter((i): i is number => i !== -1);
+
+  await Promise.all(
+    q1EngSubmittedIndices.map((i) =>
+      prisma.evaluationResponse.create({
+        data: {
+          assignmentId: createdQ1EngineeringAssignments[i].id,
+          reviewerId: q1EngineeringAssignments[i].reviewerId,
+          subjectId: q1EngineeringAssignments[i].subjectId,
+          ...encryptAnswers(globalAnswers(i), acmeEncryption.dataKey, 1),
+          submittedAt: new Date("2026-02-15"),
+        },
+      })
+    )
+  );
+
+  // Q1 Product SUBMITTED assignments get responses
+  const q1ProdSubmittedIndices = q1ProductAssignments
+    .map((a, i) => (a.status === "SUBMITTED" ? i : -1))
+    .filter((i): i is number => i !== -1);
+
+  await Promise.all(
+    q1ProdSubmittedIndices.map((i) =>
+      prisma.evaluationResponse.create({
+        data: {
+          assignmentId: createdQ1ProductAssignments[i].id,
+          reviewerId: q1ProductAssignments[i].reviewerId,
+          subjectId: q1ProductAssignments[i].subjectId,
           ...encryptAnswers(globalAnswers(i), acmeEncryption.dataKey, 1),
           submittedAt: new Date("2026-02-15"),
         },
@@ -587,8 +701,8 @@ async function main() {
   console.log("Creating OTP Sessions...");
   const otpHash = await hash("123456", 10);
 
-  // Verified session (for the IN_PROGRESS Q1 assignment)
-  const inProgressAssignment = createdQ1Assignments[1]; // james reviewing emily
+  // Verified session (for the IN_PROGRESS Q1 Engineering assignment)
+  const inProgressAssignment = createdQ1EngineeringAssignments[1]; // james reviewing emily
   await prisma.otpSession.create({
     data: {
       assignmentId: inProgressAssignment.id,
@@ -605,7 +719,7 @@ async function main() {
   // Expired session (for testing expiry)
   await prisma.otpSession.create({
     data: {
-      assignmentId: createdQ1Assignments[2].id, // lisa reviewing james (PENDING)
+      assignmentId: createdQ1EngineeringAssignments[3].id, // lisa reviewing james (PENDING)
       email: "lisa@acme.com",
       otpHash,
       attempts: 0,
@@ -653,6 +767,7 @@ async function main() {
     teamMembers: await prisma.teamMember.count(),
     templates: await prisma.evaluationTemplate.count(),
     cycles: await prisma.evaluationCycle.count(),
+    cycleTeams: await prisma.cycleTeam.count(),
     assignments: await prisma.evaluationAssignment.count(),
     responses: await prisma.evaluationResponse.count(),
     otpSessions: await prisma.otpSession.count(),
@@ -670,6 +785,7 @@ async function main() {
   console.log(`║  TeamMembers:     ${String(counts.teamMembers).padStart(3)}                  ║`);
   console.log(`║  Templates:       ${String(counts.templates).padStart(3)}                  ║`);
   console.log(`║  Cycles:          ${String(counts.cycles).padStart(3)}                  ║`);
+  console.log(`║  CycleTeams:      ${String(counts.cycleTeams).padStart(3)}                  ║`);
   console.log(`║  Assignments:     ${String(counts.assignments).padStart(3)}                  ║`);
   console.log(`║  Responses:       ${String(counts.responses).padStart(3)}                  ║`);
   console.log(`║  OTP Sessions:    ${String(counts.otpSessions).padStart(3)}                  ║`);

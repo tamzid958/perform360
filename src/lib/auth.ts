@@ -28,8 +28,32 @@ const adapterPrisma = new Proxy(prisma, {
   },
 });
 
+const baseAdapter = PrismaAdapter(adapterPrisma) as ReturnType<typeof PrismaAdapter>;
+
+// Wrap deleteSession to handle "record not found" errors gracefully.
+// The email provider callback can attempt to delete a session that
+// doesn't exist (e.g. first login, expired/cleaned session).
+const adapter: typeof baseAdapter = {
+  ...baseAdapter,
+  async deleteSession(sessionToken: string) {
+    try {
+      await prisma.session.delete({ where: { sessionToken } });
+    } catch (error: unknown) {
+      if (
+        error instanceof Error &&
+        error.name === "PrismaClientKnownRequestError" &&
+        "code" in error &&
+        (error as { code: string }).code === "P2025"
+      ) {
+        return;
+      }
+      throw error;
+    }
+  },
+};
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: PrismaAdapter(adapterPrisma) as ReturnType<typeof PrismaAdapter>,
+  adapter,
   providers: [
     EmailProvider({
       server: {

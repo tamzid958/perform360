@@ -127,14 +127,14 @@ export default function SettingsPage() {
 
           {/* Quick links to other settings */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 max-w-2xl">
-            <Link href="/settings/roles">
-              <Card className="hover:shadow-md transition-all cursor-pointer">
+            <Link href="/settings/roles" className="h-full">
+              <Card className="hover:shadow-md transition-all cursor-pointer h-full">
                 <CardTitle>Roles & Permissions</CardTitle>
                 <CardDescription>Manage user roles and access levels</CardDescription>
               </Card>
             </Link>
-            <Link href="/settings/encryption">
-              <Card className="hover:shadow-md transition-all cursor-pointer">
+            <Link href="/settings/encryption" className="h-full">
+              <Card className="hover:shadow-md transition-all cursor-pointer h-full">
                 <CardTitle>Encryption</CardTitle>
                 <CardDescription>Manage encryption passphrase and keys</CardDescription>
               </Card>
