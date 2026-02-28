@@ -38,6 +38,7 @@ interface TemplateBuilderState {
   updateQuestion: (sectionId: string, questionId: string, data: Partial<TemplateQuestion>) => void;
   removeQuestion: (sectionId: string, questionId: string) => void;
   moveQuestion: (sectionId: string, fromIndex: number, toIndex: number) => void;
+  moveQuestionBetweenSections: (fromSectionId: string, toSectionId: string, fromIndex: number, toIndex: number) => void;
   setActiveSection: (sectionId: string | null) => void;
   setActiveQuestion: (questionId: string | null) => void;
   reset: () => void;
@@ -149,6 +150,17 @@ export const useTemplateBuilder = create<TemplateBuilderState>((set) => ({
       }),
       isDirty: true,
     })),
+
+  moveQuestionBetweenSections: (fromSectionId, toSectionId, fromIndex, toIndex) =>
+    set((state) => {
+      const sections = state.sections.map((s) => ({ ...s, questions: [...s.questions] }));
+      const fromSection = sections.find((s) => s.id === fromSectionId);
+      const toSection = sections.find((s) => s.id === toSectionId);
+      if (!fromSection || !toSection) return state;
+      const [moved] = fromSection.questions.splice(fromIndex, 1);
+      toSection.questions.splice(toIndex, 0, moved);
+      return { sections, isDirty: true };
+    }),
 
   setActiveSection: (sectionId) => set({ activeSection: sectionId }),
   setActiveQuestion: (questionId) => set({ activeQuestion: questionId }),
