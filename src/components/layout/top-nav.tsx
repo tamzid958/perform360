@@ -1,5 +1,6 @@
 "use client";
 
+import { signOut } from "next-auth/react";
 import { Bell, Search } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import {
@@ -55,7 +56,7 @@ export function TopNav({ userName = "User", userEmail = "", userAvatar }: TopNav
             <DropdownMenuItem>Profile</DropdownMenuItem>
             <DropdownMenuItem>Settings</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-red-600">Sign out</DropdownMenuItem>
+            <DropdownMenuItem className="text-red-600" onClick={() => signOut({ redirectTo: "/login" })}>Sign out</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
