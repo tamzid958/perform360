@@ -19,7 +19,7 @@ import type {
 interface TemplateQuestion {
   id: string;
   text: string;
-  type: "rating_scale" | "text" | "multiple_choice" | "yes_no" | "competency_matrix";
+  type: "rating_scale" | "text" | "multiple_choice";
   required: boolean;
   options?: string[];
   scaleMin?: number;
@@ -97,7 +97,7 @@ function extractRatingScores(
 ): { questionId: string; score: number }[] {
   const results: { questionId: string; score: number }[] = [];
   for (const q of questions) {
-    if (q.type === "rating_scale" || q.type === "competency_matrix") {
+    if (q.type === "rating_scale") {
       const value = answers[q.id];
       if (typeof value === "number") {
         results.push({ questionId: q.id, score: value });
@@ -116,7 +116,7 @@ export function buildCategoryScores(
 ): CategoryScore[] {
   return sections.map((section) => {
     const ratingQuestions = section.questions.filter(
-      (q) => q.type === "rating_scale" || q.type === "competency_matrix"
+      (q) => q.type === "rating_scale"
     );
 
     if (ratingQuestions.length === 0) {
@@ -154,7 +154,7 @@ export function buildRelationshipScores(
 ): RelationshipScores {
   const allQuestions = sections.flatMap((s) => s.questions);
   const ratingQuestions = allQuestions.filter(
-    (q) => q.type === "rating_scale" || q.type === "competency_matrix"
+    (q) => q.type === "rating_scale"
   );
 
   const groups: Record<string, number[]> = {
@@ -199,7 +199,7 @@ export function buildQuestionDetails(
   const allQuestions = sections.flatMap((s) => s.questions);
 
   return allQuestions
-    .filter((q) => q.type === "rating_scale" || q.type === "competency_matrix" || q.type === "multiple_choice" || q.type === "yes_no")
+    .filter((q) => q.type === "rating_scale" || q.type === "multiple_choice")
     .map((q) => {
       const distribution: Record<string, number> = {};
       let totalScore = 0;
@@ -275,7 +275,7 @@ export function calculateOverallScore(
 ): number {
   const allQuestions = sections.flatMap((s) => s.questions);
   const ratingQuestions = allQuestions.filter(
-    (q) => q.type === "rating_scale" || q.type === "competency_matrix"
+    (q) => q.type === "rating_scale"
   );
 
   let total = 0;
@@ -468,7 +468,7 @@ export async function buildCycleReport(
       const ratingQuestionIds = new Set(
         allSections
           .flatMap((s) => s.questions)
-          .filter((q) => q.type === "rating_scale" || q.type === "competency_matrix")
+          .filter((q) => q.type === "rating_scale")
           .map((q) => q.id)
       );
 

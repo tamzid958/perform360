@@ -37,8 +37,6 @@ const typeLabels: Record<string, string> = {
   rating_scale: "Rating Scale",
   text: "Text Response",
   multiple_choice: "Multiple Choice",
-  yes_no: "Yes / No",
-  competency_matrix: "Competency Matrix",
 };
 
 export default function TemplateDetailPage() {

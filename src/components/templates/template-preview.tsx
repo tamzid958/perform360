@@ -1,12 +1,11 @@
 "use client";
 
-import { Star, ToggleLeft } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Star } from "lucide-react";
 
 interface QuestionData {
   id: string;
   text: string;
-  type: "rating_scale" | "text" | "multiple_choice" | "yes_no" | "competency_matrix";
+  type: "rating_scale" | "text" | "multiple_choice";
   required: boolean;
   options?: string[];
   scaleMin?: number;
@@ -113,21 +112,6 @@ function PreviewQuestion({ question, index }: { question: QuestionData; index: n
         )}
         {question.type === "multiple_choice" && (
           <PreviewMultipleChoice options={question.options ?? []} />
-        )}
-        {question.type === "yes_no" && (
-          <div className="flex gap-3">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 bg-white">
-              <ToggleLeft size={14} strokeWidth={1.5} className="text-gray-400" />
-              <span className="text-[12px] text-gray-500">Yes</span>
-            </div>
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 bg-white">
-              <ToggleLeft size={14} strokeWidth={1.5} className="text-gray-400" />
-              <span className="text-[12px] text-gray-500">No</span>
-            </div>
-          </div>
-        )}
-        {question.type === "competency_matrix" && (
-          <Badge variant="outline" className="text-[11px]">Competency Matrix</Badge>
         )}
       </div>
     </div>

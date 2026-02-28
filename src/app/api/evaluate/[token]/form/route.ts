@@ -8,7 +8,7 @@ type ApiResponse<T> =
 interface TemplateQuestion {
   id: string;
   text: string;
-  type: "rating_scale" | "text" | "multiple_choice" | "yes_no" | "competency_matrix";
+  type: "rating_scale" | "text" | "multiple_choice";
   required: boolean;
   options?: string[];
   scaleMin?: number;

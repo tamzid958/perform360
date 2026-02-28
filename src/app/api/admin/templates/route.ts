@@ -6,7 +6,7 @@ import { z } from "zod";
 const questionSchema = z.object({
   id: z.string().optional(),
   text: z.string().min(1),
-  type: z.enum(["rating_scale", "text", "multiple_choice", "yes_no", "competency_matrix"]),
+  type: z.enum(["rating_scale", "text", "multiple_choice"]),
   required: z.boolean(),
   options: z.array(z.string()).optional(),
   scaleMin: z.number().optional(),

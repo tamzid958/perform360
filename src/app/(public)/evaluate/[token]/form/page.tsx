@@ -11,7 +11,7 @@ import { CheckCircle2, ChevronLeft, ChevronRight, Send, Loader2, AlertCircle } f
 interface TemplateQuestion {
   id: string;
   text: string;
-  type: "rating_scale" | "text" | "multiple_choice" | "yes_no" | "competency_matrix";
+  type: "rating_scale" | "text" | "multiple_choice";
   required: boolean;
   options?: string[];
   scaleMin?: number;
@@ -241,24 +241,6 @@ export default function EvaluationFormPage({ params }: { params: { token: string
                     rows={4}
                     className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-[15px] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all resize-none"
                   />
-                )}
-
-                {q.type === "yes_no" && (
-                  <div className="flex gap-3">
-                    {["Yes", "No"].map((option) => (
-                      <button
-                        key={option}
-                        onClick={() => setAnswer(q.id, option === "Yes")}
-                        className={`flex-1 py-3 rounded-xl text-[14px] font-medium transition-all ${
-                          answers[q.id] === (option === "Yes")
-                            ? "bg-brand-500 text-white shadow-md"
-                            : "bg-gray-50 text-gray-600 hover:bg-gray-100"
-                        }`}
-                      >
-                        {option}
-                      </button>
-                    ))}
-                  </div>
                 )}
 
                 {q.type === "multiple_choice" && q.options && (

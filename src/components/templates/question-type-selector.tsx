@@ -7,14 +7,12 @@ import {
   SelectItem,
   SelectValue,
 } from "@/components/ui/select";
-import { Star, Type, List, ToggleLeft, LayoutGrid } from "lucide-react";
+import { Star, Type, List } from "lucide-react";
 
 const QUESTION_TYPES = [
   { value: "rating_scale", label: "Rating Scale", icon: Star },
   { value: "text", label: "Text Response", icon: Type },
   { value: "multiple_choice", label: "Multiple Choice", icon: List },
-  { value: "yes_no", label: "Yes / No", icon: ToggleLeft },
-  { value: "competency_matrix", label: "Competency Matrix", icon: LayoutGrid },
 ] as const;
 
 export type QuestionType = (typeof QUESTION_TYPES)[number]["value"];
