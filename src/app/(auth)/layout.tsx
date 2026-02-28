@@ -1,5 +1,8 @@
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Shield, BarChart3, Users, Zap } from "lucide-react";
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 
 const features = [
   {
@@ -24,11 +27,31 @@ const features = [
   },
 ];
 
-export default function AuthLayout({
+export default async function AuthLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const session = await auth();
+
+  if (session?.user?.email) {
+    const isSuperAdmin = await prisma.superAdmin.findUnique({
+      where: { email: session.user.email },
+    });
+
+    if (isSuperAdmin) {
+      redirect("/superadmin");
+    }
+
+    const appUser = await prisma.user.findFirst({
+      where: { email: session.user.email },
+      select: { id: true },
+    });
+
+    if (appUser) {
+      redirect("/overview");
+    }
+  }
   return (
     <div className="min-h-screen flex">
       {/* Left panel — decorative brand showcase */}
