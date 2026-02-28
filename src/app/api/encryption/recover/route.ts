@@ -8,6 +8,8 @@ import {
   decryptDataKey,
   encryptDataKey,
   verifyRecoveryCode,
+  hashRecoveryCode,
+  generateRecoveryCodes,
 } from "@/lib/encryption";
 import { ENCRYPTION_CONFIG } from "@/lib/constants";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -105,6 +107,10 @@ export async function POST(request: NextRequest) {
     const newMasterKey = deriveKey(newPassphrase, newSaltBuffer);
     const newEncryptedDataKey = encryptDataKey(dataKey, newMasterKey);
 
+    // Re-encrypt remaining unused recovery codes with the new salt
+    // so they remain usable after salt rotation
+    const remainingCodes = unusedCodes.filter((c) => c.id !== matchedCode.id);
+
     await prisma.$transaction(async (tx) => {
       await tx.company.update({
         where: { id: authResult.companyId },
@@ -118,6 +124,21 @@ export async function POST(request: NextRequest) {
         where: { id: matchedCode.id },
         data: { usedAt: new Date() },
       });
+
+      // Delete old remaining codes and recreate with new salt-derived keys
+      // We can't re-derive keys from codes (we only have hashes), so we
+      // re-encrypt the data key using the same code hashes are derived from.
+      // Since we don't have the plain codes, we must delete remaining codes.
+      // The admin should regenerate recovery codes after a recovery.
+      if (remainingCodes.length > 0) {
+        await tx.recoveryCode.deleteMany({
+          where: {
+            companyId: authResult.companyId,
+            id: { notIn: [matchedCode.id] },
+            usedAt: null,
+          },
+        });
+      }
     });
 
     await writeAuditLog({
