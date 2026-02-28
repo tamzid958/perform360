@@ -51,6 +51,13 @@ export default function EncryptionSettingsPage() {
   const [newCodes, setNewCodes] = useState<string[]>([]);
   const [copied, setCopied] = useState(false);
 
+  // Key rotation state
+  const [showRotateDialog, setShowRotateDialog] = useState(false);
+  const [rotatePassphrase, setRotatePassphrase] = useState("");
+  const [isRotating, setIsRotating] = useState(false);
+  const [rotationJobId, setRotationJobId] = useState<string | null>(null);
+  const [rotationStatus, setRotationStatus] = useState<"idle" | "processing" | "completed" | "failed">("idle");
+
   const fetchStatus = useCallback(async () => {
     try {
       const res = await fetch("/api/encryption/status");
@@ -170,6 +177,60 @@ export default function EncryptionSettingsPage() {
     a.download = "perform360-recovery-codes.txt";
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  async function handleRotateKey() {
+    setIsRotating(true);
+    try {
+      const res = await fetch("/api/encryption/rotate-key", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ passphrase: rotatePassphrase }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setRotationJobId(data.data.jobId);
+        setRotationStatus("processing");
+        pollJobStatus(data.data.jobId);
+        if (data.data.recoveryCodesInvalidated) {
+          addToast("Recovery codes invalidated — please regenerate them", "warning");
+        }
+      } else {
+        addToast(data.error || "Failed to start key rotation", "error");
+        setIsRotating(false);
+      }
+    } catch {
+      addToast("Network error", "error");
+      setIsRotating(false);
+    }
+  }
+
+  function pollJobStatus(jobId: string) {
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/jobs/${jobId}`);
+        const data = await res.json();
+        if (!data.success) return;
+
+        const { status: jobStatus } = data.data;
+        if (jobStatus === "COMPLETED") {
+          clearInterval(interval);
+          setRotationStatus("completed");
+          setIsRotating(false);
+          addToast("Key rotation completed successfully", "success");
+          fetchStatus();
+        } else if (jobStatus === "DEAD") {
+          clearInterval(interval);
+          setRotationStatus("failed");
+          setIsRotating(false);
+          addToast(data.data.lastError || "Key rotation failed", "error");
+        }
+      } catch {
+        clearInterval(interval);
+        setRotationStatus("failed");
+        setIsRotating(false);
+      }
+    }, 2000);
   }
 
   if (isLoadingStatus) {
@@ -404,13 +465,32 @@ export default function EncryptionSettingsPage() {
               </div>
               <div>
                 <CardTitle>Key Rotation</CardTitle>
-                <CardDescription>Rotate the data encryption key. All existing data will be re-encrypted with the new key.</CardDescription>
+                <CardDescription>Rotate the data encryption key. All existing data will be re-encrypted with the new key in the background.</CardDescription>
               </div>
             </div>
           </CardHeader>
           <div className="mt-4">
-            <Button variant="secondary" disabled>Rotate Encryption Key</Button>
-            <p className="text-[12px] text-gray-400 mt-2">Coming soon</p>
+            {rotationStatus === "processing" ? (
+              <div className="flex items-center gap-3">
+                <div className="h-5 w-5 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+                <p className="text-[14px] text-gray-600">Re-encrypting data with new key...</p>
+              </div>
+            ) : rotationStatus === "completed" ? (
+              <div className="flex items-center gap-3">
+                <Badge variant="success">Rotation Complete</Badge>
+                <p className="text-[13px] text-gray-500">Now at key version v{status?.keyVersion}</p>
+              </div>
+            ) : (
+              <Button
+                variant="secondary"
+                onClick={() => { setShowRotateDialog(true); setRotatePassphrase(""); setRotationStatus("idle"); }}
+              >
+                Rotate Encryption Key
+              </Button>
+            )}
+            {rotationStatus === "failed" && (
+              <p className="text-[13px] text-red-500 mt-2">Rotation failed. Please try again.</p>
+            )}
           </div>
         </Card>
       </div>
@@ -486,6 +566,51 @@ export default function EncryptionSettingsPage() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Key Rotation Confirmation Dialog */}
+      <Dialog open={showRotateDialog} onOpenChange={setShowRotateDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rotate Encryption Key</DialogTitle>
+            <DialogDescription>
+              This will generate a new data encryption key and re-encrypt all existing evaluation responses in the background.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <div className="flex gap-3 p-3 rounded-xl bg-amber-50 border border-amber-200">
+              <AlertTriangle size={16} strokeWidth={1.5} className="text-amber-500 flex-shrink-0 mt-0.5" />
+              <div className="text-[13px] text-amber-700 space-y-1">
+                <p className="font-medium">This action will:</p>
+                <ul className="list-disc list-inside space-y-0.5">
+                  <li>Generate a new AES-256 data key</li>
+                  <li>Re-encrypt all responses in the background</li>
+                  <li>Invalidate all existing recovery codes</li>
+                </ul>
+              </div>
+            </div>
+            <Input
+              id="rotate-passphrase"
+              label="Current Passphrase"
+              type="password"
+              placeholder="Enter your passphrase to confirm"
+              value={rotatePassphrase}
+              onChange={(e) => setRotatePassphrase(e.target.value)}
+            />
+            <div className="flex gap-3">
+              <Button variant="secondary" onClick={() => setShowRotateDialog(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={() => { setShowRotateDialog(false); handleRotateKey(); }}
+                disabled={!rotatePassphrase || isRotating}
+                className="flex-1"
+              >
+                {isRotating ? "Starting..." : "Rotate Key"}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
