@@ -16,13 +16,7 @@ const roles = [
     restricted: ["Manage settings", "Manage encryption"],
   },
   {
-    name: "Manager",
-    description: "Can submit evaluations via link, no dashboard access to reports",
-    permissions: ["Submit evaluations (via link)"],
-    restricted: ["View reports", "Manage cycles", "Manage teams", "Manage templates", "Manage people", "Manage settings"],
-  },
-  {
-    name: "Member",
+    name: "Employee",
     description: "Can submit evaluations via link only",
     permissions: ["Submit evaluations (via link)"],
     restricted: ["View reports", "Manage cycles", "Manage teams", "Manage templates", "Manage people", "Manage settings"],

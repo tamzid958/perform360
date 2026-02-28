@@ -11,7 +11,7 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 const inviteSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Invalid email address"),
-  role: z.enum(["ADMIN", "HR", "MANAGER", "MEMBER"]),
+  role: z.enum(["ADMIN", "HR", "MEMBER"]),
 });
 
 export async function POST(request: NextRequest) {

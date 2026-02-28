@@ -38,7 +38,6 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     "reports:export",
     "people:manage",
   ],
-  MANAGER: [],
   MEMBER: [],
 };
 

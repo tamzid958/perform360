@@ -7,7 +7,7 @@ import { validateCuidParam } from "@/lib/validation";
 import { writeAuditLog } from "@/lib/audit";
 
 const updateUserSchema = z.object({
-  role: z.enum(["ADMIN", "HR", "MANAGER", "MEMBER"]).optional(),
+  role: z.enum(["ADMIN", "HR", "MEMBER"]).optional(),
   name: z.string().min(1).optional(),
 });
 

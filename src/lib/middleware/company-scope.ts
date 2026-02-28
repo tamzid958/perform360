@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthError } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 
-type UserRole = "ADMIN" | "HR" | "MANAGER" | "MEMBER";
+type UserRole = "ADMIN" | "HR" | "MEMBER";
 
 interface CompanyScopedAuth {
   userId: string;

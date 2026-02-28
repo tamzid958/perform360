@@ -124,7 +124,6 @@ model Company {
 enum UserRole {
   ADMIN
   HR
-  MANAGER
   MEMBER
 }
 
@@ -326,6 +325,7 @@ model AuditLog {
   @@index([companyId, createdAt])
   @@index([userId])
 }
+
 // ─────────────────────────────────────────────────────────
 // JOB QUEUE (Postgres-backed async task processing)
 // ─────────────────────────────────────────────────────────

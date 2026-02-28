@@ -11,7 +11,6 @@ export function usePermissions() {
 
   const isAdmin = role === "ADMIN";
   const isHR = role === "HR";
-  const isManager = role === "MANAGER";
   const isMember = role === "MEMBER";
   const isAdminOrHR = isAdmin || isHR;
 
@@ -19,7 +18,6 @@ export function usePermissions() {
     role,
     isAdmin,
     isHR,
-    isManager,
     isMember,
     isAdminOrHR,
     canViewReports: isAdminOrHR,

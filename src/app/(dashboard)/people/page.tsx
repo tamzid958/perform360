@@ -51,8 +51,7 @@ interface User {
 const roleBadgeMap: Record<string, { variant: "info" | "success" | "warning" | "default"; label: string }> = {
   ADMIN: { variant: "info", label: "Admin" },
   HR: { variant: "success", label: "HR" },
-  MANAGER: { variant: "warning", label: "Manager" },
-  MEMBER: { variant: "default", label: "Member" },
+  MEMBER: { variant: "default", label: "Employee" },
 };
 
 export default function PeoplePage() {
@@ -183,16 +182,18 @@ export default function PeoplePage() {
         </Button>
       </PageHeader>
 
-      {/* Search */}
-      <div className="relative max-w-md mb-6">
-        <Search size={16} strokeWidth={1.5} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-        <input
-          type="text"
-          placeholder="Search people..."
-          value={searchQuery}
-          onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
-          className="w-full h-10 pl-9 pr-4 rounded-xl bg-white border border-gray-200 text-[14px] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
-        />
+      <div className="flex items-center justify-between gap-4 mb-4">
+        <div />
+        <div className="relative max-w-xs">
+          <Search size={16} strokeWidth={1.5} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search people..."
+            value={searchQuery}
+            onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
+            className="w-full h-9 pl-9 pr-4 rounded-xl bg-white border border-gray-200 text-[14px] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
+          />
+        </div>
       </div>
 
       {/* Users Table */}
@@ -338,8 +339,7 @@ export default function PeoplePage() {
                 <SelectContent>
                   <SelectItem value="ADMIN">Admin</SelectItem>
                   <SelectItem value="HR">HR</SelectItem>
-                  <SelectItem value="MANAGER">Manager</SelectItem>
-                  <SelectItem value="MEMBER">Member</SelectItem>
+                  <SelectItem value="MEMBER">Employee</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -378,8 +378,7 @@ export default function PeoplePage() {
                 <SelectContent>
                   <SelectItem value="ADMIN">Admin</SelectItem>
                   <SelectItem value="HR">HR</SelectItem>
-                  <SelectItem value="MANAGER">Manager</SelectItem>
-                  <SelectItem value="MEMBER">Member</SelectItem>
+                  <SelectItem value="MEMBER">Employee</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -4,7 +4,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "./prisma";
 import { sendEmail, getMagicLinkEmail } from "./email";
 
-type AppUserRole = "ADMIN" | "HR" | "MANAGER" | "MEMBER";
+type AppUserRole = "ADMIN" | "HR" | "MEMBER";
 
 declare module "next-auth" {
   interface Session {

@@ -352,7 +352,7 @@ async function main() {
     data: { email: "mike@acme.com", name: "Mike Johnson", role: "HR", companyId: acme.id, authUserId: authUserMap.get("mike@acme.com") },
   });
   const emily = await prisma.user.create({
-    data: { email: "emily@acme.com", name: "Emily Davis", role: "MANAGER", companyId: acme.id, authUserId: authUserMap.get("emily@acme.com") },
+    data: { email: "emily@acme.com", name: "Emily Davis", role: "MEMBER", companyId: acme.id, authUserId: authUserMap.get("emily@acme.com") },
   });
   const james = await prisma.user.create({
     data: { email: "james@acme.com", name: "James Wilson", role: "MEMBER", companyId: acme.id, authUserId: authUserMap.get("james@acme.com") },

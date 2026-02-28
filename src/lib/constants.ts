@@ -13,7 +13,6 @@ export const OTP_CONFIG = {
 export const ROLES = {
   ADMIN: "ADMIN",
   HR: "HR",
-  MANAGER: "MANAGER",
   MEMBER: "MEMBER",
 } as const;
 
@@ -47,4 +46,13 @@ export const ENCRYPTION_CONFIG = {
   recoveryCodeCount: 8,
   minPassphraseLength: 12,
   maxPassphraseLength: 128,
+} as const;
+
+export const JOB_CONFIG = {
+  pollIntervalMs: 1000,
+  schedulerIntervalMs: 5 * 60 * 1000,
+  defaultMaxAttempts: 3,
+  retentionDays: 7,
+  staleThresholdMinutes: 30,
+  reEncryptBatchSize: 100,
 } as const;

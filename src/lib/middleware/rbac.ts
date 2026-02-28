@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthError } from "@/lib/api-auth";
 
-type UserRole = "ADMIN" | "HR" | "MANAGER" | "MEMBER";
+type UserRole = "ADMIN" | "HR" | "MEMBER";
 
 interface RBACAuth {
   userId: string;

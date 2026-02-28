@@ -26,7 +26,6 @@ interface ProfileData {
 const ROLE_BADGE_VARIANT: Record<string, "info" | "success" | "warning" | "default"> = {
   ADMIN: "info",
   HR: "success",
-  MANAGER: "warning",
   MEMBER: "default",
 };
 
