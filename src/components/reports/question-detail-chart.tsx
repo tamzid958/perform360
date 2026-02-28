@@ -27,7 +27,13 @@ export function QuestionDetailChart({ questions }: QuestionDetailChartProps) {
     (q): q is QuestionDetail & { averageScore: number } =>
       q.averageScore !== null && q.averageScore > 0
   );
-  if (scored.length === 0) return null;
+  if (scored.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-[200px] text-[14px] text-gray-400">
+        No data available
+      </div>
+    );
+  }
 
   const data = scored.map((q) => ({
     question: q.questionText.length > 40

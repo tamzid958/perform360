@@ -52,7 +52,13 @@ export function RelationshipComparisonChart({
         Self: overallRelationship.self,
       }));
 
-  if (data.length === 0) return null;
+  if (data.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-[280px] text-[14px] text-gray-400">
+        No data available
+      </div>
+    );
+  }
 
   const activeKeys = (
     ["Manager", "Peer", "Direct Report", "Self"] as const

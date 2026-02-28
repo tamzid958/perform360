@@ -20,6 +20,14 @@ export function ScoreDistributionChart({ distribution }: ScoreDistributionChartP
     count,
   }));
 
+  if (!distribution.some((n) => n > 0)) {
+    return (
+      <div className="flex items-center justify-center h-[240px] text-[14px] text-gray-400">
+        No data available
+      </div>
+    );
+  }
+
   return (
     <ResponsiveContainer width="100%" height={240}>
       <BarChart data={data} barSize={32}>

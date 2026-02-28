@@ -38,7 +38,13 @@ export function RelationshipScoreChart({
     { name: "Self", score: self },
   ].filter((d): d is { name: string; score: number } => d.score !== null && d.score > 0);
 
-  if (data.length === 0) return null;
+  if (data.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-[240px] text-[14px] text-gray-400">
+        No data available
+      </div>
+    );
+  }
 
   return (
     <ResponsiveContainer width="100%" height={240}>

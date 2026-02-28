@@ -22,7 +22,13 @@ export function DistributionMiniChart({
     }))
     .sort((a, b) => Number(a.label) - Number(b.label));
 
-  if (entries.length === 0) return null;
+  if (entries.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-[60px] text-[12px] text-gray-400">
+        No data available
+      </div>
+    );
+  }
 
   const maxCount = Math.max(...entries.map((e) => e.count));
 

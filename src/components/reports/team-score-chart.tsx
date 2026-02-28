@@ -27,7 +27,13 @@ function getScoreColor(score: number): string {
 }
 
 export function TeamScoreChart({ teams }: TeamScoreChartProps) {
-  if (teams.length === 0) return null;
+  if (teams.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-[120px] text-[14px] text-gray-400">
+        No data available
+      </div>
+    );
+  }
 
   const sorted = [...teams].sort((a, b) => b.avgScore - a.avgScore);
 

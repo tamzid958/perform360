@@ -21,7 +21,13 @@ interface SubmissionTrendChartProps {
 }
 
 export function SubmissionTrendChart({ data }: SubmissionTrendChartProps) {
-  if (data.length === 0) return null;
+  if (data.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-[260px] text-[14px] text-gray-400">
+        No data available
+      </div>
+    );
+  }
 
   return (
     <ResponsiveContainer width="100%" height={260}>

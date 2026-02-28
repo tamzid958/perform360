@@ -15,7 +15,13 @@ interface CompetencyRadarChartProps {
 }
 
 export function CompetencyRadarChart({ categories }: CompetencyRadarChartProps) {
-  if (categories.length === 0) return null;
+  if (categories.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-[320px] text-[14px] text-gray-400">
+        No data available
+      </div>
+    );
+  }
 
   const maxScale = categories[0]?.maxScore ?? 5;
 

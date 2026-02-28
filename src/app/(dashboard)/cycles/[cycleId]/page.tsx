@@ -946,16 +946,14 @@ export default function CycleDetailPage() {
 
               {/* Score Distribution + Relationship Breakdown */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                {cycleReport.scoreDistribution.some((n) => n > 0) && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Score Distribution</CardTitle>
-                    </CardHeader>
-                    <ScoreDistributionChart
-                      distribution={cycleReport.scoreDistribution}
-                    />
-                  </Card>
-                )}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Score Distribution</CardTitle>
+                  </CardHeader>
+                  <ScoreDistributionChart
+                    distribution={cycleReport.scoreDistribution}
+                  />
+                </Card>
                 {cycleReport.avgScoreByRelationship && (
                   <Card>
                     <CardHeader>

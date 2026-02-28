@@ -25,7 +25,13 @@ export function StatusBreakdownChart({
     { name: "Pending", value: pending },
   ].filter((d) => d.value > 0);
 
-  if (data.length === 0) return null;
+  if (data.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-[200px] text-[14px] text-gray-400">
+        No data available
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col items-center">
