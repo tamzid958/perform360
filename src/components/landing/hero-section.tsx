@@ -33,7 +33,8 @@ export function HeroSection() {
         {/* Subtitle */}
         <p className="text-[18px] text-gray-500 text-center max-w-2xl mx-auto mt-6 leading-relaxed animate-fade-in-up delay-200">
           Run 360-degree evaluation cycles with feedback from managers, peers,
-          and direct reports. End-to-end encrypted. Beautifully simple.
+          and direct reports. End-to-end encrypted, with one-click export of
+          your company data anytime. No vendor lock-in.
         </p>
 
         {/* CTA Buttons */}

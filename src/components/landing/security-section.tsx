@@ -4,6 +4,8 @@ const bulletItems = [
   "AES-256-GCM encryption at rest",
   "Company-owned encryption keys via Argon2id",
   "Zero-access architecture — platform operators excluded",
+  "Export your company data on demand in readable format",
+  "No vendor lock-in — your data stays portable",
   "No backdoors, no escrow, no exceptions",
 ];
 
@@ -11,9 +13,9 @@ export function SecuritySection() {
   return (
     <section id="security" className="bg-[#fafafa] py-28 px-6">
       <div className="max-w-6xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-stretch">
           {/* Left column — text */}
-          <div>
+          <div className="h-full">
             <span className="inline-flex items-center rounded-full bg-[#eff6ff] text-[#0071e3] text-[13px] font-medium px-4 py-1.5 border border-[#0071e3]/10">
               Security
             </span>
@@ -47,7 +49,7 @@ export function SecuritySection() {
           </div>
 
           {/* Right column — key hierarchy diagram */}
-          <div className="bg-white rounded-2xl p-8 shadow-[0_2px_20px_rgba(0,0,0,0.04)] border border-gray-100">
+          <div className="bg-white rounded-2xl p-8 shadow-[0_2px_20px_rgba(0,0,0,0.04)] border border-gray-100 h-full flex flex-col justify-center">
             {/* Card 1 — Company Passphrase */}
             <div className="bg-gradient-to-r from-[#eff6ff] to-white rounded-xl p-5 border border-[#0071e3]/10">
               <div className="flex items-center gap-4">

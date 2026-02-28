@@ -45,7 +45,7 @@ export function CtaSection() {
         </div>
 
         <p className="text-[13px] text-white/40 text-center mt-8">
-          No credit card required &middot; Set up in under 5 minutes &middot; End-to-end encrypted
+          No credit card required &middot; End-to-end encrypted &middot; Export your data anytime &middot; No vendor lock-in
         </p>
       </div>
     </section>
