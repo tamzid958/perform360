@@ -26,6 +26,20 @@ export async function POST(
   const authResult = await requireAdminOrHR();
   if (isAuthError(authResult)) return authResult;
 
+  // Parse optional assignmentId from request body
+  let assignmentId: string | undefined;
+  try {
+    const body = await request.json();
+    assignmentId = body.assignmentId;
+  } catch {
+    // No body or invalid JSON — send to all (existing behavior)
+  }
+
+  if (assignmentId) {
+    const invalidAssignment = validateCuidParam(assignmentId);
+    if (invalidAssignment) return invalidAssignment;
+  }
+
   // 1. Fetch cycle and validate status
   const cycle = await prisma.evaluationCycle.findFirst({
     where: {
@@ -57,6 +71,7 @@ export async function POST(
     where: {
       cycleId: params.id,
       status: { in: ["PENDING", "IN_PROGRESS"] },
+      ...(assignmentId ? { id: assignmentId } : {}),
     },
     include: {
       cycle: { select: { name: true, endDate: true } },
@@ -66,7 +81,12 @@ export async function POST(
   if (pendingAssignments.length === 0) {
     return NextResponse.json({
       success: true,
-      data: { sent: 0, message: "All evaluations have been submitted" },
+      data: {
+        sent: 0,
+        message: assignmentId
+          ? "Assignment not found or already submitted"
+          : "All evaluations have been submitted",
+      },
     });
   }
 

@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/layout/page-header";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ScoreDistributionChart } from "@/components/reports/score-distribution-chart";
+import { UnlockGate, useEncryptionUnlock } from "@/components/encryption/unlock-gate";
 import {
   Play,
   Send,
@@ -21,6 +22,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useToast } from "@/components/ui/toast";
 import type { CycleReport } from "@/types/report";
 
 // ─── Types ───
@@ -113,6 +115,10 @@ export default function CycleDetailPage() {
   >("all");
   const [loading, setLoading] = useState(true);
   const [reportLoading, setReportLoading] = useState(false);
+  const [reminding, setReminding] = useState(false);
+  const [remindingId, setRemindingId] = useState<string | null>(null);
+  const { locked, handleApiResponse, handleUnlocked } = useEncryptionUnlock();
+  const { addToast } = useToast();
 
   const fetchCycle = useCallback(async () => {
     setLoading(true);
@@ -133,13 +139,14 @@ export default function CycleDetailPage() {
     try {
       const res = await fetch(`/api/reports/cycle/${cycleId}`);
       const json = await res.json();
+      if (handleApiResponse(json)) return;
       if (json.success) setCycleReport(json.data);
     } catch {
       // handled by null state
     } finally {
       setReportLoading(false);
     }
-  }, [cycleId, cycleReport]);
+  }, [cycleId, cycleReport, handleApiResponse]);
 
   useEffect(() => {
     fetchCycle();
@@ -178,6 +185,46 @@ export default function CycleDetailPage() {
     window.open(`/api/reports/cycle/${cycleId}/export`, "_blank");
   }
 
+  async function handleRemind() {
+    setReminding(true);
+    try {
+      const res = await fetch(`/api/cycles/${cycleId}/remind`, { method: "POST" });
+      const json = await res.json();
+      if (json.success) {
+        addToast(`Reminders sent to ${json.data.sent} reviewer${json.data.sent !== 1 ? "s" : ""}`, "success");
+      } else {
+        addToast(json.error ?? "Failed to send reminders", "error");
+      }
+    } catch {
+      addToast("Failed to send reminders", "error");
+    } finally {
+      setReminding(false);
+    }
+  }
+
+  async function handleRemindIndividual(assignmentId: string, reviewerName: string) {
+    setRemindingId(assignmentId);
+    try {
+      const res = await fetch(`/api/cycles/${cycleId}/remind`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assignmentId }),
+      });
+      const json = await res.json();
+      if (json.success && json.data.sent > 0) {
+        addToast(`Reminder sent to ${reviewerName}`, "success");
+      } else if (json.success && json.data.sent === 0) {
+        addToast(json.data.message ?? "No reminder sent", "warning");
+      } else {
+        addToast(json.error ?? "Failed to send reminder", "error");
+      }
+    } catch {
+      addToast("Failed to send reminder", "error");
+    } finally {
+      setRemindingId(null);
+    }
+  }
+
   return (
     <div>
       <PageHeader
@@ -197,9 +244,9 @@ export default function CycleDetailPage() {
           </Button>
         )}
         {cycle.status === "ACTIVE" && (
-          <Button variant="secondary">
+          <Button variant="secondary" onClick={handleRemind} disabled={reminding}>
             <Send size={16} strokeWidth={1.5} className="mr-1.5" />
-            Send Reminders
+            {reminding ? "Sending…" : "Send Reminders"}
           </Button>
         )}
       </PageHeader>
@@ -311,13 +358,18 @@ export default function CycleDetailPage() {
                         <th className="text-left text-[12px] font-medium text-gray-400 uppercase tracking-wider px-4 py-3">
                           Status
                         </th>
+                        {cycle.status === "ACTIVE" && (
+                          <th className="text-right text-[12px] font-medium text-gray-400 uppercase tracking-wider px-4 py-3">
+                            Action
+                          </th>
+                        )}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
                       {displayed.length === 0 ? (
                         <tr>
                           <td
-                            colSpan={4}
+                            colSpan={cycle.status === "ACTIVE" ? 5 : 4}
                             className="text-center py-8 text-[14px] text-gray-400"
                           >
                             No assignments found
@@ -359,6 +411,23 @@ export default function CycleDetailPage() {
                                 </span>
                               </div>
                             </td>
+                            {cycle.status === "ACTIVE" && (
+                              <td className="px-4 py-3 text-right">
+                                {a.status !== "SUBMITTED" ? (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    disabled={remindingId === a.id}
+                                    onClick={() => handleRemindIndividual(a.id, a.reviewerName)}
+                                  >
+                                    <Send size={14} strokeWidth={1.5} className="mr-1" />
+                                    {remindingId === a.id ? "Sending…" : "Remind"}
+                                  </Button>
+                                ) : (
+                                  <span className="text-[12px] text-gray-300">—</span>
+                                )}
+                              </td>
+                            )}
                           </tr>
                         ))
                       )}
@@ -372,7 +441,11 @@ export default function CycleDetailPage() {
 
         {/* ─── Reports Tab ─── */}
         <TabsContent value="reports">
-          {reportLoading ? (
+          {locked ? (
+            <UnlockGate locked={locked} onUnlocked={() => { handleUnlocked(); setCycleReport(null); fetchReport(); }}>
+              <div />
+            </UnlockGate>
+          ) : reportLoading ? (
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {Array.from({ length: 3 }).map((_, i) => (

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { encrypt, deriveKey, decryptDataKey } from "@/lib/encryption";
+import { encrypt } from "@/lib/encryption";
+import { decryptDataKeyFromCookie } from "@/lib/encryption-session";
 
 type ApiResponse<T> =
   | { success: true; data: T }
@@ -195,36 +196,31 @@ export async function POST(
       );
     }
 
-    // Encrypt answers with company's data key
-    const company = await prisma.company.findUnique({
-      where: { id: assignment.cycle.companyId },
-      select: {
-        encryptionKeyEncrypted: true,
-        encryptionSalt: true,
-        keyVersion: true,
-      },
+    // Read the cached data key that was stored on the cycle when admin activated it
+    const cycle = await prisma.evaluationCycle.findUnique({
+      where: { id: assignment.cycleId },
+      select: { cachedDataKeyEncrypted: true },
     });
 
-    if (!company || !company.encryptionSalt) {
+    if (!cycle?.cachedDataKeyEncrypted) {
       return NextResponse.json<ApiResponse<never>>(
-        { success: false, error: "Company encryption not configured" },
+        { success: false, error: "Encryption not available for this cycle. Admin must re-activate." },
         { status: 500 }
       );
     }
 
-    // Derive master key from server-side passphrase to decrypt the data key.
-    // In the full E2EE flow, the admin session caches the decrypted data key.
-    const passphrase = process.env.ENCRYPTION_PASSPHRASE;
-    if (!passphrase) {
+    const dataKey = decryptDataKeyFromCookie(cycle.cachedDataKeyEncrypted);
+    if (!dataKey) {
       return NextResponse.json<ApiResponse<never>>(
-        { success: false, error: "Server encryption configuration error" },
+        { success: false, error: "Failed to decrypt cycle encryption key" },
         { status: 500 }
       );
     }
 
-    const salt = Buffer.from(company.encryptionSalt, "base64");
-    const masterKey = deriveKey(passphrase, salt);
-    const dataKey = decryptDataKey(company.encryptionKeyEncrypted, masterKey);
+    const company = await prisma.company.findUnique({
+      where: { id: assignment.cycle.companyId },
+      select: { keyVersion: true },
+    });
 
     const answersJson = JSON.stringify(answers);
     const { encrypted, iv, tag } = encrypt(answersJson, dataKey);
@@ -239,7 +235,7 @@ export async function POST(
           answersEncrypted: encrypted,
           answersIv: iv,
           answersTag: tag,
-          keyVersion: company.keyVersion,
+          keyVersion: company?.keyVersion ?? 1,
           submittedAt: new Date(),
         },
       }),

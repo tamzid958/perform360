@@ -80,7 +80,7 @@ model EvaluationTemplate {
   id          String   @id @default(cuid())
   name        String
   description String?
-  sections    Json     // Array of { title, questions: [{ text, type, options?, required }] }
+  sections    Json // Array of { title, questions: [{ text, type, options?, required }] }
   isGlobal    Boolean  @default(false)
   companyId   String?
   company     Company? @relation(fields: [companyId], references: [id])
@@ -105,9 +105,9 @@ model Company {
 
   // Encryption (company-owned, SaaS owner cannot access)
   encryptionKeyEncrypted String
-  encryptionSalt         String?   // base64-encoded salt for scrypt key derivation
+  encryptionSalt         String? // base64-encoded salt for scrypt key derivation
   encryptionSetupAt      DateTime? // null = setup not complete, timestamp = setup done
-  keyVersion             Int    @default(1)
+  keyVersion             Int       @default(1)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -136,7 +136,7 @@ model User {
   role       UserRole @default(MEMBER)
   companyId  String
   company    Company  @relation(fields: [companyId], references: [id])
-  authUserId String?  // Links to AuthUser for NextAuth session resolution
+  authUserId String? // Links to AuthUser for NextAuth session resolution
   createdAt  DateTime @default(now())
 
   // Relations
@@ -203,6 +203,10 @@ model EvaluationCycle {
   endDate   DateTime
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
+
+  // Cached data key (encrypted with NEXTAUTH_SECRET) — set on activation,
+  // allows submission route to encrypt reviewer answers without the passphrase.
+  cachedDataKeyEncrypted String?
 
   assignments EvaluationAssignment[]
   cycleTeams  CycleTeam[]
@@ -284,8 +288,8 @@ model EvaluationResponse {
   keyVersion       Int
 
   submittedAt DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 // ─────────────────────────────────────────────────────────
@@ -296,8 +300,8 @@ model RecoveryCode {
   id               String    @id @default(cuid())
   companyId        String
   company          Company   @relation(fields: [companyId], references: [id])
-  codeHash         String    // bcrypt hash of the recovery code
-  encryptedDataKey String    // data key encrypted with scrypt(code, salt)
+  codeHash         String // bcrypt hash of the recovery code
+  encryptedDataKey String // data key encrypted with scrypt(code, salt)
   usedAt           DateTime? // null = available, timestamp = consumed
   createdAt        DateTime  @default(now())
 
@@ -312,10 +316,10 @@ model AuditLog {
   id        String   @id @default(cuid())
   companyId String
   company   Company  @relation(fields: [companyId], references: [id])
-  userId    String?  // null for system events
-  action    String   // e.g., "decryption", "role_change", "user_invite", "cycle_activate"
-  target    String?  // e.g., "user:cuid123", "cycle:cuid456"
-  metadata  Json?    // Additional context
+  userId    String? // null for system events
+  action    String // e.g., "decryption", "role_change", "user_invite", "cycle_activate"
+  target    String? // e.g., "user:cuid123", "cycle:cuid456"
+  metadata  Json? // Additional context
   ip        String?
   createdAt DateTime @default(now())
 

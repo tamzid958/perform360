@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdminOrHR, isAuthError } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 import { buildIndividualReport, buildCycleReport } from "@/lib/reports";
+import { getDataKeyFromRequest } from "@/lib/encryption-session";
 import { RELATIONSHIP_LABELS } from "@/lib/constants";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { validateCuidParam } from "@/lib/validation";
@@ -47,6 +48,14 @@ export async function GET(
     );
   }
 
+  const dataKey = getDataKeyFromRequest(request);
+  if (!dataKey) {
+    return NextResponse.json<ApiResponse<never>>(
+      { success: false, error: "Encryption locked. Enter your passphrase to export reports.", code: "ENCRYPTION_LOCKED" },
+      { status: 403 }
+    );
+  }
+
   const userId = request.nextUrl.searchParams.get("userId");
 
   try {
@@ -64,7 +73,7 @@ export async function GET(
         );
       }
 
-      const report = await buildIndividualReport(cycleId, userId, companyId);
+      const report = await buildIndividualReport(cycleId, userId, companyId, dataKey);
 
       await writeAuditLog({
         companyId,
@@ -93,7 +102,7 @@ export async function GET(
       metadata: { type: "full_cycle_export" },
     });
 
-    const cycleReport = await buildCycleReport(cycleId, companyId);
+    const cycleReport = await buildCycleReport(cycleId, companyId, dataKey);
 
     // Get all unique subjects in this cycle
     const subjects = await prisma.evaluationAssignment.findMany({
@@ -103,7 +112,7 @@ export async function GET(
     });
 
     const individualReports = await Promise.all(
-      subjects.map((s) => buildIndividualReport(cycleId, s.subjectId, companyId))
+      subjects.map((s) => buildIndividualReport(cycleId, s.subjectId, companyId, dataKey))
     );
 
     const html = renderCycleExportHtml(cycleReport, individualReports, cycle.name);

@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { CompetencyRadarChart } from "@/components/reports/radar-chart";
 import { ScoreBreakdown } from "@/components/reports/score-breakdown";
+import { UnlockGate, useEncryptionUnlock } from "@/components/encryption/unlock-gate";
 import { Download, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -20,6 +21,7 @@ export default function IndividualReportPage() {
   const [report, setReport] = useState<IndividualReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { locked, handleApiResponse, handleUnlocked } = useEncryptionUnlock();
 
   const fetchReport = useCallback(async () => {
     setLoading(true);
@@ -27,6 +29,7 @@ export default function IndividualReportPage() {
     try {
       const res = await fetch(`/api/reports/cycle/${cycleId}/user/${userId}`);
       const json = await res.json();
+      if (handleApiResponse(json)) return;
       if (!json.success) {
         setError(json.error ?? "Failed to load report");
         return;
@@ -37,7 +40,7 @@ export default function IndividualReportPage() {
     } finally {
       setLoading(false);
     }
-  }, [cycleId, userId]);
+  }, [cycleId, userId, handleApiResponse]);
 
   useEffect(() => {
     fetchReport();
@@ -48,6 +51,25 @@ export default function IndividualReportPage() {
   }
 
   if (loading) return <ReportSkeleton />;
+
+  if (locked) {
+    return (
+      <div>
+        <div className="mb-6">
+          <Link
+            href={`/cycles/${cycleId}`}
+            className="inline-flex items-center gap-1.5 text-[14px] text-gray-500 hover:text-gray-700 transition-colors mb-4"
+          >
+            <ArrowLeft size={14} strokeWidth={1.5} />
+            Back to Cycle
+          </Link>
+        </div>
+        <UnlockGate locked={locked} onUnlocked={() => { handleUnlocked(); fetchReport(); }}>
+          <div />
+        </UnlockGate>
+      </div>
+    );
+  }
 
   if (error || !report) {
     return (

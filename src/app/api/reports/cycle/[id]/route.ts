@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdminOrHR, isAuthError } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 import { buildCycleReport } from "@/lib/reports";
+import { getDataKeyFromRequest } from "@/lib/encryption-session";
 import type { CycleReport } from "@/types/report";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { validateCuidParam } from "@/lib/validation";
@@ -39,8 +40,16 @@ export async function GET(
     );
   }
 
+  const dataKey = getDataKeyFromRequest(request);
+  if (!dataKey) {
+    return NextResponse.json<ApiResponse<never>>(
+      { success: false, error: "Encryption locked. Enter your passphrase to view reports.", code: "ENCRYPTION_LOCKED" },
+      { status: 403 }
+    );
+  }
+
   try {
-    const report = await buildCycleReport(cycleId, companyId);
+    const report = await buildCycleReport(cycleId, companyId, dataKey);
 
     await writeAuditLog({
       companyId,

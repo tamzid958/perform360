@@ -3,6 +3,7 @@ import { requireAdminOrHR, isAuthError } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 import { createAssignmentsForCycle } from "@/lib/assignments";
 import { sendEmail, getEvaluationInviteEmail } from "@/lib/email";
+import { getDataKeyFromRequest, encryptDataKeyForCookie } from "@/lib/encryption-session";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { validateCuidParam } from "@/lib/validation";
 import { writeAuditLog } from "@/lib/audit";
@@ -54,6 +55,21 @@ export async function POST(
       { status: 400 }
     );
   }
+
+  // Require the admin's decrypted data key (from encryption unlock session).
+  // This is cached on the cycle so the submission route can encrypt reviewer answers.
+  const dataKey = getDataKeyFromRequest(request);
+  if (!dataKey) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Encryption locked. Enter your passphrase before activating a cycle.",
+        code: "ENCRYPTION_LOCKED",
+      },
+      { status: 403 }
+    );
+  }
+  const cachedDataKeyEncrypted = encryptDataKeyForCookie(dataKey);
 
   // 2. Fetch CycleTeam entries and verify templates
   const cycleTeams = await prisma.cycleTeam.findMany({
@@ -122,10 +138,10 @@ export async function POST(
     );
   }
 
-  // 4. Update cycle status to ACTIVE
+  // 4. Update cycle status to ACTIVE and cache the data key for submissions
   const updatedCycle = await prisma.evaluationCycle.update({
     where: { id: cycle.id },
-    data: { status: "ACTIVE" },
+    data: { status: "ACTIVE", cachedDataKeyEncrypted },
   });
 
   // 5. Send invitation emails in batches

@@ -9,6 +9,7 @@ import {
   generateRecoveryCodes,
   hashRecoveryCode,
 } from "../src/lib/encryption";
+import { encryptDataKeyForCookie } from "../src/lib/encryption-session";
 import { generateToken } from "../src/lib/tokens";
 
 const prisma = new PrismaClient();
@@ -465,6 +466,7 @@ async function main() {
       status: "ACTIVE",
       startDate: new Date("2026-01-01"),
       endDate: new Date("2026-03-31"),
+      cachedDataKeyEncrypted: encryptDataKeyForCookie(acmeEncryption.dataKey),
     },
   });
 

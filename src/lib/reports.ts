@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { decrypt, deriveKey, decryptDataKey } from "@/lib/encryption";
+import { decrypt } from "@/lib/encryption";
 import type {
   IndividualReport,
   IndividualSummary,
@@ -44,23 +44,6 @@ interface DecryptedResponse {
 // ─── Decryption ───
 
 /**
- * Decrypt the company data key using the server-side passphrase.
- * In the full E2EE flow, this would use the admin's session-cached passphrase.
- */
-export function getDataKey(
-  encryptionKeyEncrypted: string,
-  encryptionSalt: string
-): Buffer {
-  const passphrase = process.env.ENCRYPTION_PASSPHRASE;
-  if (!passphrase) {
-    throw new Error("Server encryption configuration error");
-  }
-  const salt = Buffer.from(encryptionSalt, "base64");
-  const masterKey = deriveKey(passphrase, salt);
-  return decryptDataKey(encryptionKeyEncrypted, masterKey);
-}
-
-/**
  * Decrypt a single evaluation response's answers.
  */
 export function decryptResponse(
@@ -75,26 +58,13 @@ export function decryptResponse(
 
 /**
  * Fetch and decrypt all evaluation responses for a subject in a cycle.
+ * The caller must provide the pre-derived data key (from session cookie).
  */
 export async function getDecryptedResponsesForSubject(
   cycleId: string,
   subjectId: string,
-  companyId: string
+  dataKey: Buffer
 ): Promise<DecryptedResponse[]> {
-  const company = await prisma.company.findUnique({
-    where: { id: companyId },
-    select: {
-      encryptionKeyEncrypted: true,
-      encryptionSalt: true,
-    },
-  });
-
-  if (!company?.encryptionSalt) {
-    throw new Error("Company encryption not configured");
-  }
-
-  const dataKey = getDataKey(company.encryptionKeyEncrypted, company.encryptionSalt);
-
   const responses = await prisma.evaluationResponse.findMany({
     where: {
       subjectId,
@@ -330,7 +300,8 @@ export function calculateOverallScore(
 export async function buildIndividualReport(
   cycleId: string,
   subjectId: string,
-  companyId: string
+  companyId: string,
+  dataKey: Buffer
 ): Promise<IndividualReport> {
   const [cycle, subject] = await Promise.all([
     prisma.evaluationCycle.findUnique({
@@ -368,7 +339,7 @@ export async function buildIndividualReport(
     (t) => t.sections as unknown as TemplateSection[]
   );
 
-  const responses = await getDecryptedResponsesForSubject(cycleId, subjectId, companyId);
+  const responses = await getDecryptedResponsesForSubject(cycleId, subjectId, dataKey);
 
   return {
     subjectId,
@@ -388,7 +359,8 @@ export async function buildIndividualReport(
  */
 export async function buildCycleReport(
   cycleId: string,
-  companyId: string
+  companyId: string,
+  dataKey: Buffer
 ): Promise<CycleReport> {
   const cycle = await prisma.evaluationCycle.findUnique({
     where: { id: cycleId },
@@ -446,11 +418,6 @@ export async function buildCycleReport(
   });
 
   // Score distribution + individual summaries — decrypt all submitted responses
-  const company = await prisma.company.findUnique({
-    where: { id: companyId },
-    select: { encryptionKeyEncrypted: true, encryptionSalt: true },
-  });
-
   const scoreDistribution: number[] = [0, 0, 0, 0, 0]; // Buckets: 1, 2, 3, 4, 5
   const individualSummaries: IndividualSummary[] = [];
 
@@ -471,9 +438,7 @@ export async function buildCycleReport(
   });
   const subjectNameMap = new Map(subjectUsers.map((u) => [u.id, u.name]));
 
-  if (company?.encryptionSalt && completedAssignments > 0) {
-    const dataKey = getDataKey(company.encryptionKeyEncrypted, company.encryptionSalt);
-
+  if (completedAssignments > 0) {
     // Fetch all templates used in this cycle via CycleTeam
     const cycleTeams = await prisma.cycleTeam.findMany({
       where: { cycleId },
@@ -552,7 +517,7 @@ export async function buildCycleReport(
       }
     }
   } else {
-    // No encryption or no completed assignments — just return counts without scores
+    // No completed assignments — just return counts without scores
     for (const subjectId of subjectIds) {
       const counts = subjectAssignmentCounts.get(subjectId) ?? { total: 0, completed: 0 };
       individualSummaries.push({
