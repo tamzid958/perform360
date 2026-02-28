@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -43,9 +43,11 @@ const typeLabels: Record<string, string> = {
 
 export default function TemplateDetailPage() {
   const params = useParams<{ templateId: string }>();
+  const router = useRouter();
   const [template, setTemplate] = useState<Template | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [duplicating, setDuplicating] = useState(false);
 
   const fetchTemplate = useCallback(async () => {
     setLoading(true);
@@ -65,6 +67,28 @@ export default function TemplateDetailPage() {
   useEffect(() => {
     fetchTemplate();
   }, [fetchTemplate]);
+
+  async function handleDuplicate() {
+    if (!template) return;
+    setDuplicating(true);
+    try {
+      const res = await fetch("/api/templates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: `${template.name} (Copy)`,
+          description: template.description,
+          sections: template.sections,
+        }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        router.push(`/templates/${json.data.id}`);
+      }
+    } finally {
+      setDuplicating(false);
+    }
+  }
 
   if (error) {
     return (
@@ -112,9 +136,9 @@ export default function TemplateDetailPage() {
   return (
     <div>
       <PageHeader title={template.name} description={template.description ?? ""}>
-        <Button variant="ghost" size="sm">
+        <Button variant="ghost" size="sm" onClick={handleDuplicate} disabled={duplicating}>
           <Copy size={16} strokeWidth={1.5} className="mr-1.5" />
-          Duplicate
+          {duplicating ? "Duplicating..." : "Duplicate"}
         </Button>
         {!template.isGlobal && (
           <Link href={`/templates/${template.id}/edit`}>
