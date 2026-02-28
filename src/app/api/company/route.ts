@@ -4,9 +4,26 @@ import { requireAuth, requireRole, isAuthError } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 import { applyRateLimit } from "@/lib/rate-limit";
 
+const notificationSettingsSchema = z.object({
+  evaluationInvitations: z.boolean(),
+  submissionConfirmations: z.boolean(),
+  cycleReminders: z.boolean(),
+  cycleCompletion: z.boolean(),
+});
+
 const updateCompanySchema = z.object({
-  name: z.string().min(1).optional(),
-  slug: z.string().min(1).optional(),
+  name: z.string().min(1).max(100).optional(),
+  slug: z
+    .string()
+    .min(2)
+    .max(50)
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Slug must be lowercase alphanumeric with hyphens only")
+    .optional(),
+  settings: z
+    .object({
+      notifications: notificationSettingsSchema.optional(),
+    })
+    .optional(),
 });
 
 export async function GET(request: NextRequest) {
@@ -56,9 +73,22 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
+    // Merge settings with existing rather than overwriting
+    const updateData: Record<string, unknown> = {};
+    if (validated.name !== undefined) updateData.name = validated.name;
+    if (validated.slug !== undefined) updateData.slug = validated.slug;
+    if (validated.settings !== undefined) {
+      const existing = await prisma.company.findUnique({
+        where: { id: authResult.companyId },
+        select: { settings: true },
+      });
+      const existingSettings = (existing?.settings as Record<string, unknown>) ?? {};
+      updateData.settings = { ...existingSettings, ...validated.settings };
+    }
+
     const company = await prisma.company.update({
       where: { id: authResult.companyId },
-      data: validated,
+      data: updateData,
       select: { id: true, name: true, slug: true, logo: true, settings: true },
     });
 
