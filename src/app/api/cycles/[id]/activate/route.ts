@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdminOrHR, isAuthError } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 import { createAssignmentsForCycle } from "@/lib/assignments";
-import { sendEmail, getEvaluationInviteHtml } from "@/lib/email";
+import { sendEmail, getEvaluationInviteEmail } from "@/lib/email";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { validateCuidParam } from "@/lib/validation";
 import { writeAuditLog } from "@/lib/audit";
@@ -112,7 +112,7 @@ export async function POST(
       batch.flatMap((reviewer) =>
         reviewer.assignments.map((assignment) => {
           const evaluationUrl = `${APP_URL}/evaluate/${assignment.token}`;
-          const html = getEvaluationInviteHtml(
+          const { html, text } = getEvaluationInviteEmail(
             reviewer.name,
             assignment.subjectName,
             cycle.name,
@@ -123,6 +123,7 @@ export async function POST(
             to: reviewer.email,
             subject: `Evaluation Invitation: ${assignment.subjectName} — ${cycle.name}`,
             html,
+            text,
           });
         })
       )

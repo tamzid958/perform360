@@ -4,6 +4,9 @@ import { requireAdminOrHR, isAuthError } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { writeAuditLog } from "@/lib/audit";
+import { sendEmail, getUserInviteEmail } from "@/lib/email";
+
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
 const inviteSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -79,6 +82,23 @@ export async function POST(request: NextRequest) {
       target: `user:${result.id}`,
       metadata: { email: validated.email, role: validated.role },
     });
+
+    // Send welcome email (fire-and-forget — don't block the response)
+    const company = await prisma.company.findUnique({
+      where: { id: authResult.companyId },
+      select: { name: true },
+    });
+    const { html, text } = getUserInviteEmail(
+      validated.name,
+      company?.name ?? "your organization",
+      `${APP_URL}/login`
+    );
+    sendEmail({
+      to: validated.email,
+      subject: `You've been invited to ${company?.name ?? "Perform360"}`,
+      html,
+      text,
+    }).catch((err) => console.error("Failed to send invite email:", err));
 
     return NextResponse.json({
       success: true,

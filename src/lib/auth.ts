@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 import EmailProvider from "next-auth/providers/email";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "./prisma";
+import { sendEmail, getMagicLinkEmail } from "./email";
 
 type AppUserRole = "ADMIN" | "HR" | "MANAGER" | "MEMBER";
 
@@ -40,6 +41,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         },
       },
       from: process.env.SMTP_FROM || "noreply@perform360.com",
+      async sendVerificationRequest({ identifier: email, url }) {
+        const { html, text } = getMagicLinkEmail(url);
+        await sendEmail({
+          to: email,
+          subject: "Sign in to Perform360",
+          html,
+          text,
+        });
+      },
     }),
   ],
   pages: {

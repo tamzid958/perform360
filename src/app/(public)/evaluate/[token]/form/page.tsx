@@ -43,6 +43,17 @@ export default function EvaluationFormPage({ params }: { params: { token: string
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
+  // Warn on page leave if answers exist
+  useEffect(() => {
+    function handleBeforeUnload(e: BeforeUnloadEvent) {
+      if (Object.keys(answers).length > 0 && !isSubmitted) {
+        e.preventDefault();
+      }
+    }
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [answers, isSubmitted]);
+
   // Load form data from API
   useEffect(() => {
     async function loadForm() {

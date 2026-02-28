@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminOrHR, isAuthError } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
-import { sendEmail, getEvaluationReminderHtml } from "@/lib/email";
+import { sendEmail, getEvaluationReminderEmail } from "@/lib/email";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { validateCuidParam } from "@/lib/validation";
 
@@ -107,7 +107,7 @@ export async function POST(
         }
 
         const evaluationUrl = `${APP_URL}/evaluate/${assignment.token}`;
-        const html = getEvaluationReminderHtml(
+        const { html, text } = getEvaluationReminderEmail(
           reviewer.name,
           subject.name,
           cycle.name,
@@ -119,6 +119,7 @@ export async function POST(
           to: reviewer.email,
           subject: `Reminder: Evaluation for ${subject.name} — ${cycle.name}`,
           html,
+          text,
         });
       })
     );

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { createOTP, hashOTP } from "@/lib/otp";
-import { sendEmail, getOTPEmailHtml } from "@/lib/email";
+import { sendEmail, getOTPEmail } from "@/lib/email";
 import { OTP_CONFIG } from "@/lib/constants";
 
 type ApiResponse<T> =
@@ -88,10 +88,12 @@ export async function POST(
     });
 
     // Send OTP email
+    const { html, text } = getOTPEmail(otp, reviewer.name);
     await sendEmail({
       to: reviewer.email,
       subject: "Your Perform360 Verification Code",
-      html: getOTPEmailHtml(otp, reviewer.name),
+      html,
+      text,
     });
 
     return NextResponse.json<ApiResponse<{ sent: true; expiresIn: number }>>({
