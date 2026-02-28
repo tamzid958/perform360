@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import {
   Building2,
   Users,
   ExternalLink,
+  Loader2,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -27,94 +28,105 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { Skeleton } from "@/components/ui/skeleton";
+import { formatDate } from "@/lib/utils";
 
 interface Company {
   id: string;
   name: string;
   slug: string;
-  users: number;
-  activeCycles: number;
-  plan: string;
-  status: "active" | "trial";
+  logo: string | null;
   createdAt: string;
+  updatedAt: string;
+  encryptionConfigured: boolean;
+  keyVersion: number;
+  userCount: number;
+  teamCount: number;
+  cycleCount: number;
 }
 
-const companies: Company[] = [
-  {
-    id: "1",
-    name: "Acme Corp",
-    slug: "acme-corp",
-    users: 45,
-    activeCycles: 2,
-    plan: "Enterprise",
-    status: "active",
-    createdAt: "2025-06-15",
-  },
-  {
-    id: "2",
-    name: "TechStart Inc",
-    slug: "techstart",
-    users: 18,
-    activeCycles: 1,
-    plan: "Pro",
-    status: "active",
-    createdAt: "2025-08-22",
-  },
-  {
-    id: "3",
-    name: "Global Services",
-    slug: "global-services",
-    users: 120,
-    activeCycles: 3,
-    plan: "Enterprise",
-    status: "active",
-    createdAt: "2025-03-10",
-  },
-  {
-    id: "4",
-    name: "Design Studio",
-    slug: "design-studio",
-    users: 8,
-    activeCycles: 0,
-    plan: "Starter",
-    status: "trial",
-    createdAt: "2026-02-01",
-  },
-  {
-    id: "5",
-    name: "FinanceHub",
-    slug: "financehub",
-    users: 32,
-    activeCycles: 1,
-    plan: "Pro",
-    status: "active",
-    createdAt: "2025-11-05",
-  },
-  {
-    id: "6",
-    name: "HealthTech Labs",
-    slug: "healthtech",
-    users: 55,
-    activeCycles: 2,
-    plan: "Enterprise",
-    status: "active",
-    createdAt: "2025-04-18",
-  },
-];
-
-function getPlanBadgeVariant(plan: string): "info" | "default" | "outline" {
-  if (plan === "Enterprise") return "info";
-  if (plan === "Pro") return "default";
-  return "outline";
+interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
 }
 
 export default function CompaniesPage() {
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [pagination, setPagination] = useState<Pagination | null>(null);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState("");
 
-  const filteredCompanies = companies.filter((c) =>
-    c.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const fetchCompanies = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({ page: String(page), limit: "20" });
+      if (searchQuery.trim()) params.set("search", searchQuery.trim());
+
+      const res = await fetch(`/api/admin/companies?${params}`);
+      const json = await res.json();
+      if (json.success) {
+        setCompanies(json.data);
+        setPagination(json.pagination);
+      }
+    } catch {
+      // Network error — leave existing data
+    } finally {
+      setLoading(false);
+    }
+  }, [page, searchQuery]);
+
+  useEffect(() => {
+    const timer = setTimeout(fetchCompanies, searchQuery ? 300 : 0);
+    return () => clearTimeout(timer);
+  }, [fetchCompanies, searchQuery]);
+
+  async function handleCreate(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setCreating(true);
+    setCreateError("");
+
+    const form = new FormData(e.currentTarget);
+    const name = form.get("name") as string;
+    const slug = form.get("slug") as string;
+
+    try {
+      const res = await fetch("/api/admin/companies", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, slug: slug || undefined }),
+      });
+      const json = await res.json();
+      if (!json.success) {
+        setCreateError(json.error ?? "Failed to create company");
+        return;
+      }
+      setShowCreateDialog(false);
+      setPage(1);
+      fetchCompanies();
+    } catch {
+      setCreateError("Network error");
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm("Are you sure you want to delete this company? This cannot be undone.")) return;
+
+    const res = await fetch(`/api/admin/companies/${id}`, { method: "DELETE" });
+    const json = await res.json();
+    if (!json.success) {
+      alert(json.error ?? "Failed to delete company");
+      return;
+    }
+    fetchCompanies();
+  }
 
   return (
     <div>
@@ -142,7 +154,10 @@ export default function CompaniesPage() {
           type="text"
           placeholder="Search companies..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={(e) => {
+            setSearchQuery(e.target.value);
+            setPage(1);
+          }}
           className="w-full h-10 pl-9 pr-4 rounded-xl bg-white border border-gray-200 text-[14px] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0071e3]/20 focus:border-[#0071e3] transition-all"
         />
       </div>
@@ -160,13 +175,13 @@ export default function CompaniesPage() {
                   Users
                 </th>
                 <th className="text-left text-[12px] font-medium text-gray-400 uppercase tracking-wider px-4 py-3">
+                  Teams
+                </th>
+                <th className="text-left text-[12px] font-medium text-gray-400 uppercase tracking-wider px-4 py-3">
                   Cycles
                 </th>
                 <th className="text-left text-[12px] font-medium text-gray-400 uppercase tracking-wider px-4 py-3">
-                  Plan
-                </th>
-                <th className="text-left text-[12px] font-medium text-gray-400 uppercase tracking-wider px-4 py-3">
-                  Status
+                  Encryption
                 </th>
                 <th className="text-left text-[12px] font-medium text-gray-400 uppercase tracking-wider px-4 py-3">
                   Created
@@ -175,97 +190,159 @@ export default function CompaniesPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {filteredCompanies.map((company) => (
-                <tr
-                  key={company.id}
-                  className="hover:bg-gray-50/50 transition-colors"
-                >
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center">
-                        <Building2
-                          size={16}
-                          strokeWidth={1.5}
-                          className="text-gray-400"
-                        />
+              {loading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i}>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <Skeleton className="w-9 h-9 rounded-xl" />
+                        <div>
+                          <Skeleton className="h-4 w-28" />
+                          <Skeleton className="h-3 w-20 mt-1" />
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-[14px] font-medium text-gray-900">
-                          {company.name}
-                        </p>
-                        <p className="text-[12px] text-gray-500">
-                          {company.slug}
-                        </p>
-                      </div>
-                    </div>
+                    </td>
+                    <td className="px-4 py-3"><Skeleton className="h-4 w-8" /></td>
+                    <td className="px-4 py-3"><Skeleton className="h-4 w-8" /></td>
+                    <td className="px-4 py-3"><Skeleton className="h-4 w-8" /></td>
+                    <td className="px-4 py-3"><Skeleton className="h-5 w-20 rounded-full" /></td>
+                    <td className="px-4 py-3"><Skeleton className="h-4 w-24" /></td>
+                    <td className="px-4 py-3"><Skeleton className="h-6 w-6" /></td>
+                  </tr>
+                ))
+              ) : companies.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-4 py-8 text-center text-[14px] text-gray-400">
+                    {searchQuery ? "No companies match your search" : "No companies registered yet"}
                   </td>
-                  <td className="px-4 py-3 text-[14px] text-gray-600">
-                    <div className="flex items-center gap-1">
-                      <Users
-                        size={14}
-                        strokeWidth={1.5}
-                        className="text-gray-400"
-                      />
-                      {company.users}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-[14px] text-gray-600">
-                    {company.activeCycles}
-                  </td>
-                  <td className="px-4 py-3">
-                    <Badge variant={getPlanBadgeVariant(company.plan)}>
-                      {company.plan}
-                    </Badge>
-                  </td>
-                  <td className="px-4 py-3">
-                    <Badge
-                      variant={
-                        company.status === "active" ? "success" : "warning"
-                      }
-                    >
-                      {company.status === "active" ? "Active" : "Trial"}
-                    </Badge>
-                  </td>
-                  <td className="px-4 py-3 text-[13px] text-gray-500">
-                    {new Date(company.createdAt).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
-                          <MoreHorizontal
+                </tr>
+              ) : (
+                companies.map((company) => (
+                  <tr
+                    key={company.id}
+                    className="hover:bg-gray-50/50 transition-colors"
+                  >
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center">
+                          <Building2
                             size={16}
                             strokeWidth={1.5}
                             className="text-gray-400"
                           />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
-                          <ExternalLink
-                            size={14}
-                            strokeWidth={1.5}
-                            className="mr-2"
-                          />
-                          Impersonate Admin
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>Edit Details</DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-red-600">
-                          Suspend
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </td>
-                </tr>
-              ))}
+                        </div>
+                        <div>
+                          <p className="text-[14px] font-medium text-gray-900">
+                            {company.name}
+                          </p>
+                          <p className="text-[12px] text-gray-500">
+                            {company.slug}
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-[14px] text-gray-600">
+                      <div className="flex items-center gap-1">
+                        <Users
+                          size={14}
+                          strokeWidth={1.5}
+                          className="text-gray-400"
+                        />
+                        {company.userCount}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-[14px] text-gray-600">
+                      {company.teamCount}
+                    </td>
+                    <td className="px-4 py-3 text-[14px] text-gray-600">
+                      {company.cycleCount}
+                    </td>
+                    <td className="px-4 py-3">
+                      <Badge variant={company.encryptionConfigured ? "success" : "warning"}>
+                        {company.encryptionConfigured ? "Configured" : "Pending"}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-3 text-[13px] text-gray-500">
+                      {formatDate(company.createdAt)}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+                            <MoreHorizontal
+                              size={16}
+                              strokeWidth={1.5}
+                              className="text-gray-400"
+                            />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={async () => {
+                              const res = await fetch(`/api/admin/impersonate/${company.id}`, {
+                                method: "POST",
+                              });
+                              const json = await res.json();
+                              if (json.success) {
+                                window.location.href = "/";
+                              } else {
+                                alert(json.error ?? "Failed to impersonate");
+                              }
+                            }}
+                          >
+                            <ExternalLink
+                              size={14}
+                              strokeWidth={1.5}
+                              className="mr-2"
+                            />
+                            Impersonate Admin
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-red-600"
+                            onClick={() => handleDelete(company.id)}
+                          >
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        {pagination && pagination.totalPages > 1 && (
+          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
+            <p className="text-[13px] text-gray-400">
+              Showing {companies.length} of {pagination.total} companies
+            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={page <= 1}
+                onClick={() => setPage(page - 1)}
+              >
+                Previous
+              </Button>
+              <span className="text-[13px] text-gray-500">
+                Page {page} of {pagination.totalPages}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={page >= pagination.totalPages}
+                onClick={() => setPage(page + 1)}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
       </Card>
 
       {/* Create Dialog */}
@@ -277,34 +354,28 @@ export default function CompaniesPage() {
               Manually onboard a new tenant organization
             </DialogDescription>
           </DialogHeader>
-          <form className="space-y-4 mt-4">
+          <form className="space-y-4 mt-4" onSubmit={handleCreate}>
             <Input
               id="company-name"
+              name="name"
               label="Company Name"
               placeholder="Acme Corp"
               required
             />
             <Input
               id="company-slug"
+              name="slug"
               label="URL Slug"
-              placeholder="acme-corp"
-              required
+              placeholder="acme-corp (auto-generated if empty)"
             />
-            <Input
-              id="admin-email"
-              label="Admin Email"
-              type="email"
-              placeholder="admin@company.com"
-              required
-            />
-            <Input
-              id="admin-name"
-              label="Admin Name"
-              placeholder="John Doe"
-              required
-            />
+            {createError && (
+              <p className="text-[13px] text-red-600">{createError}</p>
+            )}
             <div className="flex gap-3 pt-2">
-              <Button type="button">Create Company</Button>
+              <Button type="submit" disabled={creating}>
+                {creating && <Loader2 size={16} className="mr-1.5 animate-spin" />}
+                Create Company
+              </Button>
               <Button
                 type="button"
                 variant="ghost"
