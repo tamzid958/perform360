@@ -18,10 +18,9 @@ interface GeneratedAssignment {
  * if they share teams with different templates.
  *
  * Rules:
- *  - Manager evaluates each Direct Report (relationship: "manager")
- *  - Each Direct Report evaluates their Manager(s) (relationship: "direct_report")
- *  - All non-manager, non-direct-report members (MEMBER role) evaluate each other as peers
- *  - Peers also evaluate managers and direct reports, and vice versa
+ *  - Manager evaluates each Member (relationship: "manager")
+ *  - Each Member evaluates their Manager(s) (relationship: "direct_report")
+ *  - Members evaluate each other as peers (relationship: "peer")
  *  - Self-evaluation for every unique member (one per template)
  *  - Deduplication across teams by (subjectId, reviewerId, templateId) key
  */
@@ -62,35 +61,31 @@ export function generateAssignmentsFromTeams(
     if (!templateId) continue;
 
     const managers = team.members.filter((m) => m.role === "MANAGER");
-    const directReports = team.members.filter((m) => m.role === "DIRECT_REPORT");
+    const members = team.members.filter((m) => m.role === "MEMBER");
 
     // Track all users for self-evaluations
     for (const m of team.members) {
       selfEvalPairs.add(`${m.userId}:${templateId}`);
     }
 
-    // Manager evaluates each Direct Report
+    // Manager evaluates each Member (downward)
     for (const mgr of managers) {
-      for (const dr of directReports) {
-        addAssignment(dr.userId, mgr.userId, "manager", templateId);
+      for (const member of members) {
+        addAssignment(member.userId, mgr.userId, "manager", templateId);
       }
     }
 
-    // Direct Report evaluates each Manager
-    for (const dr of directReports) {
+    // Member evaluates each Manager (upward)
+    for (const member of members) {
       for (const mgr of managers) {
-        addAssignment(mgr.userId, dr.userId, "direct_report", templateId);
+        addAssignment(mgr.userId, member.userId, "direct_report", templateId);
       }
     }
 
-    // Peer evaluations: all members within the team evaluate each other
-    const allMembers = team.members;
-    for (const reviewer of allMembers) {
-      for (const subject of allMembers) {
+    // Peer evaluations: Members evaluate each other
+    for (const reviewer of members) {
+      for (const subject of members) {
         if (reviewer.userId === subject.userId) continue;
-        const key = `${subject.userId}:${reviewer.userId}:${templateId}`;
-        if (seen.has(key)) continue;
-
         addAssignment(subject.userId, reviewer.userId, "peer", templateId);
       }
     }
@@ -107,7 +102,7 @@ export function generateAssignmentsFromTeams(
 
 interface TeamMemberData {
   userId: string;
-  role: "MANAGER" | "DIRECT_REPORT" | "MEMBER";
+  role: "MANAGER" | "MEMBER";
 }
 
 interface TeamWithMembers {
