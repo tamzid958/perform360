@@ -1,3 +1,13 @@
+export interface TeamBreakdown {
+  teamId: string;
+  teamName: string;
+  overallScore: number;
+  categoryScores: CategoryScore[];
+  scoresByRelationship: RelationshipScores;
+  questionDetails: QuestionDetail[];
+  textFeedback: TextFeedbackGroup[];
+}
+
 export interface IndividualReport {
   subjectId: string;
   subjectName: string;
@@ -8,6 +18,7 @@ export interface IndividualReport {
   scoresByRelationship: RelationshipScores;
   questionDetails: QuestionDetail[];
   textFeedback: TextFeedbackGroup[];
+  teamBreakdowns: TeamBreakdown[];
 }
 
 export interface CategoryScore {

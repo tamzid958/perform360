@@ -39,6 +39,7 @@ interface DecryptedResponse {
   reviewerId: string;
   subjectId: string;
   relationship: string;
+  templateId: string;
   answers: DecryptedAnswers;
   submittedAt: Date | null;
 }
@@ -73,7 +74,7 @@ export async function getDecryptedResponsesForSubject(
       assignment: { cycleId },
     },
     include: {
-      assignment: { select: { relationship: true } },
+      assignment: { select: { relationship: true, templateId: true } },
     },
   });
 
@@ -81,6 +82,7 @@ export async function getDecryptedResponsesForSubject(
     reviewerId: r.reviewerId,
     subjectId: r.subjectId,
     relationship: r.assignment.relationship,
+    templateId: r.assignment.templateId,
     answers: decryptResponse(r.answersEncrypted, r.answersIv, r.answersTag, dataKey),
     submittedAt: r.submittedAt,
   }));
@@ -327,14 +329,28 @@ export async function buildIndividualReport(
   });
   const templateIds = Array.from(new Set(subjectAssignments.map((a) => a.templateId)));
 
-  const templates = await prisma.evaluationTemplate.findMany({
-    where: { id: { in: templateIds } },
-    select: { sections: true },
-  });
+  const [templates, cycleTeams] = await Promise.all([
+    prisma.evaluationTemplate.findMany({
+      where: { id: { in: templateIds } },
+      select: { id: true, sections: true },
+    }),
+    prisma.cycleTeam.findMany({
+      where: { cycleId },
+      include: { team: { select: { id: true, name: true } } },
+    }),
+  ]);
 
   if (templates.length === 0) {
     throw new Error("No templates found for subject's assignments");
   }
+
+  // Build lookup maps for team resolution
+  const templateTeamMap = new Map(
+    cycleTeams.map((ct) => [ct.templateId, { teamId: ct.team.id, teamName: ct.team.name }])
+  );
+  const templateSectionsMap = new Map(
+    templates.map((t) => [t.id, t.sections as unknown as TemplateSection[]])
+  );
 
   // Merge sections from all templates the subject was evaluated with
   const sections = templates.flatMap(
@@ -342,6 +358,37 @@ export async function buildIndividualReport(
   );
 
   const responses = await getDecryptedResponsesForSubject(cycleId, subjectId, dataKey);
+
+  // Build per-team breakdowns
+  const responsesByTeam = new Map<string, { teamId: string; teamName: string; responses: DecryptedResponse[] }>();
+  for (const resp of responses) {
+    const team = templateTeamMap.get(resp.templateId);
+    if (!team) continue;
+    const existing = responsesByTeam.get(team.teamId);
+    if (existing) {
+      existing.responses.push(resp);
+    } else {
+      responsesByTeam.set(team.teamId, { ...team, responses: [resp] });
+    }
+  }
+
+  const teamBreakdowns = Array.from(responsesByTeam.values()).map(({ teamId, teamName, responses: teamResponses }) => {
+    // Find which templateId this team uses in this cycle
+    const teamCycleTeam = cycleTeams.find((ct) => ct.team.id === teamId);
+    const teamSections = teamCycleTeam
+      ? (templateSectionsMap.get(teamCycleTeam.templateId) ?? sections)
+      : sections;
+
+    return {
+      teamId,
+      teamName,
+      overallScore: calculateOverallScore(teamResponses, teamSections),
+      categoryScores: buildCategoryScores(teamResponses, teamSections),
+      scoresByRelationship: buildRelationshipScores(teamResponses, teamSections),
+      questionDetails: buildQuestionDetails(teamResponses, teamSections),
+      textFeedback: buildTextFeedback(teamResponses, teamSections),
+    };
+  });
 
   return {
     subjectId,
@@ -353,6 +400,7 @@ export async function buildIndividualReport(
     scoresByRelationship: buildRelationshipScores(responses, sections),
     questionDetails: buildQuestionDetails(responses, sections),
     textFeedback: buildTextFeedback(responses, sections),
+    teamBreakdowns,
   };
 }
 

@@ -17,13 +17,15 @@ import { Download, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { RELATIONSHIP_LABELS } from "@/lib/constants";
-import type { IndividualReport } from "@/types/report";
+import type { IndividualReport, TeamBreakdown } from "@/types/report";
+import { Users } from "lucide-react";
 
 export default function IndividualReportPage() {
   const { cycleId, userId } = useParams<{ cycleId: string; userId: string }>();
   const [report, setReport] = useState<IndividualReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedTeam, setSelectedTeam] = useState("all");
   const { locked, handleApiResponse, handleUnlocked } = useEncryptionUnlock();
 
   const fetchReport = useCallback(async () => {
@@ -96,33 +98,65 @@ export default function IndividualReportPage() {
     );
   }
 
-  return <ReportContent report={report} cycleId={cycleId} onExport={handleExport} />;
+  // Derive display data based on selected team
+  const displayData: ReportDisplayData = selectedTeam === "all"
+    ? report
+    : report.teamBreakdowns.find((t) => t.teamId === selectedTeam) ?? report;
+
+  const showTeamSelector = report.teamBreakdowns.length > 1;
+
+  return (
+    <ReportContent
+      report={report}
+      displayData={displayData}
+      cycleId={cycleId}
+      onExport={handleExport}
+      selectedTeam={selectedTeam}
+      onSelectTeam={setSelectedTeam}
+      showTeamSelector={showTeamSelector}
+    />
+  );
 }
+
+// ─── Shared display data shape ───
+
+type ReportDisplayData = Pick<
+  IndividualReport | TeamBreakdown,
+  "overallScore" | "categoryScores" | "scoresByRelationship" | "questionDetails" | "textFeedback"
+>;
 
 // ─── Main Report Content ───
 
 function ReportContent({
   report,
+  displayData,
   cycleId,
   onExport,
+  selectedTeam,
+  onSelectTeam,
+  showTeamSelector,
 }: {
   report: IndividualReport;
+  displayData: ReportDisplayData;
   cycleId: string;
   onExport: () => void;
+  selectedTeam: string;
+  onSelectTeam: (team: string) => void;
+  showTeamSelector: boolean;
 }) {
-  const relScores = report.scoresByRelationship;
+  const relScores = displayData.scoresByRelationship;
 
   const scoredQuestions = useMemo(
-    () => report.questionDetails.filter((q) => q.averageScore !== null),
-    [report.questionDetails]
+    () => displayData.questionDetails.filter((q) => q.averageScore !== null),
+    [displayData.questionDetails]
   );
 
   const questionsWithDistribution = useMemo(
     () =>
-      report.questionDetails.filter(
+      displayData.questionDetails.filter(
         (q) => Object.keys(q.distribution).length > 0
       ),
-    [report.questionDetails]
+    [displayData.questionDetails]
   );
 
   const totalResponses = useMemo(
@@ -152,19 +186,51 @@ function ReportContent({
         </Button>
       </PageHeader>
 
+      {/* ─── Team Selector ─── */}
+      {showTeamSelector && (
+        <div className="flex items-center gap-2 mb-6">
+          <Users size={16} strokeWidth={1.5} className="text-gray-400" />
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => onSelectTeam("all")}
+              className={`px-3 py-1.5 rounded-full text-[13px] font-medium transition-all duration-200 ${
+                selectedTeam === "all"
+                  ? "bg-gray-900 text-white"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              All Teams
+            </button>
+            {report.teamBreakdowns.map((tb) => (
+              <button
+                key={tb.teamId}
+                onClick={() => onSelectTeam(tb.teamId)}
+                className={`px-3 py-1.5 rounded-full text-[13px] font-medium transition-all duration-200 ${
+                  selectedTeam === tb.teamId
+                    ? "bg-gray-900 text-white"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                {tb.teamName}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ─── Hero: Score Gauge + Relationship Bars ─── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <Card padding="md">
           <CardHeader>
             <CardTitle>Overall Score</CardTitle>
           </CardHeader>
-          <ScoreGauge score={report.overallScore} />
+          <ScoreGauge score={displayData.overallScore} />
           <div className="flex items-center justify-center gap-4 mt-1">
             <span className="text-[12px] text-gray-400">
               {totalResponses} reviewer{totalResponses !== 1 ? "s" : ""}
             </span>
             <span className="text-[12px] text-gray-400">
-              {report.categoryScores.length} competencies
+              {displayData.categoryScores.length} competencies
             </span>
           </div>
         </Card>
@@ -187,13 +253,13 @@ function ReportContent({
           <CardHeader>
             <CardTitle>Competency Radar</CardTitle>
           </CardHeader>
-          <CompetencyRadarChart categories={report.categoryScores} />
+          <CompetencyRadarChart categories={displayData.categoryScores} />
         </Card>
         <Card>
           <CardHeader>
             <CardTitle>Competency Scores</CardTitle>
           </CardHeader>
-          <ScoreBreakdown categories={report.categoryScores} />
+          <ScoreBreakdown categories={displayData.categoryScores} />
         </Card>
       </div>
 
@@ -244,13 +310,13 @@ function ReportContent({
             Open Feedback
           </CardTitle>
         </CardHeader>
-        {report.textFeedback.length === 0 ? (
+        {displayData.textFeedback.length === 0 ? (
           <p className="text-center py-8 text-callout text-gray-400">
             No open-text feedback submitted.
           </p>
         ) : (
           <div className="space-y-4">
-            {report.textFeedback.map((group, i) => (
+            {displayData.textFeedback.map((group, i) => (
               <div key={`${group.questionId}-${group.relationship}-${i}`}>
                 <div className="flex items-center gap-2 mb-2">
                   <Badge variant="outline">
