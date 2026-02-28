@@ -377,7 +377,7 @@ async function main() {
       members: {
         create: [
           { userId: emily.id, role: "MANAGER" },
-          { userId: james.id, role: "DIRECT_REPORT" },
+          { userId: james.id, role: "MEMBER" },
           { userId: lisa.id, role: "MEMBER" },
         ],
       },
@@ -406,7 +406,7 @@ async function main() {
       members: {
         create: [
           { userId: tom.id, role: "MANAGER" },
-          { userId: anna.id, role: "DIRECT_REPORT" },
+          { userId: anna.id, role: "MEMBER" },
         ],
       },
     },
@@ -505,7 +505,7 @@ async function main() {
     { subjectId: emily.id, reviewerId: james.id, relationship: "direct_report" },
     { subjectId: lisa.id, reviewerId: emily.id, relationship: "manager" },
     { subjectId: james.id, reviewerId: lisa.id, relationship: "peer" },
-    { subjectId: emily.id, reviewerId: lisa.id, relationship: "peer" },
+    { subjectId: emily.id, reviewerId: lisa.id, relationship: "direct_report" },
     { subjectId: lisa.id, reviewerId: james.id, relationship: "peer" },
     { subjectId: james.id, reviewerId: james.id, relationship: "self" },
     { subjectId: emily.id, reviewerId: emily.id, relationship: "self" },
@@ -559,7 +559,7 @@ async function main() {
     { subjectId: emily.id, reviewerId: james.id, relationship: "direct_report", status: "IN_PROGRESS" as const },
     { subjectId: lisa.id, reviewerId: emily.id, relationship: "manager", status: "SUBMITTED" as const },
     { subjectId: james.id, reviewerId: lisa.id, relationship: "peer", status: "PENDING" as const },
-    { subjectId: emily.id, reviewerId: lisa.id, relationship: "peer", status: "PENDING" as const },
+    { subjectId: emily.id, reviewerId: lisa.id, relationship: "direct_report", status: "PENDING" as const },
     { subjectId: lisa.id, reviewerId: james.id, relationship: "peer", status: "PENDING" as const },
     { subjectId: james.id, reviewerId: james.id, relationship: "self", status: "PENDING" as const },
     { subjectId: emily.id, reviewerId: emily.id, relationship: "self", status: "SUBMITTED" as const },
