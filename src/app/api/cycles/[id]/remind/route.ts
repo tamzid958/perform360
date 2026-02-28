@@ -1,18 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminOrHR, isAuthError } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
-import { sendEmail, getEvaluationReminderEmail } from "@/lib/email";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { validateCuidParam } from "@/lib/validation";
-
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-
-const EMAIL_BATCH_SIZE = 10;
-const EMAIL_BATCH_DELAY_MS = 500;
-
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+import { enqueue } from "@/lib/queue";
+import { JOB_TYPES } from "@/types/job";
 
 export async function POST(
   request: NextRequest,
@@ -32,7 +24,7 @@ export async function POST(
     const body = await request.json();
     assignmentId = body.assignmentId;
   } catch {
-    // No body or invalid JSON — send to all (existing behavior)
+    // No body or invalid JSON — send to all
   }
 
   if (assignmentId) {
@@ -66,19 +58,16 @@ export async function POST(
     );
   }
 
-  // 2. Query pending/in-progress assignments with reviewer info
-  const pendingAssignments = await prisma.evaluationAssignment.findMany({
+  // 2. Check pending assignments exist (for count in response)
+  const pendingCount = await prisma.evaluationAssignment.count({
     where: {
       cycleId: params.id,
       status: { in: ["PENDING", "IN_PROGRESS"] },
       ...(assignmentId ? { id: assignmentId } : {}),
     },
-    include: {
-      cycle: { select: { name: true, endDate: true } },
-    },
   });
 
-  if (pendingAssignments.length === 0) {
+  if (pendingCount === 0) {
     return NextResponse.json({
       success: true,
       data: {
@@ -90,79 +79,23 @@ export async function POST(
     });
   }
 
-  // 3. Fetch reviewer and subject user info
-  const userIds = Array.from(
-    new Set(
-      pendingAssignments.flatMap((a) => [a.reviewerId, a.subjectId])
-    )
+  // 3. Enqueue reminder job (processed by worker)
+  const jobId = await enqueue(
+    JOB_TYPES.CYCLE_REMIND,
+    {
+      cycleId: params.id,
+      companyId: authResult.companyId,
+      assignmentId,
+    },
+    { priority: 3 }
   );
-
-  const users = await prisma.user.findMany({
-    where: { id: { in: userIds } },
-    select: { id: true, email: true, name: true },
-  });
-
-  const userMap = new Map(users.map((u) => [u.id, u]));
-
-  // 4. Send reminder emails in batches
-  const deadline = cycle.endDate.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-
-  let emailsSent = 0;
-  let emailsFailed = 0;
-
-  for (let i = 0; i < pendingAssignments.length; i += EMAIL_BATCH_SIZE) {
-    const batch = pendingAssignments.slice(i, i + EMAIL_BATCH_SIZE);
-
-    const results = await Promise.allSettled(
-      batch.map((assignment) => {
-        const reviewer = userMap.get(assignment.reviewerId);
-        const subject = userMap.get(assignment.subjectId);
-
-        if (!reviewer || !subject) {
-          return Promise.reject(new Error("User not found"));
-        }
-
-        const evaluationUrl = `${APP_URL}/evaluate/${assignment.token}`;
-        const { html, text } = getEvaluationReminderEmail(
-          reviewer.name,
-          subject.name,
-          cycle.name,
-          deadline,
-          evaluationUrl
-        );
-
-        return sendEmail({
-          to: reviewer.email,
-          subject: `Reminder: Evaluation for ${subject.name} — ${cycle.name}`,
-          html,
-          text,
-        });
-      })
-    );
-
-    for (const result of results) {
-      if (result.status === "fulfilled") {
-        emailsSent++;
-      } else {
-        emailsFailed++;
-      }
-    }
-
-    if (i + EMAIL_BATCH_SIZE < pendingAssignments.length) {
-      await sleep(EMAIL_BATCH_DELAY_MS);
-    }
-  }
 
   return NextResponse.json({
     success: true,
     data: {
-      sent: emailsSent,
-      failed: emailsFailed,
-      totalPending: pendingAssignments.length,
+      totalPending: pendingCount,
+      jobId,
+      message: "Reminders queued for sending",
     },
   });
 }

@@ -7,6 +7,7 @@ type AuditAction =
   | "user_invite"
   | "user_deactivate"
   | "cycle_activate"
+  | "cycle_remind"
   | "cycle_close"
   | "encryption_setup"
   | "encryption_passphrase_change"

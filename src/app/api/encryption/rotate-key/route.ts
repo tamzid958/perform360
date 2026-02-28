@@ -7,17 +7,15 @@ import {
   generateDataKey,
   decryptDataKey,
   encryptDataKey,
-  encrypt,
-  decrypt,
 } from "@/lib/encryption";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { writeAuditLog } from "@/lib/audit";
+import { enqueue } from "@/lib/queue";
+import { JOB_TYPES } from "@/types/job";
 
 const rotateSchema = z.object({
   passphrase: z.string().min(1, "Passphrase is required"),
 });
-
-const RE_ENCRYPT_BATCH_SIZE = 100;
 
 export async function POST(request: NextRequest) {
   const rl = applyRateLimit(request);
@@ -75,20 +73,15 @@ export async function POST(request: NextRequest) {
     const newEncryptedDataKey = encryptDataKey(newDataKey, masterKey);
     const newKeyVersion = company.keyVersion + 1;
 
-    // Re-encrypt recovery codes' data key copies with new data key info
     // Recovery codes store an independently encrypted copy of the data key.
-    // We need to re-encrypt the NEW data key under each recovery code's derived key.
+    // Since we only have hashes (not plain codes), we can't re-encrypt under the new key.
+    // We must delete them and require regeneration after key rotation.
     const unusedCodes = await prisma.recoveryCode.findMany({
       where: { companyId: authResult.companyId, usedAt: null },
     });
-
-    // For each recovery code, we can't re-derive the code's key (we only have hashes).
-    // However, each recovery code's `encryptedDataKey` was encrypted with scrypt(code, salt).
-    // Since we don't have the plain codes, we can't re-encrypt under the new data key.
-    // We must delete recovery codes and require regeneration after key rotation.
     const recoveryCodesInvalidated = unusedCodes.length > 0;
 
-    // Update company key + version, then re-encrypt all responses in batches
+    // Update company key + version and invalidate recovery codes (sync — fast ops)
     await prisma.$transaction(async (tx) => {
       await tx.company.update({
         where: { id: authResult.companyId },
@@ -98,7 +91,6 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // Invalidate recovery codes — they encrypt the old data key
       if (recoveryCodesInvalidated) {
         await tx.recoveryCode.deleteMany({
           where: { companyId: authResult.companyId },
@@ -106,65 +98,18 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    // Re-encrypt evaluation responses in batches outside the transaction
-    // to avoid long-held locks on large datasets
-    let reEncryptedCount = 0;
-    let cursor: string | undefined;
-
-    for (;;) {
-      const responses = await prisma.evaluationResponse.findMany({
-        where: {
-          assignment: {
-            cycle: { companyId: authResult.companyId },
-          },
-          keyVersion: { lt: newKeyVersion },
-        },
-        select: {
-          id: true,
-          answersEncrypted: true,
-          answersIv: true,
-          answersTag: true,
-          keyVersion: true,
-        },
-        take: RE_ENCRYPT_BATCH_SIZE,
-        ...(cursor
-          ? { skip: 1, cursor: { id: cursor } }
-          : {}),
-        orderBy: { id: "asc" },
-      });
-
-      if (responses.length === 0) break;
-
-      const updates = responses.map((response) => {
-        // Decrypt with old data key
-        const plaintext = decrypt(
-          response.answersEncrypted,
-          response.answersIv,
-          response.answersTag,
-          oldDataKey
-        );
-
-        // Re-encrypt with new data key
-        const { encrypted, iv, tag } = encrypt(plaintext, newDataKey);
-
-        return prisma.evaluationResponse.update({
-          where: { id: response.id },
-          data: {
-            answersEncrypted: encrypted,
-            answersIv: iv,
-            answersTag: tag,
-            keyVersion: newKeyVersion,
-          },
-        });
-      });
-
-      await prisma.$transaction(updates);
-      reEncryptedCount += responses.length;
-      cursor = responses[responses.length - 1].id;
-
-      // If we got fewer than batch size, we're done
-      if (responses.length < RE_ENCRYPT_BATCH_SIZE) break;
-    }
+    // Enqueue background re-encryption job (passes derived keys, not passphrase)
+    const jobId = await enqueue(
+      JOB_TYPES.ENCRYPTION_ROTATE_KEY,
+      {
+        companyId: authResult.companyId,
+        userId: authResult.userId,
+        masterKeyHex: masterKey.toString("hex"),
+        oldDataKeyHex: oldDataKey.toString("hex"),
+        newKeyVersion,
+      },
+      { maxAttempts: 1 }
+    );
 
     await writeAuditLog({
       companyId: authResult.companyId,
@@ -173,8 +118,8 @@ export async function POST(request: NextRequest) {
       metadata: {
         oldKeyVersion: company.keyVersion,
         newKeyVersion,
-        reEncryptedResponses: reEncryptedCount,
         recoveryCodesInvalidated,
+        jobId,
       },
     });
 
@@ -182,8 +127,9 @@ export async function POST(request: NextRequest) {
       success: true,
       data: {
         newKeyVersion,
-        reEncryptedResponses: reEncryptedCount,
         recoveryCodesInvalidated,
+        jobId,
+        message: "Key rotation started. Re-encryption in progress.",
       },
     });
   } catch (error) {

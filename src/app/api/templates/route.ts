@@ -39,10 +39,18 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const { page, limit, search } = parsePaginationParams(searchParams, 12);
+  const scope = searchParams.get("scope"); // "global" | "company" | null (all)
+
+  const scopeFilter: Prisma.EvaluationTemplateWhereInput =
+    scope === "global"
+      ? { isGlobal: true }
+      : scope === "company"
+        ? { companyId: authResult.companyId, isGlobal: false }
+        : { OR: [{ companyId: authResult.companyId }, { isGlobal: true }] };
 
   const where: Prisma.EvaluationTemplateWhereInput = {
     AND: [
-      { OR: [{ companyId: authResult.companyId }, { isGlobal: true }] },
+      scopeFilter,
       ...(search
         ? [
             {
