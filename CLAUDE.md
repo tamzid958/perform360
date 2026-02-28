@@ -134,7 +134,7 @@ model TeamMember {
   id        String         @id @default(cuid())
   userId    String
   teamId    String
-  role      TeamMemberRole // MANAGER | DIRECT_REPORT | PEER
+  role      TeamMemberRole // MANAGER | MEMBER
   user      User           @relation(fields: [userId], references: [id])
   team      Team           @relation(fields: [teamId], references: [id])
 
@@ -142,9 +142,8 @@ model TeamMember {
 }
 
 enum TeamMemberRole {
-  MANAGER       // Multiple managers per team allowed
-  DIRECT_REPORT // Multiple direct reports per team allowed
-  PEER
+  MANAGER // Multiple managers per team allowed
+  MEMBER  // Multiple members per team allowed
 }
 
 // ─── EVALUATION CYCLES ───
@@ -590,11 +589,14 @@ Lifecycle: `DRAFT → ACTIVE → CLOSED → ARCHIVED`
 ### 3. Teams
 
 - Each team has a name, description, and members
-- Members have one of three roles: **Manager**, **Direct Report**, or **Peer**
+- Members have one of two roles: **Manager** or **Member**
 - **Multiple managers per team** are supported (co-leads, matrix reporting)
-- **Multiple direct reports per team** are supported
-- Team structure drives automatic assignment generation in cycles
-- Team members list shows role badges with clear visual hierarchy
+- **Multiple members per team** are supported
+- Team structure drives automatic assignment generation in cycles:
+  - **Downward**: Manager evaluates each Member
+  - **Upward**: Each Member evaluates their Manager(s)
+  - **Lateral**: Members evaluate each other as peers
+- Team cards and detail pages show evaluation direction badges with counts
 
 ### 4. Evaluation Templates (Form Builder)
 
