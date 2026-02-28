@@ -5,11 +5,17 @@ import { prisma } from "@/lib/prisma";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { validateCuidParam } from "@/lib/validation";
 
+const teamTemplateSchema = z.object({
+  teamId: z.string().min(1),
+  templateId: z.string().min(1),
+});
+
 const updateCycleSchema = z.object({
   name: z.string().min(1).optional(),
   status: z.enum(["DRAFT", "ACTIVE", "CLOSED", "ARCHIVED"]).optional(),
   startDate: z.string().refine((d) => !isNaN(Date.parse(d)), "Invalid start date").optional(),
   endDate: z.string().refine((d) => !isNaN(Date.parse(d)), "Invalid end date").optional(),
+  teamTemplates: z.array(teamTemplateSchema).min(1).optional(),
 });
 
 /** Valid cycle status transitions */
@@ -45,6 +51,7 @@ export async function GET(
       assignments: {
         select: {
           id: true,
+          templateId: true,
           subjectId: true,
           reviewerId: true,
           relationship: true,
@@ -54,6 +61,12 @@ export async function GET(
       },
       _count: {
         select: { assignments: true },
+      },
+      cycleTeams: {
+        include: {
+          team: { select: { id: true, name: true } },
+          template: { select: { id: true, name: true } },
+        },
       },
     },
   });
@@ -100,17 +113,18 @@ export async function GET(
     ? Math.round((submittedAssignments / totalAssignments) * 100)
     : 0;
 
-  // Fetch template name
-  const template = await prisma.evaluationTemplate.findUnique({
-    where: { id: cycle.templateId },
-    select: { name: true },
-  });
+  const teamTemplates = cycle.cycleTeams.map((ct) => ({
+    teamId: ct.team.id,
+    teamName: ct.team.name,
+    templateId: ct.template.id,
+    templateName: ct.template.name,
+  }));
 
   return NextResponse.json({
     success: true,
     data: {
       ...cycle,
-      templateName: template?.name ?? "Unknown Template",
+      teamTemplates,
       stats: {
         totalAssignments,
         submittedAssignments,
@@ -164,20 +178,94 @@ export async function PATCH(
       }
     }
 
+    // Validate teamTemplates can only be changed in DRAFT
+    if (validated.teamTemplates && existing.status !== "DRAFT") {
+      return NextResponse.json({
+        success: false,
+        error: "Team-template assignments can only be changed while cycle is in DRAFT",
+        code: "INVALID_STATUS",
+      }, { status: 400 });
+    }
+
+    // Validate team-template pairs if provided
+    if (validated.teamTemplates) {
+      const teamIds = validated.teamTemplates.map((tt) => tt.teamId);
+      if (new Set(teamIds).size !== teamIds.length) {
+        return NextResponse.json({
+          success: false,
+          error: "Duplicate teams are not allowed",
+          code: "VALIDATION_ERROR",
+        }, { status: 400 });
+      }
+
+      const teams = await prisma.team.findMany({
+        where: { id: { in: teamIds }, companyId: authResult.companyId },
+        select: { id: true },
+      });
+      if (teams.length !== teamIds.length) {
+        return NextResponse.json({
+          success: false,
+          error: "One or more teams not found",
+          code: "NOT_FOUND",
+        }, { status: 404 });
+      }
+
+      const templateIds = Array.from(new Set(validated.teamTemplates.map((tt) => tt.templateId)));
+      const templates = await prisma.evaluationTemplate.findMany({
+        where: {
+          id: { in: templateIds },
+          OR: [
+            { companyId: authResult.companyId },
+            { isGlobal: true },
+          ],
+        },
+        select: { id: true },
+      });
+      if (templates.length !== templateIds.length) {
+        return NextResponse.json({
+          success: false,
+          error: "One or more templates not found",
+          code: "NOT_FOUND",
+        }, { status: 404 });
+      }
+    }
+
     const updateData: Record<string, unknown> = {};
     if (validated.name) updateData.name = validated.name;
     if (validated.status) updateData.status = validated.status;
     if (validated.startDate) updateData.startDate = new Date(validated.startDate);
     if (validated.endDate) updateData.endDate = new Date(validated.endDate);
 
-    const cycle = await prisma.evaluationCycle.update({
-      where: { id: params.id },
-      data: updateData,
-      include: {
-        _count: {
-          select: { assignments: true },
+    const cycle = await prisma.$transaction(async (tx) => {
+      const updated = await tx.evaluationCycle.update({
+        where: { id: params.id },
+        data: updateData,
+      });
+
+      // Replace CycleTeam entries if teamTemplates provided
+      if (validated.teamTemplates) {
+        await tx.cycleTeam.deleteMany({ where: { cycleId: params.id } });
+        await tx.cycleTeam.createMany({
+          data: validated.teamTemplates.map((tt) => ({
+            cycleId: params.id,
+            teamId: tt.teamId,
+            templateId: tt.templateId,
+          })),
+        });
+      }
+
+      return tx.evaluationCycle.findUniqueOrThrow({
+        where: { id: updated.id },
+        include: {
+          _count: { select: { assignments: true } },
+          cycleTeams: {
+            include: {
+              team: { select: { id: true, name: true } },
+              template: { select: { id: true, name: true } },
+            },
+          },
         },
-      },
+      });
     });
 
     return NextResponse.json({
@@ -236,6 +324,9 @@ export async function DELETE(
 
   await prisma.$transaction([
     prisma.evaluationAssignment.deleteMany({
+      where: { cycleId: params.id },
+    }),
+    prisma.cycleTeam.deleteMany({
       where: { cycleId: params.id },
     }),
     prisma.evaluationCycle.delete({

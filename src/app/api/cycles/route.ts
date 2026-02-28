@@ -4,11 +4,16 @@ import { requireAuth, requireAdminOrHR, isAuthError } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 import { applyRateLimit } from "@/lib/rate-limit";
 
+const teamTemplateSchema = z.object({
+  teamId: z.string().min(1, "Team ID is required"),
+  templateId: z.string().min(1, "Template ID is required"),
+});
+
 const createCycleSchema = z.object({
   name: z.string().min(1, "Cycle name is required"),
-  templateId: z.string().min(1, "Template is required"),
   startDate: z.string().refine((d) => !isNaN(Date.parse(d)), "Invalid start date"),
   endDate: z.string().refine((d) => !isNaN(Date.parse(d)), "Invalid end date"),
+  teamTemplates: z.array(teamTemplateSchema).min(1, "At least one team-template pair is required"),
 });
 
 export async function GET(request: NextRequest) {
@@ -29,6 +34,12 @@ export async function GET(request: NextRequest) {
     include: {
       _count: {
         select: { assignments: true },
+      },
+      cycleTeams: {
+        include: {
+          team: { select: { id: true, name: true } },
+          template: { select: { id: true, name: true } },
+        },
       },
     },
     orderBy: { createdAt: "desc" },
@@ -62,39 +73,81 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Verify template belongs to company or is global
-    const template = await prisma.evaluationTemplate.findFirst({
+    // Check for duplicate teamIds
+    const teamIds = validated.teamTemplates.map((tt) => tt.teamId);
+    if (new Set(teamIds).size !== teamIds.length) {
+      return NextResponse.json({
+        success: false,
+        error: "Duplicate teams are not allowed",
+        code: "VALIDATION_ERROR",
+      }, { status: 400 });
+    }
+
+    // Verify all teams belong to the company
+    const teams = await prisma.team.findMany({
+      where: { id: { in: teamIds }, companyId: authResult.companyId },
+      select: { id: true },
+    });
+    if (teams.length !== teamIds.length) {
+      return NextResponse.json({
+        success: false,
+        error: "One or more teams not found",
+        code: "NOT_FOUND",
+      }, { status: 404 });
+    }
+
+    // Verify all templates belong to company or are global
+    const templateIds = Array.from(new Set(validated.teamTemplates.map((tt) => tt.templateId)));
+    const templates = await prisma.evaluationTemplate.findMany({
       where: {
-        id: validated.templateId,
+        id: { in: templateIds },
         OR: [
           { companyId: authResult.companyId },
           { isGlobal: true },
         ],
       },
+      select: { id: true },
     });
-
-    if (!template) {
+    if (templates.length !== templateIds.length) {
       return NextResponse.json({
         success: false,
-        error: "Template not found",
+        error: "One or more templates not found",
         code: "NOT_FOUND",
       }, { status: 404 });
     }
 
-    const cycle = await prisma.evaluationCycle.create({
-      data: {
-        name: validated.name,
-        companyId: authResult.companyId,
-        templateId: validated.templateId,
-        startDate,
-        endDate,
-        status: "DRAFT",
-      },
-      include: {
-        _count: {
-          select: { assignments: true },
+    // Create cycle and CycleTeam rows in a transaction
+    const cycle = await prisma.$transaction(async (tx) => {
+      const created = await tx.evaluationCycle.create({
+        data: {
+          name: validated.name,
+          companyId: authResult.companyId,
+          startDate,
+          endDate,
+          status: "DRAFT",
         },
-      },
+      });
+
+      await tx.cycleTeam.createMany({
+        data: validated.teamTemplates.map((tt) => ({
+          cycleId: created.id,
+          teamId: tt.teamId,
+          templateId: tt.templateId,
+        })),
+      });
+
+      return tx.evaluationCycle.findUniqueOrThrow({
+        where: { id: created.id },
+        include: {
+          _count: { select: { assignments: true } },
+          cycleTeams: {
+            include: {
+              team: { select: { id: true, name: true } },
+              template: { select: { id: true, name: true } },
+            },
+          },
+        },
+      });
     });
 
     return NextResponse.json({

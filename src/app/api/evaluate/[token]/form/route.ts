@@ -48,7 +48,6 @@ export async function GET(
             cycle: {
               select: {
                 name: true,
-                templateId: true,
                 status: true,
               },
             },
@@ -87,9 +86,9 @@ export async function GET(
       );
     }
 
-    // Load template
+    // Load template (from assignment's per-team template)
     const template = await prisma.evaluationTemplate.findFirst({
-      where: { id: assignment.cycle.templateId },
+      where: { id: assignment.templateId },
       select: { sections: true },
     });
 

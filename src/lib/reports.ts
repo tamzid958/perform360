@@ -332,32 +332,42 @@ export async function buildIndividualReport(
   subjectId: string,
   companyId: string
 ): Promise<IndividualReport> {
-  const [cycle, subject, template] = await Promise.all([
+  const [cycle, subject] = await Promise.all([
     prisma.evaluationCycle.findUnique({
       where: { id: cycleId },
-      select: { name: true, templateId: true },
+      select: { name: true },
     }),
     prisma.user.findUnique({
       where: { id: subjectId },
       select: { name: true },
     }),
-    prisma.evaluationCycle
-      .findUnique({ where: { id: cycleId }, select: { templateId: true } })
-      .then((c) =>
-        c
-          ? prisma.evaluationTemplate.findUnique({
-              where: { id: c.templateId },
-              select: { sections: true },
-            })
-          : null
-      ),
   ]);
 
-  if (!cycle || !subject || !template) {
-    throw new Error("Cycle, subject, or template not found");
+  if (!cycle || !subject) {
+    throw new Error("Cycle or subject not found");
   }
 
-  const sections = template.sections as unknown as TemplateSection[];
+  // Get templates from the subject's assignments in this cycle
+  const subjectAssignments = await prisma.evaluationAssignment.findMany({
+    where: { cycleId, subjectId },
+    select: { templateId: true },
+  });
+  const templateIds = Array.from(new Set(subjectAssignments.map((a) => a.templateId)));
+
+  const templates = await prisma.evaluationTemplate.findMany({
+    where: { id: { in: templateIds } },
+    select: { sections: true },
+  });
+
+  if (templates.length === 0) {
+    throw new Error("No templates found for subject's assignments");
+  }
+
+  // Merge sections from all templates the subject was evaluated with
+  const sections = templates.flatMap(
+    (t) => t.sections as unknown as TemplateSection[]
+  );
+
   const responses = await getDecryptedResponsesForSubject(cycleId, subjectId, companyId);
 
   return {
@@ -382,7 +392,7 @@ export async function buildCycleReport(
 ): Promise<CycleReport> {
   const cycle = await prisma.evaluationCycle.findUnique({
     where: { id: cycleId },
-    select: { name: true, templateId: true },
+    select: { name: true },
   });
 
   if (!cycle) throw new Error("Cycle not found");
@@ -464,15 +474,24 @@ export async function buildCycleReport(
   if (company?.encryptionSalt && completedAssignments > 0) {
     const dataKey = getDataKey(company.encryptionKeyEncrypted, company.encryptionSalt);
 
-    const template = await prisma.evaluationTemplate.findUnique({
-      where: { id: cycle.templateId },
+    // Fetch all templates used in this cycle via CycleTeam
+    const cycleTeams = await prisma.cycleTeam.findMany({
+      where: { cycleId },
+      select: { templateId: true },
+    });
+    const templateIds = Array.from(new Set(cycleTeams.map((ct) => ct.templateId)));
+
+    const templates = await prisma.evaluationTemplate.findMany({
+      where: { id: { in: templateIds } },
       select: { sections: true },
     });
 
-    if (template) {
-      const sections = template.sections as unknown as TemplateSection[];
+    if (templates.length > 0) {
+      const allSections = templates.flatMap(
+        (t) => t.sections as unknown as TemplateSection[]
+      );
       const ratingQuestionIds = new Set(
-        sections
+        allSections
           .flatMap((s) => s.questions)
           .filter((q) => q.type === "rating_scale" || q.type === "competency_matrix")
           .map((q) => q.id)

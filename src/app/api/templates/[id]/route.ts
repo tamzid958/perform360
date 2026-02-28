@@ -156,10 +156,10 @@ export async function DELETE(
   }
 
   // Check if template is used in active cycles
-  const activeCycleCount = await prisma.evaluationCycle.count({
+  const activeCycleCount = await prisma.cycleTeam.count({
     where: {
       templateId: params.id,
-      status: { in: ["ACTIVE", "CLOSED"] },
+      cycle: { status: { in: ["ACTIVE", "CLOSED"] } },
     },
   });
 

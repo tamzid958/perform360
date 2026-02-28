@@ -55,32 +55,59 @@ export async function POST(
     );
   }
 
-  // 2. Verify template exists
-  const template = await prisma.evaluationTemplate.findFirst({
+  // 2. Fetch CycleTeam entries and verify templates
+  const cycleTeams = await prisma.cycleTeam.findMany({
+    where: { cycleId: cycle.id },
+    include: {
+      template: { select: { id: true } },
+    },
+  });
+
+  if (cycleTeams.length === 0) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: "No teams assigned to this cycle. Add team-template pairs before activating.",
+        code: "NO_TEAMS",
+      },
+      { status: 400 }
+    );
+  }
+
+  // Verify all templates still exist and are accessible
+  const templateIds = Array.from(new Set(cycleTeams.map((ct) => ct.templateId)));
+  const templates = await prisma.evaluationTemplate.findMany({
     where: {
-      id: cycle.templateId,
+      id: { in: templateIds },
       OR: [
         { companyId: authResult.companyId },
         { isGlobal: true },
       ],
     },
+    select: { id: true },
   });
 
-  if (!template) {
+  if (templates.length !== templateIds.length) {
     return NextResponse.json(
       {
         success: false,
-        error: "Cycle template not found or inaccessible",
+        error: "One or more cycle templates not found or inaccessible",
         code: "NOT_FOUND",
       },
       { status: 400 }
     );
   }
 
-  // 3. Generate assignments from team structure
+  // 3. Generate assignments from team structure (only selected teams)
+  const teamTemplatePairs = cycleTeams.map((ct) => ({
+    teamId: ct.teamId,
+    templateId: ct.templateId,
+  }));
+
   const { count, reviewerEmails } = await createAssignmentsForCycle(
     cycle.id,
-    authResult.companyId
+    authResult.companyId,
+    teamTemplatePairs
   );
 
   if (count === 0) {

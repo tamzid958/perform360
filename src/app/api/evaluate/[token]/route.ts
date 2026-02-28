@@ -110,7 +110,6 @@ export async function POST(
           include: {
             cycle: {
               select: {
-                templateId: true,
                 status: true,
                 companyId: true,
               },
@@ -161,9 +160,9 @@ export async function POST(
       );
     }
 
-    // Validate required questions are answered
+    // Validate required questions are answered (using assignment's per-team template)
     const template = await prisma.evaluationTemplate.findFirst({
-      where: { id: assignment.cycle.templateId },
+      where: { id: assignment.templateId },
       select: { sections: true },
     });
 

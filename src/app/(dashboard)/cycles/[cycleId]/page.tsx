@@ -25,12 +25,18 @@ import type { CycleReport } from "@/types/report";
 
 // ─── Types ───
 
+interface TeamTemplate {
+  teamId: string;
+  teamName: string;
+  templateId: string;
+  templateName: string;
+}
+
 interface CycleApiData {
   id: string;
   name: string;
   status: "DRAFT" | "ACTIVE" | "CLOSED" | "ARCHIVED";
-  templateId: string;
-  templateName: string;
+  teamTemplates: TeamTemplate[];
   startDate: string;
   endDate: string;
   assignmentsWithNames: AssignmentWithNames[];
@@ -176,7 +182,7 @@ export default function CycleDetailPage() {
     <div>
       <PageHeader
         title={cycle.name}
-        description={`${cycle.templateName} \u00B7 ${new Date(cycle.startDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })} \u2013 ${new Date(cycle.endDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`}
+        description={`${cycle.teamTemplates.length} team${cycle.teamTemplates.length !== 1 ? "s" : ""} \u00B7 ${new Date(cycle.startDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })} \u2013 ${new Date(cycle.endDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`}
       >
         {activeTab === "reports" && (
           <Button variant="secondary" onClick={handleExport}>
@@ -243,6 +249,23 @@ export default function CycleDetailPage() {
         </div>
         <Progress value={cycle.stats.completionRate} className="h-3" />
       </Card>
+
+      {/* Team-Template Pairs */}
+      {cycle.teamTemplates.length > 0 && (
+        <Card padding="sm" className="mb-8">
+          <CardHeader>
+            <CardTitle>Teams &amp; Templates</CardTitle>
+          </CardHeader>
+          <div className="divide-y divide-gray-50">
+            {cycle.teamTemplates.map((tt) => (
+              <div key={tt.teamId} className="flex items-center justify-between px-4 py-2.5">
+                <span className="text-[14px] font-medium text-gray-900">{tt.teamName}</span>
+                <Badge variant="outline">{tt.templateName}</Badge>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
       {/* Main Tabs */}
       <Tabs

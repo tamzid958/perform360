@@ -101,13 +101,13 @@ export const DELETE = withSuperAdmin<Params>(async (_request, { params }) => {
     );
   }
 
-  const inUse = await prisma.evaluationCycle.count({
+  const inUse = await prisma.cycleTeam.count({
     where: { templateId: params.id },
   });
 
   if (inUse > 0) {
     return NextResponse.json(
-      { success: false, error: `Template is used by ${inUse} evaluation cycle(s) and cannot be deleted` },
+      { success: false, error: `Template is used by ${inUse} cycle-team assignment(s) and cannot be deleted` },
       { status: 409 }
     );
   }

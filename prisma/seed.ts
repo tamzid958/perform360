@@ -428,7 +428,6 @@ async function main() {
     data: {
       name: "Q4 2025 Performance Review",
       companyId: acme.id,
-      templateId: acmeTemplate.id,
       status: "CLOSED",
       startDate: new Date("2025-10-01"),
       endDate: new Date("2025-12-31"),
@@ -439,7 +438,6 @@ async function main() {
     data: {
       name: "Q1 2026 Leadership Review",
       companyId: acme.id,
-      templateId: globalTemplate.id,
       status: "ACTIVE",
       startDate: new Date("2026-01-01"),
       endDate: new Date("2026-03-31"),
@@ -450,11 +448,25 @@ async function main() {
     data: {
       name: "H1 2026 Peer Feedback",
       companyId: globex.id,
-      templateId: globexTemplate.id,
       status: "DRAFT",
       startDate: new Date("2026-01-01"),
       endDate: new Date("2026-06-30"),
     },
+  });
+
+  // ─── 7b. CycleTeam (team-template pairs) ───
+  console.log("Creating CycleTeam pairs...");
+  await prisma.cycleTeam.createMany({
+    data: [
+      // Acme Q4: Engineering uses acmeTemplate, Product uses globalTemplate
+      { cycleId: acmeQ4Cycle.id, teamId: engineering.id, templateId: acmeTemplate.id },
+      { cycleId: acmeQ4Cycle.id, teamId: product.id, templateId: globalTemplate.id },
+      // Acme Q1: Both teams use globalTemplate
+      { cycleId: acmeQ1Cycle.id, teamId: engineering.id, templateId: globalTemplate.id },
+      { cycleId: acmeQ1Cycle.id, teamId: product.id, templateId: globalTemplate.id },
+      // Globex H1: Operations uses globexTemplate
+      { cycleId: globexH1Cycle.id, teamId: operations.id, templateId: globexTemplate.id },
+    ],
   });
 
   // ─── 8. EvaluationAssignments ───
@@ -475,6 +487,7 @@ async function main() {
       prisma.evaluationAssignment.create({
         data: {
           cycleId: acmeQ4Cycle.id,
+          templateId: acmeTemplate.id,
           subjectId: a.subjectId,
           reviewerId: a.reviewerId,
           relationship: a.relationship,
@@ -500,6 +513,7 @@ async function main() {
       prisma.evaluationAssignment.create({
         data: {
           cycleId: acmeQ1Cycle.id,
+          templateId: globalTemplate.id,
           subjectId: a.subjectId,
           reviewerId: a.reviewerId,
           relationship: a.relationship,
@@ -521,6 +535,7 @@ async function main() {
       prisma.evaluationAssignment.create({
         data: {
           cycleId: globexH1Cycle.id,
+          templateId: globexTemplate.id,
           subjectId: a.subjectId,
           reviewerId: a.reviewerId,
           relationship: a.relationship,
