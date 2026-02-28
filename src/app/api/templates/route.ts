@@ -3,6 +3,8 @@ import { z } from "zod";
 import { requireAuth, requireAdminOrHR, isAuthError } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { parsePaginationParams, buildPaginationMeta } from "@/lib/utils";
+import type { Prisma } from "@prisma/client";
 
 const questionSchema = z.object({
   id: z.string().min(1),
@@ -35,20 +37,39 @@ export async function GET(request: NextRequest) {
   const authResult = await requireAuth();
   if (isAuthError(authResult)) return authResult;
 
-  // Return company templates + global templates
-  const templates = await prisma.evaluationTemplate.findMany({
-    where: {
-      OR: [
-        { companyId: authResult.companyId },
-        { isGlobal: true },
-      ],
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const { searchParams } = new URL(request.url);
+  const { page, limit, search } = parsePaginationParams(searchParams, 12);
+
+  const where: Prisma.EvaluationTemplateWhereInput = {
+    AND: [
+      { OR: [{ companyId: authResult.companyId }, { isGlobal: true }] },
+      ...(search
+        ? [
+            {
+              OR: [
+                { name: { contains: search, mode: "insensitive" as const } },
+                { description: { contains: search, mode: "insensitive" as const } },
+              ],
+            },
+          ]
+        : []),
+    ],
+  };
+
+  const [templates, total] = await Promise.all([
+    prisma.evaluationTemplate.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.evaluationTemplate.count({ where }),
+  ]);
 
   return NextResponse.json({
     success: true,
     data: templates,
+    pagination: buildPaginationMeta(page, limit, total),
   });
 }
 

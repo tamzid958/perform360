@@ -8,6 +8,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/layout/page-header";
+import { Pagination } from "@/components/ui/pagination";
 import { useToast } from "@/components/ui/toast";
 import {
   Dialog,
@@ -31,6 +32,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { UserPlus, Search, MoreHorizontal, Shield, AlertCircle, Inbox, Trash2 } from "lucide-react";
+import type { PaginationMeta } from "@/types/pagination";
 
 interface TeamMembership {
   id: string;
@@ -62,6 +64,8 @@ export default function PeoplePage() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [newRole, setNewRole] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState<PaginationMeta | null>(null);
   const [inviteName, setInviteName] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("MEMBER");
@@ -72,10 +76,13 @@ export default function PeoplePage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/users");
+      const params = new URLSearchParams({ page: String(page), limit: "20" });
+      if (searchQuery.trim()) params.set("search", searchQuery.trim());
+      const res = await fetch(`/api/users?${params}`);
       const json = await res.json();
       if (!json.success) throw new Error(json.error || "Failed to load users");
       setUsers(json.data);
+      setPagination(json.pagination);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to load users";
       setError(msg);
@@ -83,11 +90,12 @@ export default function PeoplePage() {
     } finally {
       setLoading(false);
     }
-  }, [addToast]);
+  }, [addToast, page, searchQuery]);
 
   useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
+    const timer = setTimeout(fetchUsers, searchQuery ? 300 : 0);
+    return () => clearTimeout(timer);
+  }, [fetchUsers, searchQuery]);
 
   const handleInvite = async () => {
     if (!inviteName.trim() || !inviteEmail.trim()) return;
@@ -105,6 +113,7 @@ export default function PeoplePage() {
       setInviteName("");
       setInviteEmail("");
       setInviteRole("MEMBER");
+      setPage(1);
       fetchUsers();
     } catch (err) {
       addToast(err instanceof Error ? err.message : "Failed to invite user", "error");
@@ -139,17 +148,12 @@ export default function PeoplePage() {
       const json = await res.json();
       if (!json.success) throw new Error(json.error || "Failed to deactivate user");
       addToast(`${user.name} deactivated`, "success");
+      setPage(1);
       fetchUsers();
     } catch (err) {
       addToast(err instanceof Error ? err.message : "Failed to deactivate user", "error");
     }
   };
-
-  const filteredUsers = users.filter(
-    (u) =>
-      u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      u.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
 
   if (error && users.length === 0) {
     return (
@@ -186,7 +190,7 @@ export default function PeoplePage() {
           type="text"
           placeholder="Search people..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
           className="w-full h-10 pl-9 pr-4 rounded-xl bg-white border border-gray-200 text-[14px] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
         />
       </div>
@@ -206,7 +210,7 @@ export default function PeoplePage() {
             ))}
           </div>
         </Card>
-      ) : filteredUsers.length === 0 ? (
+      ) : users.length === 0 ? (
         <div className="flex flex-col items-center gap-3 py-16 text-center">
           <Inbox size={32} strokeWidth={1.5} className="text-gray-300" />
           <p className="text-[14px] text-gray-500">
@@ -226,7 +230,7 @@ export default function PeoplePage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {filteredUsers.map((user) => {
+                {users.map((user) => {
                   const badge = roleBadgeMap[user.role] ?? { variant: "default" as const, label: user.role };
                   return (
                     <tr key={user.id} className="hover:bg-gray-50/50 transition-colors">
@@ -280,6 +284,17 @@ export default function PeoplePage() {
               </tbody>
             </table>
           </div>
+          {pagination && (
+            <Pagination
+              page={pagination.page}
+              totalPages={pagination.totalPages}
+              total={pagination.total}
+              showing={users.length}
+              noun="people"
+              onPageChange={setPage}
+              className="px-4 pb-3 border-t border-gray-100"
+            />
+          )}
         </Card>
       )}
 

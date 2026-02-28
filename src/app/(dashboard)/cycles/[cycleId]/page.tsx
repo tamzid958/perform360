@@ -782,11 +782,6 @@ export default function CycleDetailPage() {
                           <th className="text-left text-[11px] font-medium text-gray-400 uppercase tracking-wider px-4 py-2">
                             Status
                           </th>
-                          {cycle.status === "ACTIVE" && (
-                            <th className="text-right text-[11px] font-medium text-gray-400 uppercase tracking-wider px-4 py-2">
-                              Action
-                            </th>
-                          )}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-50">
@@ -818,43 +813,38 @@ export default function CycleDetailPage() {
                               </Badge>
                             </td>
                             <td className="px-4 py-2.5">
-                              <div className="flex items-center gap-1.5">
-                                {statusIcon[a.status]}
-                                <span className="text-[12px] text-gray-600">
-                                  {statusLabel[a.status]}
-                                </span>
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-1.5">
+                                  {statusIcon[a.status]}
+                                  <span className="text-[12px] text-gray-600">
+                                    {statusLabel[a.status]}
+                                  </span>
+                                </div>
+                                {cycle.status === "ACTIVE" &&
+                                  a.status !== "SUBMITTED" && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      disabled={remindingId === a.id}
+                                      onClick={() =>
+                                        handleRemindIndividual(
+                                          a.id,
+                                          a.reviewerName
+                                        )
+                                      }
+                                    >
+                                      <Send
+                                        size={14}
+                                        strokeWidth={1.5}
+                                        className="mr-1"
+                                      />
+                                      {remindingId === a.id
+                                        ? "Sending\u2026"
+                                        : "Remind"}
+                                    </Button>
+                                  )}
                               </div>
                             </td>
-                            {cycle.status === "ACTIVE" && (
-                              <td className="px-4 py-2.5 text-right">
-                                {a.status !== "SUBMITTED" ? (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    disabled={remindingId === a.id}
-                                    onClick={() =>
-                                      handleRemindIndividual(
-                                        a.id,
-                                        a.reviewerName
-                                      )
-                                    }
-                                  >
-                                    <Send
-                                      size={14}
-                                      strokeWidth={1.5}
-                                      className="mr-1"
-                                    />
-                                    {remindingId === a.id
-                                      ? "Sending\u2026"
-                                      : "Remind"}
-                                  </Button>
-                                ) : (
-                                  <span className="text-[12px] text-gray-300">
-                                    \u2014
-                                  </span>
-                                )}
-                              </td>
-                            )}
                           </tr>
                         ))}
                       </tbody>

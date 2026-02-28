@@ -6,9 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/layout/page-header";
+import { Pagination } from "@/components/ui/pagination";
 import { useToast } from "@/components/ui/toast";
-import { Users, Plus, ChevronRight, AlertCircle, Inbox } from "lucide-react";
+import { Users, Plus, ChevronRight, AlertCircle, Inbox, Search } from "lucide-react";
 import Link from "next/link";
+import type { PaginationMeta } from "@/types/pagination";
 
 interface TeamMember {
   id: string;
@@ -48,16 +50,22 @@ export default function TeamsPage() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [pagination, setPagination] = useState<PaginationMeta | null>(null);
   const { addToast } = useToast();
 
   const fetchTeams = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/teams");
+      const params = new URLSearchParams({ page: String(page), limit: "12" });
+      if (searchQuery.trim()) params.set("search", searchQuery.trim());
+      const res = await fetch(`/api/teams?${params}`);
       const json = await res.json();
       if (!json.success) throw new Error(json.error || "Failed to load teams");
       setTeams(json.data);
+      setPagination(json.pagination);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to load teams";
       setError(msg);
@@ -65,11 +73,12 @@ export default function TeamsPage() {
     } finally {
       setLoading(false);
     }
-  }, [addToast]);
+  }, [addToast, page, searchQuery]);
 
   useEffect(() => {
-    fetchTeams();
-  }, [fetchTeams]);
+    const timer = setTimeout(fetchTeams, searchQuery ? 300 : 0);
+    return () => clearTimeout(timer);
+  }, [fetchTeams, searchQuery]);
 
   if (error && teams.length === 0) {
     return (
@@ -96,6 +105,17 @@ export default function TeamsPage() {
         </Link>
       </PageHeader>
 
+      <div className="relative max-w-md mb-6">
+        <Search size={16} strokeWidth={1.5} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <input
+          type="text"
+          placeholder="Search teams..."
+          value={searchQuery}
+          onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
+          className="w-full h-10 pl-9 pr-4 rounded-xl bg-white border border-gray-200 text-[14px] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
+        />
+      </div>
+
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => <TeamCardSkeleton key={i} />)}
@@ -103,39 +123,55 @@ export default function TeamsPage() {
       ) : teams.length === 0 ? (
         <div className="flex flex-col items-center gap-3 py-16 text-center">
           <Inbox size={32} strokeWidth={1.5} className="text-gray-300" />
-          <p className="text-[14px] text-gray-500">No teams yet</p>
-          <Link href="/teams/new">
-            <Button variant="secondary" size="sm">Create Team</Button>
-          </Link>
+          <p className="text-[14px] text-gray-500">
+            {searchQuery ? "No teams match your search" : "No teams yet"}
+          </p>
+          {!searchQuery && (
+            <Link href="/teams/new">
+              <Button variant="secondary" size="sm">Create Team</Button>
+            </Link>
+          )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {teams.map((team) => {
-            const managerCount = team.members.filter((m) => m.role === "MANAGER").length;
-            const reportCount = team.members.filter((m) => m.role === "DIRECT_REPORT").length;
-            return (
-              <Link key={team.id} href={`/teams/${team.id}`} className="h-full">
-                <Card className="h-full flex flex-col hover:shadow-md transition-all duration-200 cursor-pointer group">
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="p-2.5 rounded-xl bg-brand-50">
-                        <Users size={20} strokeWidth={1.5} className="text-brand-500" />
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {teams.map((team) => {
+              const managerCount = team.members.filter((m) => m.role === "MANAGER").length;
+              const reportCount = team.members.filter((m) => m.role === "DIRECT_REPORT").length;
+              return (
+                <Link key={team.id} href={`/teams/${team.id}`} className="h-full">
+                  <Card className="h-full flex flex-col hover:shadow-md transition-all duration-200 cursor-pointer group">
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div className="p-2.5 rounded-xl bg-brand-50">
+                          <Users size={20} strokeWidth={1.5} className="text-brand-500" />
+                        </div>
+                        <ChevronRight size={16} strokeWidth={1.5} className="text-gray-300 group-hover:text-gray-500 transition-colors" />
                       </div>
-                      <ChevronRight size={16} strokeWidth={1.5} className="text-gray-300 group-hover:text-gray-500 transition-colors" />
+                    </CardHeader>
+                    <CardTitle>{team.name}</CardTitle>
+                    <CardDescription className="line-clamp-2">{team.description ?? "No description"}</CardDescription>
+                    <div className="flex items-center gap-2 mt-auto pt-4 flex-wrap">
+                      <Badge variant="default">{team._count.members} members</Badge>
+                      <Badge variant="info">{managerCount} managers</Badge>
+                      <Badge variant="outline">{reportCount} reports</Badge>
                     </div>
-                  </CardHeader>
-                  <CardTitle>{team.name}</CardTitle>
-                  <CardDescription className="line-clamp-2">{team.description ?? "No description"}</CardDescription>
-                  <div className="flex items-center gap-2 mt-auto pt-4 flex-wrap">
-                    <Badge variant="default">{team._count.members} members</Badge>
-                    <Badge variant="info">{managerCount} managers</Badge>
-                    <Badge variant="outline">{reportCount} reports</Badge>
-                  </div>
-                </Card>
-              </Link>
-            );
-          })}
-        </div>
+                  </Card>
+                </Link>
+              );
+            })}
+          </div>
+          {pagination && (
+            <Pagination
+              page={pagination.page}
+              totalPages={pagination.totalPages}
+              total={pagination.total}
+              showing={teams.length}
+              noun="teams"
+              onPageChange={setPage}
+            />
+          )}
+        </>
       )}
     </div>
   );

@@ -39,3 +39,24 @@ export function slugify(text: string): string {
     .replace(/[\s_]+/g, "-")
     .replace(/^-+|-+$/g, "");
 }
+
+export function parsePaginationParams(
+  searchParams: URLSearchParams,
+  defaultLimit = 20
+): { page: number; limit: number; search: string | undefined } {
+  const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));
+  const limit = Math.min(
+    100,
+    Math.max(1, parseInt(searchParams.get("limit") ?? String(defaultLimit), 10))
+  );
+  const search = searchParams.get("search")?.trim() || undefined;
+  return { page, limit, search };
+}
+
+export function buildPaginationMeta(
+  page: number,
+  limit: number,
+  total: number
+) {
+  return { page, limit, total, totalPages: Math.ceil(total / limit) };
+}

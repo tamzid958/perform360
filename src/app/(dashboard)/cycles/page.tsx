@@ -6,10 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/layout/page-header";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Pagination } from "@/components/ui/pagination";
 import { useToast } from "@/components/ui/toast";
-import { Plus, Calendar, ChevronRight, AlertCircle, Inbox } from "lucide-react";
+import { Plus, Calendar, ChevronRight, AlertCircle, Inbox, Search } from "lucide-react";
 import Link from "next/link";
+import type { PaginationMeta } from "@/types/pagination";
 
 interface Cycle {
   id: string;
@@ -26,6 +28,12 @@ const statusBadge: Record<string, { variant: "success" | "warning" | "default" |
   ACTIVE: { variant: "success", label: "Active" },
   CLOSED: { variant: "warning", label: "Closed" },
   ARCHIVED: { variant: "info", label: "Archived" },
+};
+
+const STATUS_MAP: Record<string, string> = {
+  active: "ACTIVE",
+  draft: "DRAFT",
+  closed: "CLOSED,ARCHIVED",
 };
 
 function CycleCard({ cycle }: { cycle: Cycle }) {
@@ -64,34 +72,30 @@ function CycleCardSkeleton() {
   );
 }
 
-function EmptyState({ status }: { status: string }) {
-  return (
-    <div className="flex flex-col items-center gap-3 py-16 text-center">
-      <Inbox size={32} strokeWidth={1.5} className="text-gray-300" />
-      <p className="text-[14px] text-gray-500">
-        No {status === "all" ? "" : status.toLowerCase() + " "}cycles found
-      </p>
-      <Link href="/cycles/new">
-        <Button variant="secondary" size="sm">Create Cycle</Button>
-      </Link>
-    </div>
-  );
-}
-
 export default function CyclesPage() {
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [activeTab, setActiveTab] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [pagination, setPagination] = useState<PaginationMeta | null>(null);
   const { addToast } = useToast();
 
   const fetchCycles = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/cycles");
+      const params = new URLSearchParams({ page: String(page), limit: "12" });
+      if (searchQuery.trim()) params.set("search", searchQuery.trim());
+      if (activeTab !== "all") {
+        params.set("status", STATUS_MAP[activeTab] ?? activeTab.toUpperCase());
+      }
+      const res = await fetch(`/api/cycles?${params}`);
       const json = await res.json();
       if (!json.success) throw new Error(json.error || "Failed to load cycles");
       setCycles(json.data);
+      setPagination(json.pagination);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to load cycles";
       setError(msg);
@@ -99,11 +103,17 @@ export default function CyclesPage() {
     } finally {
       setLoading(false);
     }
-  }, [addToast]);
+  }, [addToast, page, activeTab, searchQuery]);
 
   useEffect(() => {
-    fetchCycles();
-  }, [fetchCycles]);
+    const timer = setTimeout(fetchCycles, searchQuery ? 300 : 0);
+    return () => clearTimeout(timer);
+  }, [fetchCycles, searchQuery]);
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    setPage(1);
+  };
 
   if (error && cycles.length === 0) {
     return (
@@ -124,28 +134,6 @@ export default function CyclesPage() {
     );
   }
 
-  const filterCycles = (status: string) => {
-    if (status === "all") return cycles;
-    if (status === "closed") return cycles.filter((c) => c.status === "CLOSED" || c.status === "ARCHIVED");
-    return cycles.filter((c) => c.status === status.toUpperCase());
-  };
-
-  const renderGrid = (filtered: Cycle[]) => {
-    if (loading) {
-      return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => <CycleCardSkeleton key={i} />)}
-        </div>
-      );
-    }
-    if (filtered.length === 0) return <EmptyState status="all" />;
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filtered.map((cycle) => <CycleCard key={cycle.id} cycle={cycle} />)}
-      </div>
-    );
-  };
-
   return (
     <div>
       <PageHeader title="Evaluation Cycles" description="Create and manage 360° evaluation cycles">
@@ -154,20 +142,62 @@ export default function CyclesPage() {
         </Link>
       </PageHeader>
 
-      <Tabs defaultValue="all">
-        <TabsList>
-          <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="active">Active</TabsTrigger>
-          <TabsTrigger value="draft">Draft</TabsTrigger>
-          <TabsTrigger value="closed">Closed</TabsTrigger>
-        </TabsList>
-
-        {["all", "active", "draft", "closed"].map((tab) => (
-          <TabsContent key={tab} value={tab}>
-            {renderGrid(filterCycles(tab))}
-          </TabsContent>
-        ))}
+      <Tabs value={activeTab} onValueChange={handleTabChange}>
+        <div className="flex items-center justify-between gap-4 mb-4">
+          <TabsList>
+            <TabsTrigger value="all">All</TabsTrigger>
+            <TabsTrigger value="active">Active</TabsTrigger>
+            <TabsTrigger value="draft">Draft</TabsTrigger>
+            <TabsTrigger value="closed">Closed</TabsTrigger>
+          </TabsList>
+          <div className="relative max-w-xs">
+            <Search size={16} strokeWidth={1.5} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search cycles..."
+              value={searchQuery}
+              onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
+              className="w-full h-9 pl-9 pr-4 rounded-xl bg-white border border-gray-200 text-[14px] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
+            />
+          </div>
+        </div>
       </Tabs>
+
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => <CycleCardSkeleton key={i} />)}
+        </div>
+      ) : cycles.length === 0 ? (
+        <div className="flex flex-col items-center gap-3 py-16 text-center">
+          <Inbox size={32} strokeWidth={1.5} className="text-gray-300" />
+          <p className="text-[14px] text-gray-500">
+            {searchQuery || activeTab !== "all"
+              ? "No cycles found"
+              : "No cycles yet"}
+          </p>
+          {!searchQuery && activeTab === "all" && (
+            <Link href="/cycles/new">
+              <Button variant="secondary" size="sm">Create Cycle</Button>
+            </Link>
+          )}
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {cycles.map((cycle) => <CycleCard key={cycle.id} cycle={cycle} />)}
+          </div>
+          {pagination && (
+            <Pagination
+              page={pagination.page}
+              totalPages={pagination.totalPages}
+              total={pagination.total}
+              showing={cycles.length}
+              noun="cycles"
+              onPageChange={setPage}
+            />
+          )}
+        </>
+      )}
     </div>
   );
 }

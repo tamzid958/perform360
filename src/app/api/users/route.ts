@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdminOrHR, isAuthError } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { parsePaginationParams, buildPaginationMeta } from "@/lib/utils";
+import type { Prisma } from "@prisma/client";
 
 export async function GET(request: NextRequest) {
   const rl = applyRateLimit(request);
@@ -10,22 +12,43 @@ export async function GET(request: NextRequest) {
   const authResult = await requireAdminOrHR();
   if (isAuthError(authResult)) return authResult;
 
-  const users = await prisma.user.findMany({
-    where: { companyId: authResult.companyId },
-    include: {
-      teamMemberships: {
-        include: {
-          team: {
-            select: { id: true, name: true },
+  const { searchParams } = new URL(request.url);
+  const { page, limit, search } = parsePaginationParams(searchParams, 20);
+
+  const where: Prisma.UserWhereInput = {
+    companyId: authResult.companyId,
+    ...(search
+      ? {
+          OR: [
+            { name: { contains: search, mode: "insensitive" } },
+            { email: { contains: search, mode: "insensitive" } },
+          ],
+        }
+      : {}),
+  };
+
+  const [users, total] = await Promise.all([
+    prisma.user.findMany({
+      where,
+      include: {
+        teamMemberships: {
+          include: {
+            team: {
+              select: { id: true, name: true },
+            },
           },
         },
       },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.user.count({ where }),
+  ]);
 
   return NextResponse.json({
     success: true,
     data: users,
+    pagination: buildPaginationMeta(page, limit, total),
   });
 }

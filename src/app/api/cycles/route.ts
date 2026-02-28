@@ -4,6 +4,8 @@ import { requireAuth, requireAdminOrHR, isAuthError } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 import { createAssignmentsForCycle } from "@/lib/assignments";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { parsePaginationParams, buildPaginationMeta } from "@/lib/utils";
+import type { CycleStatus } from "@prisma/client";
 
 const teamTemplateSchema = z.object({
   teamId: z.string().min(1, "Team ID is required"),
@@ -25,30 +27,46 @@ export async function GET(request: NextRequest) {
   if (isAuthError(authResult)) return authResult;
 
   const { searchParams } = new URL(request.url);
-  const status = searchParams.get("status");
+  const { page, limit, search } = parsePaginationParams(searchParams, 12);
+  const statusParam = searchParams.get("status");
 
-  const cycles = await prisma.evaluationCycle.findMany({
-    where: {
-      companyId: authResult.companyId,
-      ...(status ? { status: status as "DRAFT" | "ACTIVE" | "CLOSED" | "ARCHIVED" } : {}),
-    },
-    include: {
-      _count: {
-        select: { assignments: true },
-      },
-      cycleTeams: {
-        include: {
-          team: { select: { id: true, name: true } },
-          template: { select: { id: true, name: true } },
+  const statusFilter: { status?: CycleStatus | { in: CycleStatus[] } } = {};
+  if (statusParam) {
+    const statuses = statusParam.split(",") as CycleStatus[];
+    statusFilter.status = statuses.length === 1 ? statuses[0] : { in: statuses };
+  }
+
+  const where = {
+    companyId: authResult.companyId,
+    ...statusFilter,
+    ...(search ? { name: { contains: search, mode: "insensitive" as const } } : {}),
+  };
+
+  const [cycles, total] = await Promise.all([
+    prisma.evaluationCycle.findMany({
+      where,
+      include: {
+        _count: {
+          select: { assignments: true },
+        },
+        cycleTeams: {
+          include: {
+            team: { select: { id: true, name: true } },
+            template: { select: { id: true, name: true } },
+          },
         },
       },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.evaluationCycle.count({ where }),
+  ]);
 
   return NextResponse.json({
     success: true,
     data: cycles,
+    pagination: buildPaginationMeta(page, limit, total),
   });
 }
 

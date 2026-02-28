@@ -3,6 +3,8 @@ import { z } from "zod";
 import { requireAuth, requireAdminOrHR, isAuthError } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { parsePaginationParams, buildPaginationMeta } from "@/lib/utils";
+import type { Prisma } from "@prisma/client";
 
 const createTeamSchema = z.object({
   name: z.string().min(1, "Team name is required"),
@@ -16,26 +18,47 @@ export async function GET(request: NextRequest) {
   const authResult = await requireAuth();
   if (isAuthError(authResult)) return authResult;
 
-  const teams = await prisma.team.findMany({
-    where: { companyId: authResult.companyId },
-    include: {
-      members: {
-        include: {
-          user: {
-            select: { id: true, name: true, email: true, avatar: true, role: true },
+  const { searchParams } = new URL(request.url);
+  const { page, limit, search } = parsePaginationParams(searchParams, 12);
+
+  const where: Prisma.TeamWhereInput = {
+    companyId: authResult.companyId,
+    ...(search
+      ? {
+          OR: [
+            { name: { contains: search, mode: "insensitive" } },
+            { description: { contains: search, mode: "insensitive" } },
+          ],
+        }
+      : {}),
+  };
+
+  const [teams, total] = await Promise.all([
+    prisma.team.findMany({
+      where,
+      include: {
+        members: {
+          include: {
+            user: {
+              select: { id: true, name: true, email: true, avatar: true, role: true },
+            },
           },
         },
+        _count: {
+          select: { members: true },
+        },
       },
-      _count: {
-        select: { members: true },
-      },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.team.count({ where }),
+  ]);
 
   return NextResponse.json({
     success: true,
     data: teams,
+    pagination: buildPaginationMeta(page, limit, total),
   });
 }
 
