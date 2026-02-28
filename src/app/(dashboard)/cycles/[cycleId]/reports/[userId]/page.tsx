@@ -182,32 +182,28 @@ function ReportContent({
       </div>
 
       {/* ─── Competency Radar + Bar Breakdown ─── */}
-      {report.categoryScores.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Competency Radar</CardTitle>
-            </CardHeader>
-            <CompetencyRadarChart categories={report.categoryScores} />
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Competency Scores</CardTitle>
-            </CardHeader>
-            <ScoreBreakdown categories={report.categoryScores} />
-          </Card>
-        </div>
-      )}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Competency Radar</CardTitle>
+          </CardHeader>
+          <CompetencyRadarChart categories={report.categoryScores} />
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Competency Scores</CardTitle>
+          </CardHeader>
+          <ScoreBreakdown categories={report.categoryScores} />
+        </Card>
+      </div>
 
       {/* ─── Per-Question Average Scores ─── */}
-      {scoredQuestions.length > 0 && (
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Per-Question Scores</CardTitle>
-          </CardHeader>
-          <QuestionDetailChart questions={scoredQuestions} />
-        </Card>
-      )}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Per-Question Scores</CardTitle>
+        </CardHeader>
+        <QuestionDetailChart questions={scoredQuestions} />
+      </Card>
 
       {/* ─── Response Distributions ─── */}
       {questionsWithDistribution.length > 0 && (

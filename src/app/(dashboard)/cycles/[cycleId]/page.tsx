@@ -935,14 +935,12 @@ export default function CycleDetailPage() {
               </div>
 
               {/* Submission Trend */}
-              {cycleReport.submissionTrend.length > 1 && (
-                <Card className="mb-6">
-                  <CardHeader>
-                    <CardTitle>Submission Timeline</CardTitle>
-                  </CardHeader>
-                  <SubmissionTrendChart data={cycleReport.submissionTrend} />
-                </Card>
-              )}
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle>Submission Timeline</CardTitle>
+                </CardHeader>
+                <SubmissionTrendChart data={cycleReport.submissionTrend} />
+              </Card>
 
               {/* Score Distribution + Relationship Breakdown */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -972,19 +970,17 @@ export default function CycleDetailPage() {
               </div>
 
               {/* Avg Score by Team */}
-              {cycleReport.avgScoreByTeam.length > 0 && (
-                <Card className="mb-6">
-                  <CardHeader>
-                    <CardTitle>Average Score by Team</CardTitle>
-                  </CardHeader>
-                  <TeamScoreChart
-                    teams={cycleReport.avgScoreByTeam.map((t) => ({
-                      teamName: t.teamName,
-                      avgScore: t.avgScore,
-                    }))}
-                  />
-                </Card>
-              )}
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle>Average Score by Team</CardTitle>
+                </CardHeader>
+                <TeamScoreChart
+                  teams={cycleReport.avgScoreByTeam.map((t) => ({
+                    teamName: t.teamName,
+                    avgScore: t.avgScore,
+                  }))}
+                />
+              </Card>
 
               {/* Team Completion */}
               {cycleReport.teamCompletionRates.length > 0 && (

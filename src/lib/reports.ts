@@ -392,9 +392,15 @@ export async function buildCycleReport(
     inProgressAssignments,
   };
 
-  // Team completion rates
+  // Team completion rates — only teams assigned to this cycle
+  const cycleTeamLinks = await prisma.cycleTeam.findMany({
+    where: { cycleId },
+    select: { teamId: true },
+  });
+  const cycleTeamIds = cycleTeamLinks.map((ct) => ct.teamId);
+
   const teams = await prisma.team.findMany({
-    where: { companyId },
+    where: { id: { in: cycleTeamIds } },
     select: {
       id: true,
       name: true,
