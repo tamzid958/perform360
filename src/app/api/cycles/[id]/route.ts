@@ -275,7 +275,7 @@ export async function PATCH(
     if (validated.startDate) updateData.startDate = new Date(validated.startDate);
     if (validated.endDate) updateData.endDate = new Date(validated.endDate);
 
-    const cycle = await prisma.$transaction(async (tx) => {
+    const _cycle = await prisma.$transaction(async (tx) => {
       const updated = await tx.evaluationCycle.update({
         where: { id: params.id },
         data: updateData,
