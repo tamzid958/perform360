@@ -29,7 +29,16 @@ export async function sendEmail({ to, subject, html, text }: SendEmailOptions) {
   });
 }
 
-// ─── Shared email wrapper ───
+// ─── Helpers ───
+
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 
 function emailWrapper(subtitle: string, bodyContent: string): string {
   return `
@@ -62,7 +71,7 @@ function emailWrapper(subtitle: string, bodyContent: string): string {
 }
 
 function ctaButton(href: string, label: string): string {
-  return `<a href="${href}" style="display: inline-block; background: #0071e3; color: white; text-decoration: none; padding: 12px 28px; border-radius: 9999px; font-size: 15px; font-weight: 500;">${label}</a>`;
+  return `<a href="${escapeHtml(href)}" style="display: inline-block; background: #0071e3; color: white; text-decoration: none; padding: 12px 28px; border-radius: 9999px; font-size: 15px; font-weight: 500;">${escapeHtml(label)}</a>`;
 }
 
 // ─── Magic Link Login ───
@@ -75,7 +84,7 @@ export function getMagicLinkEmail(url: string): { html: string; text: string } {
     <p style="margin: 0 0 24px; font-size: 15px; color: #48484a; line-height: 1.5;">Click the button below to sign in to your Perform360 account. This link expires in 24 hours.</p>
     ${ctaButton(url, "Sign In to Perform360")}
     <p style="margin: 24px 0 4px; font-size: 13px; color: #86868b; line-height: 1.4;">If you didn't request this email, you can safely ignore it.</p>
-    <p style="margin: 0; font-size: 13px; color: #86868b; line-height: 1.4; word-break: break-all;">Or copy this link: ${url}</p>
+    <p style="margin: 0; font-size: 13px; color: #86868b; line-height: 1.4; word-break: break-all;">Or copy this link: ${escapeHtml(url)}</p>
     `
   );
 
@@ -90,10 +99,10 @@ export function getOTPEmail(otp: string, recipientName: string): { html: string;
   const html = emailWrapper(
     "Verification Code",
     `
-    <p style="margin: 0 0 16px; font-size: 15px; color: #1d1d1f; line-height: 1.5;">Hi ${recipientName},</p>
+    <p style="margin: 0 0 16px; font-size: 15px; color: #1d1d1f; line-height: 1.5;">Hi ${escapeHtml(recipientName)},</p>
     <p style="margin: 0 0 24px; font-size: 15px; color: #48484a; line-height: 1.5;">Use the following code to verify your identity and access the evaluation form:</p>
     <div style="background: #f5f5f7; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 24px;">
-      <span style="font-size: 32px; font-weight: 700; letter-spacing: 8px; color: #1d1d1f; font-family: 'SF Mono', monospace;">${otp}</span>
+      <span style="font-size: 32px; font-weight: 700; letter-spacing: 8px; color: #1d1d1f; font-family: 'SF Mono', monospace;">${escapeHtml(otp)}</span>
     </div>
     <p style="margin: 0 0 4px; font-size: 13px; color: #86868b; line-height: 1.4;">This code expires in 10 minutes.</p>
     <p style="margin: 0; font-size: 13px; color: #86868b; line-height: 1.4;">If you didn't request this code, please ignore this email.</p>
@@ -116,8 +125,8 @@ export function getEvaluationInviteEmail(
   const html = emailWrapper(
     "Evaluation Invitation",
     `
-    <p style="margin: 0 0 16px; font-size: 15px; color: #1d1d1f; line-height: 1.5;">Hi ${recipientName},</p>
-    <p style="margin: 0 0 24px; font-size: 15px; color: #48484a; line-height: 1.5;">You've been invited to provide feedback for <strong>${subjectName}</strong> as part of the <strong>${cycleName}</strong> evaluation cycle.</p>
+    <p style="margin: 0 0 16px; font-size: 15px; color: #1d1d1f; line-height: 1.5;">Hi ${escapeHtml(recipientName)},</p>
+    <p style="margin: 0 0 24px; font-size: 15px; color: #48484a; line-height: 1.5;">You've been invited to provide feedback for <strong>${escapeHtml(subjectName)}</strong> as part of the <strong>${escapeHtml(cycleName)}</strong> evaluation cycle.</p>
     ${ctaButton(evaluationUrl, "Start Evaluation")}
     <p style="margin: 24px 0 0; font-size: 13px; color: #86868b; line-height: 1.4;">You'll be asked to verify your identity with a one-time code before starting.</p>
     `
@@ -140,9 +149,9 @@ export function getEvaluationReminderEmail(
   const html = emailWrapper(
     "Evaluation Reminder",
     `
-    <p style="margin: 0 0 16px; font-size: 15px; color: #1d1d1f; line-height: 1.5;">Hi ${recipientName},</p>
-    <p style="margin: 0 0 16px; font-size: 15px; color: #48484a; line-height: 1.5;">This is a friendly reminder that your evaluation for <strong>${subjectName}</strong> as part of the <strong>${cycleName}</strong> cycle is still pending.</p>
-    <p style="margin: 0 0 24px; font-size: 15px; color: #48484a; line-height: 1.5;">The deadline is <strong>${deadline}</strong>. Please complete it before then.</p>
+    <p style="margin: 0 0 16px; font-size: 15px; color: #1d1d1f; line-height: 1.5;">Hi ${escapeHtml(recipientName)},</p>
+    <p style="margin: 0 0 16px; font-size: 15px; color: #48484a; line-height: 1.5;">This is a friendly reminder that your evaluation for <strong>${escapeHtml(subjectName)}</strong> as part of the <strong>${escapeHtml(cycleName)}</strong> cycle is still pending.</p>
+    <p style="margin: 0 0 24px; font-size: 15px; color: #48484a; line-height: 1.5;">The deadline is <strong>${escapeHtml(deadline)}</strong>. Please complete it before then.</p>
     ${ctaButton(evaluationUrl, "Complete Evaluation")}
     <p style="margin: 24px 0 0; font-size: 13px; color: #86868b; line-height: 1.4;">You'll be asked to verify your identity with a one-time code before starting.</p>
     `
@@ -163,8 +172,8 @@ export function getUserInviteEmail(
   const html = emailWrapper(
     "Welcome",
     `
-    <p style="margin: 0 0 16px; font-size: 15px; color: #1d1d1f; line-height: 1.5;">Hi ${recipientName},</p>
-    <p style="margin: 0 0 24px; font-size: 15px; color: #48484a; line-height: 1.5;">You've been invited to join <strong>${companyName}</strong> on Perform360, a 360-degree performance evaluation platform.</p>
+    <p style="margin: 0 0 16px; font-size: 15px; color: #1d1d1f; line-height: 1.5;">Hi ${escapeHtml(recipientName)},</p>
+    <p style="margin: 0 0 24px; font-size: 15px; color: #48484a; line-height: 1.5;">You've been invited to join <strong>${escapeHtml(companyName)}</strong> on Perform360, a 360-degree performance evaluation platform.</p>
     ${ctaButton(loginUrl, "Sign In to Get Started")}
     <p style="margin: 24px 0 0; font-size: 13px; color: #86868b; line-height: 1.4;">You'll sign in using a magic link sent to your email — no password needed.</p>
     `
@@ -175,27 +184,3 @@ export function getUserInviteEmail(
   return { html, text };
 }
 
-// ─── Backward-compatible aliases (deprecated — use the new *Email functions) ───
-
-export function getOTPEmailHtml(otp: string, recipientName: string): string {
-  return getOTPEmail(otp, recipientName).html;
-}
-
-export function getEvaluationReminderHtml(
-  recipientName: string,
-  subjectName: string,
-  cycleName: string,
-  deadline: string,
-  evaluationUrl: string
-): string {
-  return getEvaluationReminderEmail(recipientName, subjectName, cycleName, deadline, evaluationUrl).html;
-}
-
-export function getEvaluationInviteHtml(
-  recipientName: string,
-  subjectName: string,
-  cycleName: string,
-  evaluationUrl: string
-): string {
-  return getEvaluationInviteEmail(recipientName, subjectName, cycleName, evaluationUrl).html;
-}

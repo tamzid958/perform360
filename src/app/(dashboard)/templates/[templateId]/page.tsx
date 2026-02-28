@@ -71,6 +71,7 @@ export default function TemplateDetailPage() {
   async function handleDuplicate() {
     if (!template) return;
     setDuplicating(true);
+    setError(null);
     try {
       const res = await fetch("/api/templates", {
         method: "POST",
@@ -84,7 +85,11 @@ export default function TemplateDetailPage() {
       const json = await res.json();
       if (json.success) {
         router.push(`/templates/${json.data.id}`);
+      } else {
+        setError(json.error || "Failed to duplicate template");
       }
+    } catch {
+      setError("Network error — please try again");
     } finally {
       setDuplicating(false);
     }
@@ -149,6 +154,12 @@ export default function TemplateDetailPage() {
           </Link>
         )}
       </PageHeader>
+
+      {error && (
+        <div className="mb-4 px-4 py-3 rounded-xl bg-red-50 border border-red-100 text-[13px] text-red-600">
+          {error}
+        </div>
+      )}
 
       {/* Meta */}
       <div className="flex items-center gap-3 mb-8">

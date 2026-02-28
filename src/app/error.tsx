@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { AlertCircle } from "lucide-react";
 
-export default function GlobalError({
+export default function Error({
   error,
   reset,
 }: {

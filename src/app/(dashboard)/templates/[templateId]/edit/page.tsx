@@ -33,7 +33,7 @@ export default function EditTemplatePage() {
         name: json.data.name,
         description: json.data.description ?? "",
         sections: json.data.sections.map((s: { title: string; description?: string; questions: Array<{ id?: string; text: string; type: string; required: boolean; options?: string[]; scaleMin?: number; scaleMax?: number; scaleLabels?: string[] }> }, i: number) => ({
-          id: s.questions?.[0]?.id ? `section-${i}` : `section-${i}`,
+          id: `section-${i}`,
           title: s.title,
           description: s.description,
           questions: s.questions.map((q, j: number) => ({
