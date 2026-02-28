@@ -17,8 +17,6 @@ WORKDIR /app
 RUN apk add --no-cache openssl libc6-compat
 ENV NODE_ENV=production
 ENV PORT=3000
-ENV SUPER_ADMIN_EMAIL=admin@perform360.com
-ENV SUPER_ADMIN_NAME="Perform360 Admin"
 
 RUN addgroup -S nodejs && adduser -S nextjs -G nodejs
 
