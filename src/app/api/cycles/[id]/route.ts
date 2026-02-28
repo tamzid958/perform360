@@ -71,7 +71,7 @@ export async function GET(
     },
   });
 
-  // Resolve subject/reviewer names for assignments
+  // Resolve subject/reviewer names + team info for assignments
   if (cycle) {
     const userIds = new Set<string>();
     for (const a of cycle.assignments) {
@@ -83,12 +83,50 @@ export async function GET(
       select: { id: true, name: true },
     });
     const nameMap = new Map(users.map((u) => [u.id, u.name]));
-    // Attach names to cycle object for response
-    (cycle as Record<string, unknown>).assignmentsWithNames = cycle.assignments.map((a) => ({
-      ...a,
-      subjectName: nameMap.get(a.subjectId) ?? "Unknown",
-      reviewerName: nameMap.get(a.reviewerId) ?? "Unknown",
-    }));
+
+    // Build templateId -> team mapping from cycleTeams
+    // If multiple teams share the same template, fetch membership to disambiguate
+    const templateToTeams = new Map<string, { teamId: string; teamName: string }[]>();
+    for (const ct of cycle.cycleTeams) {
+      const arr = templateToTeams.get(ct.template.id) ?? [];
+      arr.push({ teamId: ct.team.id, teamName: ct.team.name });
+      templateToTeams.set(ct.template.id, arr);
+    }
+
+    // Fetch team memberships only if disambiguation needed
+    const needsDisambiguation = Array.from(templateToTeams.values()).some((t) => t.length > 1);
+    let userTeamMap: Map<string, Set<string>> | null = null;
+    if (needsDisambiguation) {
+      const teamIds = cycle.cycleTeams.map((ct) => ct.team.id);
+      const memberships = await prisma.teamMember.findMany({
+        where: { teamId: { in: teamIds } },
+        select: { userId: true, teamId: true },
+      });
+      userTeamMap = new Map<string, Set<string>>();
+      for (const m of memberships) {
+        const set = userTeamMap.get(m.userId) ?? new Set<string>();
+        set.add(m.teamId);
+        userTeamMap.set(m.userId, set);
+      }
+    }
+
+    // Attach names + team to cycle object for response
+    (cycle as Record<string, unknown>).assignmentsWithNames = cycle.assignments.map((a) => {
+      const teams = templateToTeams.get(a.templateId) ?? [];
+      let team = teams[0] ?? { teamId: "", teamName: "Unknown" };
+      if (teams.length > 1 && userTeamMap) {
+        const subjectTeams = userTeamMap.get(a.subjectId);
+        const match = teams.find((t) => subjectTeams?.has(t.teamId));
+        if (match) team = match;
+      }
+      return {
+        ...a,
+        subjectName: nameMap.get(a.subjectId) ?? "Unknown",
+        reviewerName: nameMap.get(a.reviewerId) ?? "Unknown",
+        teamId: team.teamId,
+        teamName: team.teamName,
+      };
+    });
   }
 
   if (!cycle) {

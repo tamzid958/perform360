@@ -9,7 +9,9 @@ import type {
   TextFeedbackGroup,
   CycleReport,
   TeamCompletionRate,
+  TeamScore,
   ParticipationStats,
+  SubmissionTrendPoint,
 } from "@/types/report";
 
 // ─── Types ───
@@ -420,6 +422,14 @@ export async function buildCycleReport(
   // Score distribution + individual summaries — decrypt all submitted responses
   const scoreDistribution: number[] = [0, 0, 0, 0, 0]; // Buckets: 1, 2, 3, 4, 5
   const individualSummaries: IndividualSummary[] = [];
+  const avgScoreByTeam: TeamScore[] = [];
+  let avgScoreByRelationship: RelationshipScores = {
+    manager: null,
+    peer: null,
+    directReport: null,
+    self: null,
+  };
+  const submissionTrend: SubmissionTrendPoint[] = [];
 
   // Build per-subject assignment counts
   const subjectIds = Array.from(new Set(assignments.map((a) => a.subjectId)));
@@ -469,11 +479,22 @@ export async function buildCycleReport(
           answersEncrypted: true,
           answersIv: true,
           answersTag: true,
+          submittedAt: true,
+          assignment: { select: { relationship: true } },
         },
       });
 
       // Per-subject score accumulation
       const subjectScores = new Map<string, { total: number; count: number }>();
+      // Per-relationship score accumulation
+      const relationshipScoreGroups: Record<string, number[]> = {
+        manager: [],
+        peer: [],
+        direct_report: [],
+        self: [],
+      };
+      // Submission date tracking
+      const dailySubmissions = new Map<string, number>();
 
       for (const resp of allResponses) {
         try {
@@ -485,6 +506,8 @@ export async function buildCycleReport(
           );
 
           const accum = subjectScores.get(resp.subjectId) ?? { total: 0, count: 0 };
+          let respTotal = 0;
+          let respCount = 0;
 
           for (const [key, value] of Object.entries(answers)) {
             if (ratingQuestionIds.has(key) && typeof value === "number") {
@@ -492,10 +515,26 @@ export async function buildCycleReport(
               scoreDistribution[bucket]++;
               accum.total += value;
               accum.count++;
+              respTotal += value;
+              respCount++;
             }
           }
 
           subjectScores.set(resp.subjectId, accum);
+
+          // Relationship scores
+          if (respCount > 0) {
+            const rel = resp.assignment.relationship;
+            if (relationshipScoreGroups[rel]) {
+              relationshipScoreGroups[rel].push(respTotal / respCount);
+            }
+          }
+
+          // Submission trend
+          if (resp.submittedAt) {
+            const dateKey = new Date(resp.submittedAt).toISOString().split("T")[0];
+            dailySubmissions.set(dateKey, (dailySubmissions.get(dateKey) ?? 0) + 1);
+          }
         } catch {
           // Skip responses that fail to decrypt (mismatched key version)
         }
@@ -514,6 +553,52 @@ export async function buildCycleReport(
           reviewCount: counts.total,
           completedCount: counts.completed,
         });
+      }
+
+      // Avg score by relationship
+      const avgArr = (arr: number[]): number | null =>
+        arr.length > 0
+          ? parseFloat((arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(2))
+          : null;
+
+      avgScoreByRelationship = {
+        manager: avgArr(relationshipScoreGroups.manager),
+        peer: avgArr(relationshipScoreGroups.peer),
+        directReport: avgArr(relationshipScoreGroups.direct_report),
+        self: avgArr(relationshipScoreGroups.self),
+      };
+
+      // Avg score by team
+      for (const team of teams) {
+        const memberIds = new Set(team.members.map((m) => m.userId));
+        let teamTotal = 0;
+        let teamCount = 0;
+        for (const [sid, scores] of Array.from(subjectScores.entries())) {
+          if (memberIds.has(sid) && scores.count > 0) {
+            teamTotal += scores.total / scores.count;
+            teamCount++;
+          }
+        }
+        if (teamCount > 0) {
+          avgScoreByTeam.push({
+            teamId: team.id,
+            teamName: team.name,
+            avgScore: parseFloat((teamTotal / teamCount).toFixed(2)),
+          });
+        }
+      }
+
+      // Build submission trend (sorted by date)
+      const sortedDates = Array.from(dailySubmissions.keys()).sort();
+      let cumulative = 0;
+      for (const date of sortedDates) {
+        const count = dailySubmissions.get(date) ?? 0;
+        cumulative += count;
+        const formatted = new Date(date + "T00:00:00").toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        });
+        submissionTrend.push({ date: formatted, count, cumulative });
       }
     }
   } else {
@@ -538,5 +623,8 @@ export async function buildCycleReport(
     scoreDistribution,
     participationStats,
     individualSummaries,
+    avgScoreByTeam,
+    avgScoreByRelationship,
+    submissionTrend,
   };
 }

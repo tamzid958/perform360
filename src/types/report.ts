@@ -47,6 +47,18 @@ export interface IndividualSummary {
   completedCount: number;
 }
 
+export interface TeamScore {
+  teamId: string;
+  teamName: string;
+  avgScore: number;
+}
+
+export interface SubmissionTrendPoint {
+  date: string;
+  count: number;
+  cumulative: number;
+}
+
 export interface CycleReport {
   cycleId: string;
   cycleName: string;
@@ -55,6 +67,9 @@ export interface CycleReport {
   scoreDistribution: number[];
   participationStats: ParticipationStats;
   individualSummaries: IndividualSummary[];
+  avgScoreByTeam: TeamScore[];
+  avgScoreByRelationship: RelationshipScores;
+  submissionTrend: SubmissionTrendPoint[];
 }
 
 export interface TeamCompletionRate {

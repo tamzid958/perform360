@@ -38,26 +38,26 @@ export function Sidebar() {
       )}
     >
       {/* Logo */}
-      <div className="flex items-center justify-between p-4 h-16">
-        {!collapsed && (
-          <Link href="/overview" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center">
-              <span className="text-white text-[14px] font-bold">P</span>
-            </div>
-            <span className="text-headline text-gray-900">Perform360</span>
-          </Link>
+      <div
+        className={cn(
+          "flex items-center p-4",
+          collapsed ? "flex-col justify-center gap-2 py-3" : "h-16 justify-between"
         )}
-        {collapsed && (
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center mx-auto">
+      >
+        <Link
+          href="/overview"
+          className={cn("flex items-center gap-2", collapsed && "justify-center")}
+        >
+          <div className="w-8 h-8 shrink-0 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center">
             <span className="text-white text-[14px] font-bold">P</span>
           </div>
-        )}
+          {!collapsed && (
+            <span className="text-headline text-gray-900">Perform360</span>
+          )}
+        </Link>
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className={cn(
-            "p-1.5 rounded-lg hover:bg-gray-200/60 transition-colors",
-            collapsed && "mx-auto mt-2"
-          )}
+          className="p-1.5 rounded-lg hover:bg-gray-200/60 transition-colors"
         >
           <ChevronLeft
             size={16}

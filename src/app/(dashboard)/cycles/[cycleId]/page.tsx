@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,19 @@ import { Avatar } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/layout/page-header";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "@/components/ui/select";
 import { ScoreDistributionChart } from "@/components/reports/score-distribution-chart";
+import { CompletionDonutChart } from "@/components/reports/completion-donut-chart";
+import { StatusBreakdownChart } from "@/components/reports/status-breakdown-chart";
+import { TeamScoreChart } from "@/components/reports/team-score-chart";
+import { RelationshipScoreChart } from "@/components/reports/relationship-score-chart";
+import { SubmissionTrendChart } from "@/components/reports/submission-trend-chart";
 import { UnlockGate, useEncryptionUnlock } from "@/components/encryption/unlock-gate";
 import {
   Play,
@@ -19,6 +31,13 @@ import {
   Clock,
   AlertCircle,
   ChevronRight,
+  Search,
+  Users,
+  BarChart3,
+  ClipboardList,
+  TrendingUp,
+  TrendingDown,
+  Trophy,
 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -59,9 +78,19 @@ interface AssignmentWithNames {
   reviewerName: string;
   relationship: string;
   status: "SUBMITTED" | "IN_PROGRESS" | "PENDING";
+  teamId: string;
+  teamName: string;
 }
 
 // ─── Constants ───
+
+type StatusFilterValue = "all" | "PENDING" | "IN_PROGRESS" | "SUBMITTED";
+type RelationshipFilterValue =
+  | "all"
+  | "manager"
+  | "direct_report"
+  | "peer"
+  | "self";
 
 const statusIcon: Record<string, React.ReactNode> = {
   SUBMITTED: (
@@ -88,7 +117,10 @@ const relationshipLabel: Record<string, string> = {
   self: "Self",
 };
 
-const statusBadgeVariant: Record<string, "success" | "warning" | "default" | "outline"> = {
+const statusBadgeVariant: Record<
+  string,
+  "success" | "warning" | "default" | "outline"
+> = {
   DRAFT: "outline",
   ACTIVE: "success",
   CLOSED: "warning",
@@ -107,12 +139,15 @@ export default function CycleDetailPage() {
   const { cycleId } = useParams<{ cycleId: string }>();
   const [cycle, setCycle] = useState<CycleApiData | null>(null);
   const [cycleReport, setCycleReport] = useState<CycleReport | null>(null);
-  const [activeTab, setActiveTab] = useState<"assignments" | "reports">(
-    "assignments"
-  );
-  const [assignmentFilter, setAssignmentFilter] = useState<
-    "all" | "pending" | "completed"
-  >("all");
+  const [activeTab, setActiveTab] = useState<
+    "overview" | "assignments" | "reports"
+  >("overview");
+  const [statusFilter, setStatusFilter] = useState<StatusFilterValue>("all");
+  const [relationshipFilter, setRelationshipFilter] =
+    useState<RelationshipFilterValue>("all");
+  const [teamFilter, setTeamFilter] = useState("all");
+  const [reportTeamFilter, setReportTeamFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [reportLoading, setReportLoading] = useState(false);
   const [reminding, setReminding] = useState(false);
@@ -156,30 +191,98 @@ export default function CycleDetailPage() {
     if (activeTab === "reports") fetchReport();
   }, [activeTab, fetchReport]);
 
-  if (loading) return <CycleSkeleton />;
-  if (!cycle) {
-    return (
-      <Card className="text-center py-12">
-        <p className="text-body text-gray-500">Cycle not found</p>
-      </Card>
-    );
-  }
+  // ─── Filtered assignments ───
 
-  const assignments = cycle.assignmentsWithNames ?? [];
-  const displayed = assignments.filter((a) => {
-    if (assignmentFilter === "pending")
-      return a.status === "PENDING" || a.status === "IN_PROGRESS";
-    if (assignmentFilter === "completed") return a.status === "SUBMITTED";
-    return true;
-  });
+  const assignments = useMemo(
+    () => cycle?.assignmentsWithNames ?? [],
+    [cycle?.assignmentsWithNames]
+  );
+
+  const filteredAssignments = useMemo(() => {
+    const query = searchQuery.toLowerCase().trim();
+    return assignments.filter((a) => {
+      if (statusFilter !== "all" && a.status !== statusFilter) return false;
+      if (relationshipFilter !== "all" && a.relationship !== relationshipFilter)
+        return false;
+      if (teamFilter !== "all" && a.teamId !== teamFilter) return false;
+      if (
+        query &&
+        !a.subjectName.toLowerCase().includes(query) &&
+        !a.reviewerName.toLowerCase().includes(query)
+      )
+        return false;
+      return true;
+    });
+  }, [assignments, statusFilter, relationshipFilter, teamFilter, searchQuery]);
+
+  // Group filtered assignments by team
+  const groupedByTeam = useMemo(() => {
+    const groups = new Map<string, { teamName: string; items: AssignmentWithNames[] }>();
+    for (const a of filteredAssignments) {
+      const group = groups.get(a.teamId) ?? { teamName: a.teamName, items: [] };
+      group.items.push(a);
+      groups.set(a.teamId, group);
+    }
+    return Array.from(groups.entries()).map(([teamId, g]) => ({
+      teamId,
+      teamName: g.teamName,
+      items: g.items,
+    }));
+  }, [filteredAssignments]);
+
+  const activeFilterCount = [
+    statusFilter !== "all",
+    relationshipFilter !== "all",
+    teamFilter !== "all",
+    searchQuery.trim() !== "",
+  ].filter(Boolean).length;
+
+  // ─── Report computed data ───
 
   const avgScore =
-    cycleReport?.individualSummaries && cycleReport.individualSummaries.length > 0
+    cycleReport?.individualSummaries &&
+    cycleReport.individualSummaries.length > 0
       ? cycleReport.individualSummaries.reduce(
           (sum, s) => sum + s.overallScore,
           0
         ) / cycleReport.individualSummaries.length
       : 0;
+
+  // Resolve which subjects belong to which team for report filtering
+  const subjectTeamMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const a of assignments) {
+      // Map subject to their team (first occurrence wins)
+      if (!map.has(a.subjectId)) {
+        map.set(a.subjectId, a.teamId);
+      }
+    }
+    return map;
+  }, [assignments]);
+
+  const filteredReportSummaries = useMemo(() => {
+    if (!cycleReport) return [];
+    if (reportTeamFilter === "all") return cycleReport.individualSummaries;
+    return cycleReport.individualSummaries.filter(
+      (s) => subjectTeamMap.get(s.subjectId) === reportTeamFilter
+    );
+  }, [cycleReport, reportTeamFilter, subjectTeamMap]);
+
+  const topPerformers = useMemo(() => {
+    return [...filteredReportSummaries]
+      .filter((s) => s.completedCount > 0 && s.overallScore > 0)
+      .sort((a, b) => b.overallScore - a.overallScore)
+      .slice(0, 5);
+  }, [filteredReportSummaries]);
+
+  const bottomPerformers = useMemo(() => {
+    return [...filteredReportSummaries]
+      .filter((s) => s.completedCount > 0 && s.overallScore > 0)
+      .sort((a, b) => a.overallScore - b.overallScore)
+      .slice(0, 5);
+  }, [filteredReportSummaries]);
+
+  // ─── Handlers ───
 
   function handleExport() {
     window.open(`/api/reports/cycle/${cycleId}/export`, "_blank");
@@ -188,10 +291,15 @@ export default function CycleDetailPage() {
   async function handleRemind() {
     setReminding(true);
     try {
-      const res = await fetch(`/api/cycles/${cycleId}/remind`, { method: "POST" });
+      const res = await fetch(`/api/cycles/${cycleId}/remind`, {
+        method: "POST",
+      });
       const json = await res.json();
       if (json.success) {
-        addToast(`Reminders sent to ${json.data.sent} reviewer${json.data.sent !== 1 ? "s" : ""}`, "success");
+        addToast(
+          `Reminders sent to ${json.data.sent} reviewer${json.data.sent !== 1 ? "s" : ""}`,
+          "success"
+        );
       } else {
         addToast(json.error ?? "Failed to send reminders", "error");
       }
@@ -202,7 +310,10 @@ export default function CycleDetailPage() {
     }
   }
 
-  async function handleRemindIndividual(assignmentId: string, reviewerName: string) {
+  async function handleRemindIndividual(
+    assignmentId: string,
+    reviewerName: string
+  ) {
     setRemindingId(assignmentId);
     try {
       const res = await fetch(`/api/cycles/${cycleId}/remind`, {
@@ -225,12 +336,33 @@ export default function CycleDetailPage() {
     }
   }
 
+  function clearFilters() {
+    setStatusFilter("all");
+    setRelationshipFilter("all");
+    setTeamFilter("all");
+    setSearchQuery("");
+  }
+
+  // ─── Render ───
+
+  if (loading) return <CycleSkeleton />;
+  if (!cycle) {
+    return (
+      <Card className="text-center py-12">
+        <p className="text-body text-gray-500">Cycle not found</p>
+      </Card>
+    );
+  }
+
   return (
     <div>
       <PageHeader
         title={cycle.name}
         description={`${cycle.teamTemplates.length} team${cycle.teamTemplates.length !== 1 ? "s" : ""} \u00B7 ${new Date(cycle.startDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })} \u2013 ${new Date(cycle.endDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`}
       >
+        <Badge variant={statusBadgeVariant[cycle.status]}>
+          {cycle.status.charAt(0) + cycle.status.slice(1).toLowerCase()}
+        </Badge>
         {activeTab === "reports" && (
           <Button variant="secondary" onClick={handleExport}>
             <Download size={16} strokeWidth={1.5} className="mr-1.5" />
@@ -244,219 +376,377 @@ export default function CycleDetailPage() {
           </Button>
         )}
         {cycle.status === "ACTIVE" && (
-          <Button variant="secondary" onClick={handleRemind} disabled={reminding}>
+          <Button
+            variant="secondary"
+            onClick={handleRemind}
+            disabled={reminding}
+          >
             <Send size={16} strokeWidth={1.5} className="mr-1.5" />
-            {reminding ? "Sending…" : "Send Reminders"}
+            {reminding ? "Sending\u2026" : "Send Reminders"}
           </Button>
         )}
       </PageHeader>
 
-      {/* Status Badge */}
-      <div className="mb-6">
-        <Badge variant={statusBadgeVariant[cycle.status]}>
-          {cycle.status.charAt(0) + cycle.status.slice(1).toLowerCase()}
-        </Badge>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <Card padding="md">
-          <p className="text-callout text-gray-500">Total</p>
-          <p className="text-title-small text-gray-900 mt-1">
-            {cycle.stats.totalAssignments}
-          </p>
-        </Card>
-        <Card padding="md">
-          <p className="text-callout text-green-600">Completed</p>
-          <p className="text-title-small text-green-700 mt-1">
-            {cycle.stats.submittedAssignments}
-          </p>
-        </Card>
-        <Card padding="md">
-          <p className="text-callout text-amber-600">In Progress</p>
-          <p className="text-title-small text-amber-700 mt-1">
-            {cycle.stats.inProgressAssignments}
-          </p>
-        </Card>
-        <Card padding="md">
-          <p className="text-callout text-gray-500">Pending</p>
-          <p className="text-title-small text-gray-700 mt-1">
-            {cycle.stats.pendingAssignments}
-          </p>
-        </Card>
-      </div>
-
-      {/* Progress */}
-      <Card className="mb-8">
-        <div className="flex justify-between text-[14px] mb-3">
-          <span className="text-gray-500">Overall Completion</span>
-          <span className="font-semibold text-gray-900">
-            {cycle.stats.completionRate}%
-          </span>
-        </div>
-        <Progress value={cycle.stats.completionRate} className="h-3" />
-      </Card>
-
-      {/* Team-Template Pairs */}
-      {cycle.teamTemplates.length > 0 && (
-        <Card padding="sm" className="mb-8">
-          <CardHeader>
-            <CardTitle>Teams &amp; Templates</CardTitle>
-          </CardHeader>
-          <div className="divide-y divide-gray-50">
-            {cycle.teamTemplates.map((tt) => (
-              <div key={tt.teamId} className="flex items-center justify-between px-4 py-2.5">
-                <span className="text-[14px] font-medium text-gray-900">{tt.teamName}</span>
-                <Badge variant="outline">{tt.templateName}</Badge>
-              </div>
-            ))}
-          </div>
-        </Card>
-      )}
-
-      {/* Main Tabs */}
+      {/* ─── Top-Level Tabs ─── */}
       <Tabs
         value={activeTab}
         onValueChange={(v) =>
-          setActiveTab(v as "assignments" | "reports")
+          setActiveTab(v as "overview" | "assignments" | "reports")
         }
       >
         <TabsList>
-          <TabsTrigger value="assignments">Assignments</TabsTrigger>
-          <TabsTrigger value="reports">Reports</TabsTrigger>
+          <TabsTrigger value="overview">
+            <BarChart3 size={15} strokeWidth={1.5} className="mr-1.5" />
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="assignments">
+            <ClipboardList size={15} strokeWidth={1.5} className="mr-1.5" />
+            Assignments
+            {cycle.stats.totalAssignments > 0 && (
+              <span className="ml-1.5 text-[11px] font-normal bg-gray-200/80 text-gray-600 rounded-full px-1.5 py-0.5 min-w-[20px] text-center">
+                {cycle.stats.totalAssignments}
+              </span>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="reports">
+            <Users size={15} strokeWidth={1.5} className="mr-1.5" />
+            Reports
+          </TabsTrigger>
         </TabsList>
+
+        {/* ─── Overview Tab ─── */}
+        <TabsContent value="overview">
+          {/* Completion Donut + Status Breakdown */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <Card padding="md">
+              <CardHeader>
+                <CardTitle>Completion Progress</CardTitle>
+              </CardHeader>
+              <div className="flex justify-center py-2">
+                <CompletionDonutChart
+                  completed={cycle.stats.submittedAssignments}
+                  total={cycle.stats.totalAssignments}
+                />
+              </div>
+            </Card>
+            <Card padding="md">
+              <CardHeader>
+                <CardTitle>Status Breakdown</CardTitle>
+              </CardHeader>
+              <StatusBreakdownChart
+                submitted={cycle.stats.submittedAssignments}
+                inProgress={cycle.stats.inProgressAssignments}
+                pending={cycle.stats.pendingAssignments}
+              />
+            </Card>
+          </div>
+
+          {/* Team-Template Pairs */}
+          {cycle.teamTemplates.length > 0 && (
+            <Card padding="sm">
+              <CardHeader>
+                <CardTitle>Teams & Templates</CardTitle>
+              </CardHeader>
+              <div className="divide-y divide-gray-50">
+                {cycle.teamTemplates.map((tt) => (
+                  <div
+                    key={tt.teamId}
+                    className="flex items-center justify-between px-4 py-2.5"
+                  >
+                    <span className="text-[14px] font-medium text-gray-900">
+                      {tt.teamName}
+                    </span>
+                    <Badge variant="outline">{tt.templateName}</Badge>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+        </TabsContent>
 
         {/* ─── Assignments Tab ─── */}
         <TabsContent value="assignments">
-          <Tabs
-            value={assignmentFilter}
-            onValueChange={(v) =>
-              setAssignmentFilter(v as "all" | "pending" | "completed")
-            }
-          >
-            <TabsList>
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="pending">Pending</TabsTrigger>
-              <TabsTrigger value="completed">Completed</TabsTrigger>
-            </TabsList>
+          {/* Filter Bar */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-4">
+            {/* Status segmented control */}
+            <div className="inline-flex items-center gap-0.5 rounded-xl bg-gray-100 p-1">
+              {(
+                [
+                  { value: "all", label: "All" },
+                  { value: "PENDING", label: "Pending" },
+                  { value: "IN_PROGRESS", label: "In Progress" },
+                  { value: "SUBMITTED", label: "Submitted" },
+                ] as const
+              ).map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => setStatusFilter(opt.value)}
+                  className={`px-3 py-1.5 rounded-lg text-[13px] font-medium transition-all duration-200 ${
+                    statusFilter === opt.value
+                      ? "bg-white text-gray-900 shadow-sm"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
 
-            <div className="mt-4">
-              <Card padding="sm">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-gray-100">
-                        <th className="text-left text-[12px] font-medium text-gray-400 uppercase tracking-wider px-4 py-3">
-                          Subject
-                        </th>
-                        <th className="text-left text-[12px] font-medium text-gray-400 uppercase tracking-wider px-4 py-3">
-                          Reviewer
-                        </th>
-                        <th className="text-left text-[12px] font-medium text-gray-400 uppercase tracking-wider px-4 py-3">
-                          Relationship
-                        </th>
-                        <th className="text-left text-[12px] font-medium text-gray-400 uppercase tracking-wider px-4 py-3">
-                          Status
-                        </th>
-                        {cycle.status === "ACTIVE" && (
-                          <th className="text-right text-[12px] font-medium text-gray-400 uppercase tracking-wider px-4 py-3">
-                            Action
+            {/* Team dropdown */}
+            <Select value={teamFilter} onValueChange={setTeamFilter}>
+              <SelectTrigger className="w-auto h-9 min-w-[130px] text-[13px] rounded-lg">
+                <SelectValue placeholder="Team" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Teams</SelectItem>
+                {cycle.teamTemplates.map((tt) => (
+                  <SelectItem key={tt.teamId} value={tt.teamId}>
+                    {tt.teamName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Relationship dropdown */}
+            <Select
+              value={relationshipFilter}
+              onValueChange={(v) =>
+                setRelationshipFilter(v as RelationshipFilterValue)
+              }
+            >
+              <SelectTrigger className="w-auto h-9 min-w-[150px] text-[13px] rounded-lg">
+                <SelectValue placeholder="Relationship" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Relationships</SelectItem>
+                <SelectItem value="manager">Manager</SelectItem>
+                <SelectItem value="direct_report">Direct Report</SelectItem>
+                <SelectItem value="peer">Peer</SelectItem>
+                <SelectItem value="self">Self</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Search input */}
+            <div className="relative flex-1 min-w-[180px]">
+              <Search
+                size={15}
+                strokeWidth={1.5}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              />
+              <input
+                type="text"
+                placeholder="Search by name\u2026"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full h-9 pl-9 pr-3 rounded-lg border border-gray-200 bg-white text-[13px] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0071e3]/20 focus:border-[#0071e3] transition-all duration-200"
+              />
+            </div>
+
+            {/* Clear filters */}
+            {activeFilterCount > 0 && (
+              <button
+                onClick={clearFilters}
+                className="text-[12px] text-[#0071e3] hover:text-[#0058b9] font-medium whitespace-nowrap transition-colors"
+              >
+                Clear filters ({activeFilterCount})
+              </button>
+            )}
+          </div>
+
+          {/* Results count */}
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-[12px] text-gray-400">
+              {filteredAssignments.length} of {assignments.length} assignment
+              {assignments.length !== 1 ? "s" : ""}
+              {groupedByTeam.length > 1 &&
+                ` across ${groupedByTeam.length} teams`}
+            </p>
+          </div>
+
+          {/* Grouped Assignments Table */}
+          {filteredAssignments.length === 0 ? (
+            <Card className="py-12">
+              <div className="flex flex-col items-center gap-2">
+                <Search
+                  size={24}
+                  strokeWidth={1.5}
+                  className="text-gray-300"
+                />
+                <p className="text-[14px] text-gray-400">
+                  {activeFilterCount > 0
+                    ? "No assignments match your filters"
+                    : "No assignments found"}
+                </p>
+                {activeFilterCount > 0 && (
+                  <button
+                    onClick={clearFilters}
+                    className="text-[13px] text-[#0071e3] hover:text-[#0058b9] font-medium transition-colors"
+                  >
+                    Clear all filters
+                  </button>
+                )}
+              </div>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {groupedByTeam.map((group) => (
+                <Card key={group.teamId} padding="sm">
+                  {/* Team header */}
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                    <div className="flex items-center gap-2">
+                      <Users
+                        size={15}
+                        strokeWidth={1.5}
+                        className="text-gray-400"
+                      />
+                      <span className="text-[14px] font-semibold text-gray-900">
+                        {group.teamName}
+                      </span>
+                    </div>
+                    <span className="text-[12px] text-gray-400">
+                      {group.items.filter((a) => a.status === "SUBMITTED").length}
+                      /{group.items.length} completed
+                    </span>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-gray-50">
+                          <th className="text-left text-[11px] font-medium text-gray-400 uppercase tracking-wider px-4 py-2">
+                            Subject
                           </th>
-                        )}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-50">
-                      {displayed.length === 0 ? (
-                        <tr>
-                          <td
-                            colSpan={cycle.status === "ACTIVE" ? 5 : 4}
-                            className="text-center py-8 text-[14px] text-gray-400"
-                          >
-                            No assignments found
-                          </td>
+                          <th className="text-left text-[11px] font-medium text-gray-400 uppercase tracking-wider px-4 py-2">
+                            Reviewer
+                          </th>
+                          <th className="text-left text-[11px] font-medium text-gray-400 uppercase tracking-wider px-4 py-2">
+                            Relationship
+                          </th>
+                          <th className="text-left text-[11px] font-medium text-gray-400 uppercase tracking-wider px-4 py-2">
+                            Status
+                          </th>
+                          {cycle.status === "ACTIVE" && (
+                            <th className="text-right text-[11px] font-medium text-gray-400 uppercase tracking-wider px-4 py-2">
+                              Action
+                            </th>
+                          )}
                         </tr>
-                      ) : (
-                        displayed.map((a) => (
+                      </thead>
+                      <tbody className="divide-y divide-gray-50">
+                        {group.items.map((a) => (
                           <tr
                             key={a.id}
                             className="hover:bg-gray-50/50 transition-colors"
                           >
-                            <td className="px-4 py-3">
+                            <td className="px-4 py-2.5">
                               <div className="flex items-center gap-2">
                                 <Avatar name={a.subjectName} size="sm" />
-                                <span className="text-[14px] font-medium text-gray-900">
+                                <span className="text-[13px] font-medium text-gray-900">
                                   {a.subjectName}
                                 </span>
                               </div>
                             </td>
-                            <td className="px-4 py-3">
+                            <td className="px-4 py-2.5">
                               <div className="flex items-center gap-2">
                                 <Avatar name={a.reviewerName} size="sm" />
-                                <span className="text-[14px] text-gray-700">
+                                <span className="text-[13px] text-gray-700">
                                   {a.reviewerName}
                                 </span>
                               </div>
                             </td>
-                            <td className="px-4 py-3">
+                            <td className="px-4 py-2.5">
                               <Badge variant="outline">
                                 {relationshipLabel[a.relationship] ??
                                   a.relationship}
                               </Badge>
                             </td>
-                            <td className="px-4 py-3">
+                            <td className="px-4 py-2.5">
                               <div className="flex items-center gap-1.5">
                                 {statusIcon[a.status]}
-                                <span className="text-[13px] text-gray-600">
+                                <span className="text-[12px] text-gray-600">
                                   {statusLabel[a.status]}
                                 </span>
                               </div>
                             </td>
                             {cycle.status === "ACTIVE" && (
-                              <td className="px-4 py-3 text-right">
+                              <td className="px-4 py-2.5 text-right">
                                 {a.status !== "SUBMITTED" ? (
                                   <Button
                                     variant="ghost"
                                     size="sm"
                                     disabled={remindingId === a.id}
-                                    onClick={() => handleRemindIndividual(a.id, a.reviewerName)}
+                                    onClick={() =>
+                                      handleRemindIndividual(
+                                        a.id,
+                                        a.reviewerName
+                                      )
+                                    }
                                   >
-                                    <Send size={14} strokeWidth={1.5} className="mr-1" />
-                                    {remindingId === a.id ? "Sending…" : "Remind"}
+                                    <Send
+                                      size={14}
+                                      strokeWidth={1.5}
+                                      className="mr-1"
+                                    />
+                                    {remindingId === a.id
+                                      ? "Sending\u2026"
+                                      : "Remind"}
                                   </Button>
                                 ) : (
-                                  <span className="text-[12px] text-gray-300">—</span>
+                                  <span className="text-[12px] text-gray-300">
+                                    \u2014
+                                  </span>
                                 )}
                               </td>
                             )}
                           </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </Card>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </Card>
+              ))}
             </div>
-          </Tabs>
+          )}
         </TabsContent>
 
         {/* ─── Reports Tab ─── */}
         <TabsContent value="reports">
           {locked ? (
-            <UnlockGate locked={locked} onUnlocked={() => { handleUnlocked(); setCycleReport(null); fetchReport(); }}>
+            <UnlockGate
+              locked={locked}
+              onUnlocked={() => {
+                handleUnlocked();
+                setCycleReport(null);
+                fetchReport();
+              }}
+            >
               <div />
             </UnlockGate>
           ) : reportLoading ? (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton key={i} className="h-24 rounded-2xl" />
-                ))}
-              </div>
-              <Skeleton className="h-64 rounded-2xl" />
-            </div>
+            <ReportSkeleton />
           ) : cycleReport ? (
             <>
-              {/* Report Stats */}
+              {/* Summary Stats + Team Filter */}
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-headline text-gray-900">Summary</h3>
+                {cycle.teamTemplates.length > 1 && (
+                  <Select
+                    value={reportTeamFilter}
+                    onValueChange={setReportTeamFilter}
+                  >
+                    <SelectTrigger className="w-auto h-9 min-w-[160px] text-[13px] rounded-lg">
+                      <SelectValue placeholder="Filter by team" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Teams</SelectItem>
+                      {cycle.teamTemplates.map((tt) => (
+                        <SelectItem key={tt.teamId} value={tt.teamId}>
+                          {tt.teamName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                 <Card padding="md" className="text-center">
                   <p className="text-callout text-gray-500">Completion Rate</p>
@@ -478,20 +768,64 @@ export default function CycleDetailPage() {
                 <Card padding="md" className="text-center">
                   <p className="text-callout text-gray-500">Participants</p>
                   <p className="text-title-small text-gray-900 mt-1">
-                    {cycleReport.individualSummaries.length}
+                    {filteredReportSummaries.length}
                   </p>
-                  <p className="text-[12px] text-gray-400 mt-1">individuals</p>
+                  <p className="text-[12px] text-gray-400 mt-1">
+                    {reportTeamFilter !== "all" ? "in team" : "individuals"}
+                  </p>
                 </Card>
               </div>
 
-              {/* Score Distribution */}
-              {cycleReport.scoreDistribution.some((n) => n > 0) && (
+              {/* Submission Trend */}
+              {cycleReport.submissionTrend.length > 1 && (
                 <Card className="mb-6">
                   <CardHeader>
-                    <CardTitle>Score Distribution</CardTitle>
+                    <CardTitle>Submission Timeline</CardTitle>
                   </CardHeader>
-                  <ScoreDistributionChart
-                    distribution={cycleReport.scoreDistribution}
+                  <SubmissionTrendChart data={cycleReport.submissionTrend} />
+                </Card>
+              )}
+
+              {/* Score Distribution + Relationship Breakdown */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                {cycleReport.scoreDistribution.some((n) => n > 0) && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Score Distribution</CardTitle>
+                    </CardHeader>
+                    <ScoreDistributionChart
+                      distribution={cycleReport.scoreDistribution}
+                    />
+                  </Card>
+                )}
+                {cycleReport.avgScoreByRelationship && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Scores by Relationship</CardTitle>
+                    </CardHeader>
+                    <RelationshipScoreChart
+                      manager={cycleReport.avgScoreByRelationship.manager}
+                      peer={cycleReport.avgScoreByRelationship.peer}
+                      directReport={
+                        cycleReport.avgScoreByRelationship.directReport
+                      }
+                      self={cycleReport.avgScoreByRelationship.self}
+                    />
+                  </Card>
+                )}
+              </div>
+
+              {/* Avg Score by Team */}
+              {cycleReport.avgScoreByTeam.length > 0 && (
+                <Card className="mb-6">
+                  <CardHeader>
+                    <CardTitle>Average Score by Team</CardTitle>
+                  </CardHeader>
+                  <TeamScoreChart
+                    teams={cycleReport.avgScoreByTeam.map((t) => ({
+                      teamName: t.teamName,
+                      avgScore: t.avgScore,
+                    }))}
                   />
                 </Card>
               )}
@@ -506,7 +840,9 @@ export default function CycleDetailPage() {
                     {cycleReport.teamCompletionRates.map((team) => (
                       <div key={team.teamId}>
                         <div className="flex justify-between text-[14px] mb-1">
-                          <span className="text-gray-700">{team.teamName}</span>
+                          <span className="text-gray-700">
+                            {team.teamName}
+                          </span>
                           <span className="text-gray-500">
                             {team.completed}/{team.total} ({team.rate}%)
                           </span>
@@ -518,18 +854,104 @@ export default function CycleDetailPage() {
                 </Card>
               )}
 
+              {/* Top & Bottom Performers */}
+              {topPerformers.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                  <Card padding="sm">
+                    <CardHeader>
+                      <div className="flex items-center gap-2">
+                        <TrendingUp
+                          size={16}
+                          strokeWidth={1.5}
+                          className="text-green-500"
+                        />
+                        <CardTitle>Top Performers</CardTitle>
+                      </div>
+                    </CardHeader>
+                    <div className="divide-y divide-gray-50">
+                      {topPerformers.map((person, idx) => (
+                        <Link
+                          key={person.subjectId}
+                          href={`/cycles/${cycleId}/reports/${person.subjectId}`}
+                        >
+                          <div className="flex items-center justify-between px-4 py-2.5 hover:bg-gray-50/50 transition-colors group">
+                            <div className="flex items-center gap-3">
+                              <span className="text-[12px] font-semibold text-gray-400 w-5 text-center">
+                                {idx === 0 ? (
+                                  <Trophy
+                                    size={14}
+                                    strokeWidth={1.5}
+                                    className="text-amber-500 inline"
+                                  />
+                                ) : (
+                                  idx + 1
+                                )}
+                              </span>
+                              <Avatar name={person.subjectName} size="sm" />
+                              <span className="text-[14px] font-medium text-gray-900">
+                                {person.subjectName}
+                              </span>
+                            </div>
+                            <ScoreBadge score={person.overallScore} />
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  </Card>
+
+                  <Card padding="sm">
+                    <CardHeader>
+                      <div className="flex items-center gap-2">
+                        <TrendingDown
+                          size={16}
+                          strokeWidth={1.5}
+                          className="text-amber-500"
+                        />
+                        <CardTitle>Needs Improvement</CardTitle>
+                      </div>
+                    </CardHeader>
+                    <div className="divide-y divide-gray-50">
+                      {bottomPerformers.map((person, idx) => (
+                        <Link
+                          key={person.subjectId}
+                          href={`/cycles/${cycleId}/reports/${person.subjectId}`}
+                        >
+                          <div className="flex items-center justify-between px-4 py-2.5 hover:bg-gray-50/50 transition-colors group">
+                            <div className="flex items-center gap-3">
+                              <span className="text-[12px] font-semibold text-gray-400 w-5 text-center">
+                                {idx + 1}
+                              </span>
+                              <Avatar name={person.subjectName} size="sm" />
+                              <span className="text-[14px] font-medium text-gray-900">
+                                {person.subjectName}
+                              </span>
+                            </div>
+                            <ScoreBadge score={person.overallScore} />
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  </Card>
+                </div>
+              )}
+
               {/* Individual Reports List */}
               <Card padding="sm">
                 <CardHeader>
-                  <CardTitle>Individual Reports</CardTitle>
+                  <CardTitle>
+                    {reportTeamFilter !== "all"
+                      ? "Team Individual Reports"
+                      : "All Individual Reports"}
+                  </CardTitle>
                 </CardHeader>
                 <div className="divide-y divide-gray-50">
-                  {cycleReport.individualSummaries.length === 0 ? (
+                  {filteredReportSummaries.length === 0 ? (
                     <p className="text-center py-8 text-[14px] text-gray-400">
-                      No individual reports available yet
+                      No individual reports available
+                      {reportTeamFilter !== "all" && " for this team"}
                     </p>
                   ) : (
-                    cycleReport.individualSummaries.map((person) => (
+                    filteredReportSummaries.map((person) => (
                       <Link
                         key={person.subjectId}
                         href={`/cycles/${cycleId}/reports/${person.subjectId}`}
@@ -587,20 +1009,47 @@ export default function CycleDetailPage() {
   );
 }
 
-// ─── Skeleton ───
+// ─── Skeletons ───
 
 function CycleSkeleton() {
   return (
     <div>
       <Skeleton className="h-8 w-64 mb-2" />
       <Skeleton className="h-4 w-48 mb-8" />
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-20 rounded-2xl" />
+      <div className="inline-flex gap-1 mb-6">
+        <Skeleton className="h-10 w-28 rounded-xl" />
+        <Skeleton className="h-10 w-32 rounded-xl" />
+        <Skeleton className="h-10 w-24 rounded-xl" />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <Skeleton className="h-56 rounded-2xl" />
+        <Skeleton className="h-56 rounded-2xl" />
+      </div>
+      <Skeleton className="h-16 rounded-2xl mb-6" />
+      <Skeleton className="h-32 rounded-2xl" />
+    </div>
+  );
+}
+
+function ReportSkeleton() {
+  return (
+    <div className="space-y-4">
+      <Skeleton className="h-9 w-40 rounded-lg" />
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} className="h-24 rounded-2xl" />
         ))}
       </div>
-      <Skeleton className="h-16 rounded-2xl mb-8" />
-      <Skeleton className="h-10 w-64 mb-4" />
+      <Skeleton className="h-72 rounded-2xl" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Skeleton className="h-64 rounded-2xl" />
+        <Skeleton className="h-64 rounded-2xl" />
+      </div>
+      <Skeleton className="h-48 rounded-2xl" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Skeleton className="h-48 rounded-2xl" />
+        <Skeleton className="h-48 rounded-2xl" />
+      </div>
       <Skeleton className="h-64 rounded-2xl" />
     </div>
   );

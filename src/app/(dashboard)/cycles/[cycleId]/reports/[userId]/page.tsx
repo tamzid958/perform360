@@ -1,14 +1,17 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/layout/page-header";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { CompetencyRadarChart } from "@/components/reports/radar-chart";
 import { ScoreBreakdown } from "@/components/reports/score-breakdown";
+import { ScoreGauge } from "@/components/reports/score-gauge";
+import { RelationshipScoreChart } from "@/components/reports/relationship-score-chart";
+import { QuestionDetailChart } from "@/components/reports/question-detail-chart";
+import { DistributionMiniChart } from "@/components/reports/distribution-mini-chart";
 import { UnlockGate, useEncryptionUnlock } from "@/components/encryption/unlock-gate";
 import { Download, ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -93,7 +96,42 @@ export default function IndividualReportPage() {
     );
   }
 
+  return <ReportContent report={report} cycleId={cycleId} onExport={handleExport} />;
+}
+
+// ─── Main Report Content ───
+
+function ReportContent({
+  report,
+  cycleId,
+  onExport,
+}: {
+  report: IndividualReport;
+  cycleId: string;
+  onExport: () => void;
+}) {
   const relScores = report.scoresByRelationship;
+
+  const scoredQuestions = useMemo(
+    () => report.questionDetails.filter((q) => q.averageScore !== null),
+    [report.questionDetails]
+  );
+
+  const questionsWithDistribution = useMemo(
+    () =>
+      report.questionDetails.filter(
+        (q) => Object.keys(q.distribution).length > 0
+      ),
+    [report.questionDetails]
+  );
+
+  const totalResponses = useMemo(
+    () =>
+      scoredQuestions.length > 0
+        ? Math.max(...scoredQuestions.map((q) => q.responseCount))
+        : 0,
+    [scoredQuestions]
+  );
 
   return (
     <div>
@@ -108,121 +146,143 @@ export default function IndividualReportPage() {
       </div>
 
       <PageHeader title={report.subjectName} description={report.cycleName}>
-        <Button variant="secondary" onClick={handleExport}>
+        <Button variant="secondary" onClick={onExport}>
           <Download size={16} strokeWidth={1.5} className="mr-1.5" />
           Export PDF
         </Button>
       </PageHeader>
 
-      {/* Overall Score + Relationship Scores */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
-        <Card padding="md" className="text-center col-span-2 sm:col-span-1">
-          <p className="text-callout text-gray-500">Overall</p>
-          <p className="text-title-large text-gray-900 mt-1">
-            {report.overallScore.toFixed(1)}
-          </p>
-          <p className="text-[12px] text-gray-400">out of 5.0</p>
+      {/* ─── Hero: Score Gauge + Relationship Bars ─── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <Card padding="md">
+          <CardHeader>
+            <CardTitle>Overall Score</CardTitle>
+          </CardHeader>
+          <ScoreGauge score={report.overallScore} />
+          <div className="flex items-center justify-center gap-4 mt-1">
+            <span className="text-[12px] text-gray-400">
+              {totalResponses} reviewer{totalResponses !== 1 ? "s" : ""}
+            </span>
+            <span className="text-[12px] text-gray-400">
+              {report.categoryScores.length} competencies
+            </span>
+          </div>
         </Card>
-        <RelationshipScoreCard label="Manager" value={relScores.manager} color="blue" />
-        <RelationshipScoreCard label="Peers" value={relScores.peer} color="green" />
-        <RelationshipScoreCard label="Reports" value={relScores.directReport} color="amber" />
-        <RelationshipScoreCard label="Self" value={relScores.self} color="gray" />
+        <Card padding="md">
+          <CardHeader>
+            <CardTitle>Scores by Relationship</CardTitle>
+          </CardHeader>
+          <RelationshipScoreChart
+            manager={relScores.manager}
+            peer={relScores.peer}
+            directReport={relScores.directReport}
+            self={relScores.self}
+          />
+        </Card>
       </div>
 
-      <Tabs defaultValue="scores">
-        <TabsList>
-          <TabsTrigger value="scores">Score Breakdown</TabsTrigger>
-          <TabsTrigger value="radar">Radar Chart</TabsTrigger>
-          <TabsTrigger value="feedback">Open Feedback</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="scores">
-          <Card>
-            <CardHeader>
-              <CardTitle>Competency Scores</CardTitle>
-            </CardHeader>
-            <ScoreBreakdown categories={report.categoryScores} />
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="radar">
+      {/* ─── Competency Radar + Bar Breakdown ─── */}
+      {report.categoryScores.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <Card>
             <CardHeader>
               <CardTitle>Competency Radar</CardTitle>
             </CardHeader>
             <CompetencyRadarChart categories={report.categoryScores} />
           </Card>
-        </TabsContent>
+          <Card>
+            <CardHeader>
+              <CardTitle>Competency Scores</CardTitle>
+            </CardHeader>
+            <ScoreBreakdown categories={report.categoryScores} />
+          </Card>
+        </div>
+      )}
 
-        <TabsContent value="feedback">
-          <div className="space-y-4">
-            {report.textFeedback.length === 0 ? (
-              <Card className="text-center py-8">
-                <p className="text-callout text-gray-400">
-                  No open-text feedback submitted.
+      {/* ─── Per-Question Average Scores ─── */}
+      {scoredQuestions.length > 0 && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Per-Question Scores</CardTitle>
+          </CardHeader>
+          <QuestionDetailChart questions={scoredQuestions} />
+        </Card>
+      )}
+
+      {/* ─── Response Distributions ─── */}
+      {questionsWithDistribution.length > 0 && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Response Distributions</CardTitle>
+          </CardHeader>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {questionsWithDistribution.map((q) => (
+              <div
+                key={q.questionId}
+                className="p-3 rounded-xl bg-gray-50/80 border border-gray-100"
+              >
+                <p className="text-[12px] font-medium text-gray-700 mb-2 line-clamp-2">
+                  {q.questionText}
                 </p>
-              </Card>
-            ) : (
-              report.textFeedback.map((group, i) => (
-                <Card key={`${group.questionId}-${group.relationship}-${i}`}>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      {RELATIONSHIP_LABELS[group.relationship] ?? group.relationship}{" "}
-                      Feedback
-                      <Badge variant="outline">
-                        {group.responses.length} responses
-                      </Badge>
-                    </CardTitle>
-                    <p className="text-[13px] text-gray-400 mt-0.5">
-                      {group.questionText}
-                    </p>
-                  </CardHeader>
-                  <div className="space-y-3">
-                    {group.responses.map((response, j) => (
-                      <div key={j} className="p-3 rounded-xl bg-gray-50">
-                        <p className="text-[14px] text-gray-700 leading-relaxed">
-                          {response}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-              ))
-            )}
+                <DistributionMiniChart distribution={q.distribution} />
+                <div className="flex items-center justify-between mt-1">
+                  <span className="text-[11px] text-gray-400">
+                    {q.responseCount} responses
+                  </span>
+                  {q.averageScore !== null && (
+                    <span className="text-[11px] font-medium text-gray-600">
+                      avg {q.averageScore.toFixed(1)}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
-        </TabsContent>
-      </Tabs>
+        </Card>
+      )}
+
+      {/* ─── Open Feedback ─── */}
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            Open Feedback
+          </CardTitle>
+        </CardHeader>
+        {report.textFeedback.length === 0 ? (
+          <p className="text-center py-8 text-callout text-gray-400">
+            No open-text feedback submitted.
+          </p>
+        ) : (
+          <div className="space-y-4">
+            {report.textFeedback.map((group, i) => (
+              <div key={`${group.questionId}-${group.relationship}-${i}`}>
+                <div className="flex items-center gap-2 mb-2">
+                  <Badge variant="outline">
+                    {RELATIONSHIP_LABELS[group.relationship] ?? group.relationship}
+                  </Badge>
+                  <span className="text-[13px] text-gray-500">
+                    {group.questionText}
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  {group.responses.map((response, j) => (
+                    <div key={j} className="p-3 rounded-xl bg-gray-50">
+                      <p className="text-[14px] text-gray-700 leading-relaxed">
+                        {response}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
     </div>
   );
 }
 
 // ─── Sub-components ───
-
-function RelationshipScoreCard({
-  label,
-  value,
-  color,
-}: {
-  label: string;
-  value: number | null;
-  color: "blue" | "green" | "amber" | "gray";
-}) {
-  const colorClass: Record<string, string> = {
-    blue: "text-blue-600",
-    green: "text-green-600",
-    amber: "text-amber-600",
-    gray: "text-gray-500",
-  };
-
-  return (
-    <Card padding="md" className="text-center">
-      <p className={`text-callout ${colorClass[color]}`}>{label}</p>
-      <p className="text-title-small text-gray-900 mt-1">
-        {value !== null ? value.toFixed(1) : "\u2014"}
-      </p>
-    </Card>
-  );
-}
 
 function ReportSkeleton() {
   return (
@@ -230,13 +290,16 @@ function ReportSkeleton() {
       <Skeleton className="h-4 w-24 mb-6" />
       <Skeleton className="h-8 w-48 mb-2" />
       <Skeleton className="h-4 w-64 mb-8" />
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <Skeleton key={i} className="h-24 rounded-2xl" />
-        ))}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <Skeleton className="h-56 rounded-2xl" />
+        <Skeleton className="h-56 rounded-2xl" />
       </div>
-      <Skeleton className="h-10 w-80 mb-4" />
-      <Skeleton className="h-64 rounded-2xl" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <Skeleton className="h-64 rounded-2xl" />
+        <Skeleton className="h-64 rounded-2xl" />
+      </div>
+      <Skeleton className="h-80 rounded-2xl mb-6" />
+      <Skeleton className="h-48 rounded-2xl" />
     </div>
   );
 }
