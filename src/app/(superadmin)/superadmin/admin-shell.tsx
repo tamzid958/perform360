@@ -2,13 +2,14 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import { LayoutDashboard, Building2, FileText } from "lucide-react";
 
 const navigation = [
-  { name: "Overview", href: "/admin", icon: LayoutDashboard },
-  { name: "Companies", href: "/admin/companies", icon: Building2 },
-  { name: "Templates", href: "/admin/templates", icon: FileText },
+  { name: "Overview", href: "/superadmin", icon: LayoutDashboard },
+  { name: "Companies", href: "/superadmin/companies", icon: Building2 },
+  { name: "Global Templates", href: "/superadmin/global-templates", icon: FileText },
 ];
 
 export function SuperAdminShell({ children }: { children: React.ReactNode }) {
@@ -28,7 +29,10 @@ export function SuperAdminShell({ children }: { children: React.ReactNode }) {
               Super Admin
             </span>
           </div>
-          <button className="text-[14px] text-gray-400 hover:text-white transition-colors">
+          <button
+            onClick={() => signOut({ redirectTo: "/login" })}
+            className="text-[14px] text-gray-400 hover:text-white transition-colors"
+          >
             Sign Out
           </button>
         </div>
@@ -36,7 +40,7 @@ export function SuperAdminShell({ children }: { children: React.ReactNode }) {
           {navigation.map((item) => {
             const isActive =
               pathname === item.href ||
-              (item.href !== "/admin" && pathname.startsWith(item.href));
+              (item.href !== "/superadmin" && pathname.startsWith(item.href));
             const Icon = item.icon;
             return (
               <Link

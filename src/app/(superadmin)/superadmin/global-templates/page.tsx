@@ -19,8 +19,9 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Globe, MoreHorizontal, Loader2, Trash2, Pencil } from "lucide-react";
+import { Plus, Globe, MoreHorizontal, Loader2, Trash2, Pencil, BarChart3 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
+import Link from "next/link";
 
 interface Section {
   title: string;
@@ -184,13 +185,13 @@ export default function GlobalTemplatesPage() {
                   className="group relative"
                 >
                   <div className="flex items-start justify-between mb-3">
-                    <div className="p-2.5 rounded-xl bg-blue-50">
+                    <Link href={`/superadmin/global-templates/${template.id}`} className="p-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors">
                       <Globe
                         size={20}
                         strokeWidth={1.5}
                         className="text-[#0071e3]"
                       />
-                    </div>
+                    </Link>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <button className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors opacity-0 group-hover:opacity-100">
@@ -202,6 +203,12 @@ export default function GlobalTemplatesPage() {
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        <DropdownMenuItem asChild>
+                          <Link href={`/superadmin/global-templates/${template.id}`}>
+                            <BarChart3 size={14} strokeWidth={1.5} className="mr-2" />
+                            View Analytics
+                          </Link>
+                        </DropdownMenuItem>
                         <DropdownMenuItem>
                           <Pencil size={14} strokeWidth={1.5} className="mr-2" />
                           Edit
@@ -217,7 +224,9 @@ export default function GlobalTemplatesPage() {
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
-                  <CardTitle>{template.name}</CardTitle>
+                  <Link href={`/superadmin/global-templates/${template.id}`} className="block">
+                    <CardTitle className="hover:text-[#0071e3] transition-colors">{template.name}</CardTitle>
+                  </Link>
                   {template.description && (
                     <CardDescription>{template.description}</CardDescription>
                   )}

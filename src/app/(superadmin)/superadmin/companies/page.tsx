@@ -20,6 +20,7 @@ import {
   Users,
   ExternalLink,
   Loader2,
+  BarChart3,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -30,6 +31,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDate } from "@/lib/utils";
+import Link from "next/link";
 
 interface Company {
   id: string;
@@ -223,7 +225,7 @@ export default function CompaniesPage() {
                     className="hover:bg-gray-50/50 transition-colors"
                   >
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
+                      <Link href={`/superadmin/companies/${company.id}`} className="flex items-center gap-3 group">
                         <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center">
                           <Building2
                             size={16}
@@ -232,14 +234,14 @@ export default function CompaniesPage() {
                           />
                         </div>
                         <div>
-                          <p className="text-[14px] font-medium text-gray-900">
+                          <p className="text-[14px] font-medium text-gray-900 group-hover:text-[#0071e3] transition-colors">
                             {company.name}
                           </p>
                           <p className="text-[12px] text-gray-500">
                             {company.slug}
                           </p>
                         </div>
-                      </div>
+                      </Link>
                     </td>
                     <td className="px-4 py-3 text-[14px] text-gray-600">
                       <div className="flex items-center gap-1">
@@ -277,6 +279,16 @@ export default function CompaniesPage() {
                           </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          <DropdownMenuItem asChild>
+                            <Link href={`/superadmin/companies/${company.id}`}>
+                              <BarChart3
+                                size={14}
+                                strokeWidth={1.5}
+                                className="mr-2"
+                              />
+                              View Analytics
+                            </Link>
+                          </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={async () => {
                               const res = await fetch(`/api/admin/impersonate/${company.id}`, {

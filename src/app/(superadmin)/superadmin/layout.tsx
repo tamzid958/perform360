@@ -10,7 +10,6 @@ export default async function SuperAdminLayout({ children }: { children: React.R
     redirect("/login");
   }
 
-  // Verify user is a Super Admin (stored in SuperAdmin table, not User table)
   const superAdmin = await prisma.superAdmin.findUnique({
     where: { email: session.user.email },
   });
