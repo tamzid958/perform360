@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/layout/page-header";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import Link from "next/link";
 
 interface NotificationSettings {
@@ -74,6 +75,9 @@ export default function SettingsPage() {
   const [slugError, setSlugError] = useState("");
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [notifications, setNotifications] = useState<NotificationSettings>(DEFAULT_NOTIFICATIONS);
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [exportPassphrase, setExportPassphrase] = useState("");
+  const [exportingData, setExportingData] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { addToast } = useToast();
 
@@ -209,6 +213,49 @@ export default function SettingsPage() {
     }
   };
 
+  const handleExportData = async () => {
+    if (!exportPassphrase) {
+      addToast("Passphrase is required", "error");
+      return;
+    }
+
+    setExportingData(true);
+    try {
+      const res = await fetch("/api/company/export", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ passphrase: exportPassphrase }),
+      });
+
+      if (!res.ok) {
+        const json = await res.json();
+        throw new Error(json.error || "Failed to export company data");
+      }
+
+      const disposition = res.headers.get("content-disposition");
+      const filenameMatch = disposition?.match(/filename=\"?([^"]+)\"?/);
+      const filename = filenameMatch?.[1] || "perform360-company-data-dump.json";
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      addToast("Company data exported", "success");
+      setShowExportDialog(false);
+      setExportPassphrase("");
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : "Failed to export company data", "error");
+    } finally {
+      setExportingData(false);
+    }
+  };
+
   const profileDirty =
     company !== null && (companyName !== company.name || companySlug !== company.slug);
 
@@ -340,6 +387,28 @@ export default function SettingsPage() {
               </Card>
             </Link>
           </div>
+
+          <Card className="max-w-2xl mt-6 border-amber-200 bg-amber-50/40">
+            <CardHeader>
+              <CardTitle>Data Export</CardTitle>
+              <CardDescription>
+                Download a full company data dump with decrypted evaluation responses.
+                You must enter the encryption passphrase before export.
+              </CardDescription>
+            </CardHeader>
+            <div className="pt-2">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  setShowExportDialog(true);
+                  setExportPassphrase("");
+                }}
+              >
+                Export Company Data
+              </Button>
+            </div>
+          </Card>
         </TabsContent>
 
         <TabsContent value="notifications">
@@ -388,6 +457,47 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Export Company Data</DialogTitle>
+            <DialogDescription>
+              Enter your encryption passphrase to export all company data in readable JSON format.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <Input
+              id="export-passphrase"
+              label="Encryption Passphrase"
+              type="password"
+              placeholder="Enter passphrase"
+              value={exportPassphrase}
+              onChange={(e) => setExportPassphrase(e.target.value)}
+            />
+            <div className="flex gap-3">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  setShowExportDialog(false);
+                  setExportPassphrase("");
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={handleExportData}
+                disabled={!exportPassphrase || exportingData}
+                className="flex-1"
+              >
+                {exportingData ? "Exporting..." : "Verify & Export"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
