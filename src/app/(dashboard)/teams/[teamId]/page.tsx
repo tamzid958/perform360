@@ -30,7 +30,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { UserPlus, MoreHorizontal, Mail, Trash2, AlertCircle } from "lucide-react";
+import { UserPlus, MoreHorizontal, Mail, Trash2, AlertCircle, ArrowDown, ArrowUp, ArrowLeftRight } from "lucide-react";
 
 interface TeamMember {
   id: string;
@@ -188,29 +188,41 @@ export default function TeamDetailPage() {
   return (
     <div>
       <PageHeader title={team.name} description={team.description ?? ""}>
-        <Button variant="secondary" onClick={() => setShowAddDialog(true)}>
+        <Button onClick={() => setShowAddDialog(true)}>
           <UserPlus size={16} strokeWidth={1.5} className="mr-1.5" />
           Add Member
         </Button>
       </PageHeader>
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-6 max-w-xl">
-        <Card padding="sm" className="text-center">
-          <p className="text-title-small text-brand-500">{downwardCount}</p>
-          <p className="text-[12px] text-gray-500 mt-0.5">Downward</p>
-          <p className="text-[11px] text-gray-400">Manager → Member</p>
-        </Card>
-        <Card padding="sm" className="text-center">
-          <p className="text-title-small text-amber-500">{upwardCount}</p>
-          <p className="text-[12px] text-gray-500 mt-0.5">Upward</p>
-          <p className="text-[11px] text-gray-400">Member → Manager</p>
-        </Card>
-        <Card padding="sm" className="text-center">
-          <p className="text-title-small text-green-600">{lateralCount}</p>
-          <p className="text-[12px] text-gray-500 mt-0.5">Lateral</p>
-          <p className="text-[11px] text-gray-400">Member → Member</p>
-        </Card>
+      {/* Evaluation Direction Stats */}
+      <div className="grid grid-cols-3 gap-3 mb-6 max-w-xl">
+        <div className="flex items-center gap-3 rounded-2xl border border-emerald-100 bg-emerald-50/50 px-4 py-3">
+          <div className="p-2 rounded-xl bg-emerald-100">
+            <ArrowDown size={18} strokeWidth={1.5} className="text-emerald-600" />
+          </div>
+          <div>
+            <p className="text-title-small text-emerald-700">{downwardCount}</p>
+            <p className="text-[12px] font-medium text-emerald-600/70">Downward</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 rounded-2xl border border-violet-100 bg-violet-50/50 px-4 py-3">
+          <div className="p-2 rounded-xl bg-violet-100">
+            <ArrowUp size={18} strokeWidth={1.5} className="text-violet-600" />
+          </div>
+          <div>
+            <p className="text-title-small text-violet-700">{upwardCount}</p>
+            <p className="text-[12px] font-medium text-violet-600/70">Upward</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 rounded-2xl border border-amber-100 bg-amber-50/50 px-4 py-3">
+          <div className="p-2 rounded-xl bg-amber-100">
+            <ArrowLeftRight size={18} strokeWidth={1.5} className="text-amber-600" />
+          </div>
+          <div>
+            <p className="text-title-small text-amber-700">{lateralCount}</p>
+            <p className="text-[12px] font-medium text-amber-600/70">Lateral</p>
+          </div>
+        </div>
       </div>
 
       {/* Members List */}

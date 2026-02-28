@@ -15,7 +15,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { Users, Plus, AlertCircle, Inbox, Search, MoreHorizontal, Eye, Trash2 } from "lucide-react";
+import { Users, Plus, AlertCircle, Inbox, Search, MoreHorizontal, Eye, Trash2, ArrowDown, ArrowUp, ArrowLeftRight } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { PaginationMeta } from "@/types/pagination";
@@ -163,6 +163,9 @@ export default function TeamsPage() {
             {teams.map((team) => {
               const managerCount = team.members.filter((m) => m.role === "MANAGER").length;
               const memberCount = team.members.filter((m) => m.role === "MEMBER").length;
+              const hasDownward = managerCount > 0 && memberCount > 0;
+              const hasUpward = managerCount > 0 && memberCount > 0;
+              const hasLateral = memberCount >= 2;
               return (
                 <Card key={team.id} className="h-full flex flex-col hover:shadow-md transition-all duration-200 group">
                   <CardHeader>
@@ -199,10 +202,26 @@ export default function TeamsPage() {
                   <Link href={`/teams/${team.id}`} className="flex-1 flex flex-col">
                     <CardTitle>{team.name}</CardTitle>
                     <CardDescription className="line-clamp-2">{team.description ?? "No description"}</CardDescription>
-                    <div className="flex items-center gap-2 mt-auto pt-4 flex-wrap">
+                    <div className="flex items-center gap-1.5 mt-auto pt-4 flex-wrap">
                       <Badge variant="default">{team._count.members} members</Badge>
-                      <Badge variant="info">{managerCount} managers</Badge>
-                      <Badge variant="outline">{memberCount} members</Badge>
+                      {hasDownward && (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 bg-emerald-50 rounded-full px-2 py-0.5">
+                          <ArrowDown size={11} strokeWidth={2} />
+                          {managerCount * memberCount}
+                        </span>
+                      )}
+                      {hasUpward && (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-violet-600 bg-violet-50 rounded-full px-2 py-0.5">
+                          <ArrowUp size={11} strokeWidth={2} />
+                          {memberCount * managerCount}
+                        </span>
+                      )}
+                      {hasLateral && (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-600 bg-amber-50 rounded-full px-2 py-0.5">
+                          <ArrowLeftRight size={11} strokeWidth={2} />
+                          {memberCount * (memberCount - 1)}
+                        </span>
+                      )}
                     </div>
                   </Link>
                 </Card>
