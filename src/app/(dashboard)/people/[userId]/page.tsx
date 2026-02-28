@@ -1,0 +1,467 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { PageHeader } from "@/components/layout/page-header";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { useToast } from "@/components/ui/toast";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Users,
+  ClipboardCheck,
+  FileEdit,
+  ChevronRight,
+  MoreHorizontal,
+  Shield,
+  Trash2,
+  AlertCircle,
+  Inbox,
+} from "lucide-react";
+
+interface TeamMembership {
+  id: string;
+  role: string;
+  team: { id: string; name: string };
+}
+
+interface EvaluationEntry {
+  id: string;
+  cycleId: string;
+  cycleName: string;
+  cycleStatus: string;
+  relationship: string;
+  status: string;
+  reviewerName?: string;
+  subjectName?: string;
+}
+
+interface PersonStats {
+  totalTeams: number;
+  totalEvaluationsReceiving: number;
+  totalEvaluationsGiving: number;
+  submittedReceiving: number;
+  submittedGiving: number;
+}
+
+interface PersonDetail {
+  id: string;
+  name: string;
+  email: string;
+  avatar: string | null;
+  role: string;
+  createdAt: string;
+  teamMemberships: TeamMembership[];
+  receivingEvaluations: EvaluationEntry[];
+  givingEvaluations: EvaluationEntry[];
+  stats: PersonStats;
+}
+
+const roleBadgeMap: Record<string, { variant: "info" | "success" | "default"; label: string }> = {
+  ADMIN: { variant: "info", label: "Admin" },
+  HR: { variant: "success", label: "HR" },
+  MEMBER: { variant: "default", label: "Employee" },
+};
+
+const teamRoleBadge: Record<string, { variant: "info" | "success"; label: string }> = {
+  MANAGER: { variant: "info", label: "Manager" },
+  MEMBER: { variant: "success", label: "Member" },
+};
+
+const relationshipLabels: Record<string, string> = {
+  manager: "Manager",
+  direct_report: "Direct Report",
+  peer: "Peer",
+  self: "Self",
+};
+
+const statusBadge: Record<string, { variant: "outline" | "warning" | "success"; label: string }> = {
+  PENDING: { variant: "outline", label: "Pending" },
+  IN_PROGRESS: { variant: "warning", label: "In Progress" },
+  SUBMITTED: { variant: "success", label: "Submitted" },
+};
+
+function groupByCycle(evaluations: EvaluationEntry[]) {
+  const groups = new Map<string, { cycleName: string; cycleStatus: string; cycleId: string; items: EvaluationEntry[] }>();
+  for (const ev of evaluations) {
+    const existing = groups.get(ev.cycleId);
+    if (existing) {
+      existing.items.push(ev);
+    } else {
+      groups.set(ev.cycleId, {
+        cycleName: ev.cycleName,
+        cycleStatus: ev.cycleStatus,
+        cycleId: ev.cycleId,
+        items: [ev],
+      });
+    }
+  }
+  return Array.from(groups.values());
+}
+
+export default function PersonDetailPage() {
+  const params = useParams<{ userId: string }>();
+  const router = useRouter();
+  const [person, setPerson] = useState<PersonDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [evalTab, setEvalTab] = useState<"receiving" | "giving">("receiving");
+  const [showRoleDialog, setShowRoleDialog] = useState(false);
+  const [newRole, setNewRole] = useState("");
+  const { addToast } = useToast();
+
+  const fetchPerson = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/users/${params.userId}`);
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || "Failed to load person");
+      setPerson(json.data);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to load person";
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
+  }, [params.userId]);
+
+  useEffect(() => {
+    fetchPerson();
+  }, [fetchPerson]);
+
+  const handleChangeRole = async () => {
+    if (!person || !newRole) return;
+    try {
+      const res = await fetch(`/api/users/${person.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: newRole }),
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || "Failed to update role");
+      addToast(`${person.name} role updated to ${newRole}`, "success");
+      setShowRoleDialog(false);
+      setNewRole("");
+      fetchPerson();
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : "Failed to update role", "error");
+    }
+  };
+
+  const handleDeactivate = async () => {
+    if (!person) return;
+    try {
+      const res = await fetch(`/api/users/${person.id}`, { method: "DELETE" });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || "Failed to deactivate user");
+      addToast(`${person.name} deactivated`, "success");
+      router.push("/people");
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : "Failed to deactivate user", "error");
+    }
+  };
+
+  if (error) {
+    return (
+      <div>
+        <PageHeader title="Person" description="" />
+        <Card className="max-w-lg mx-auto mt-12 text-center">
+          <div className="flex flex-col items-center gap-3 py-4">
+            <AlertCircle size={32} strokeWidth={1.5} className="text-red-400" />
+            <p className="text-[14px] text-gray-600">{error}</p>
+            <Button variant="secondary" size="sm" onClick={fetchPerson}>Retry</Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  if (loading || !person) {
+    return (
+      <div>
+        <PageHeader title="" description="">
+          <Skeleton className="h-9 w-32" />
+        </PageHeader>
+        <div className="grid grid-cols-3 gap-3 mb-6 max-w-xl">
+          {[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 rounded-2xl" />)}
+        </div>
+        <Card className="mb-6">
+          <CardHeader><Skeleton className="h-5 w-32" /></CardHeader>
+          {[1, 2].map((i) => (
+            <div key={i} className="flex items-center gap-3 py-3 px-4">
+              <Skeleton className="h-4 w-40" />
+              <Skeleton className="h-5 w-16 rounded-full" />
+            </div>
+          ))}
+        </Card>
+        <Card>
+          <CardHeader><Skeleton className="h-5 w-40" /></CardHeader>
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="flex items-center gap-3 py-3 px-4">
+              <Skeleton className="h-4 w-48" />
+              <Skeleton className="h-5 w-20 rounded-full" />
+            </div>
+          ))}
+        </Card>
+      </div>
+    );
+  }
+
+  const badge = roleBadgeMap[person.role] ?? { variant: "default" as const, label: person.role };
+  const receivingGroups = groupByCycle(person.receivingEvaluations);
+  const givingGroups = groupByCycle(person.givingEvaluations);
+
+  return (
+    <div>
+      <PageHeader title={person.name} description={person.email}>
+        <Badge variant={badge.variant}>{badge.label}</Badge>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+              <MoreHorizontal size={18} strokeWidth={1.5} className="text-gray-500" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => { setNewRole(person.role); setShowRoleDialog(true); }}>
+              <Shield size={14} strokeWidth={1.5} className="mr-2" />
+              Change Role
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="text-red-600" onClick={handleDeactivate}>
+              <Trash2 size={14} strokeWidth={1.5} className="mr-2" />
+              Deactivate
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </PageHeader>
+
+      {/* Stats Row */}
+      <div className="grid grid-cols-3 gap-3 mb-6 max-w-xl">
+        <div className="flex items-center gap-3 rounded-2xl border border-blue-100 bg-blue-50/50 px-4 py-3">
+          <div className="p-2 rounded-xl bg-blue-100">
+            <Users size={18} strokeWidth={1.5} className="text-blue-600" />
+          </div>
+          <div>
+            <p className="text-title-small text-blue-700">{person.stats.totalTeams}</p>
+            <p className="text-[12px] font-medium text-blue-600/70">Teams</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 rounded-2xl border border-violet-100 bg-violet-50/50 px-4 py-3">
+          <div className="p-2 rounded-xl bg-violet-100">
+            <ClipboardCheck size={18} strokeWidth={1.5} className="text-violet-600" />
+          </div>
+          <div>
+            <p className="text-title-small text-violet-700">
+              {person.stats.submittedReceiving}/{person.stats.totalEvaluationsReceiving}
+            </p>
+            <p className="text-[12px] font-medium text-violet-600/70">Receiving</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 rounded-2xl border border-emerald-100 bg-emerald-50/50 px-4 py-3">
+          <div className="p-2 rounded-xl bg-emerald-100">
+            <FileEdit size={18} strokeWidth={1.5} className="text-emerald-600" />
+          </div>
+          <div>
+            <p className="text-title-small text-emerald-700">
+              {person.stats.submittedGiving}/{person.stats.totalEvaluationsGiving}
+            </p>
+            <p className="text-[12px] font-medium text-emerald-600/70">Giving</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Team Memberships */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Team Memberships</CardTitle>
+        </CardHeader>
+        {person.teamMemberships.length === 0 ? (
+          <div className="flex flex-col items-center gap-2 py-6">
+            <Inbox size={24} strokeWidth={1.5} className="text-gray-300" />
+            <p className="text-[14px] text-gray-400">Not assigned to any teams</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-100">
+            {person.teamMemberships.map((tm) => {
+              const trb = teamRoleBadge[tm.role] ?? { variant: "default" as const, label: tm.role };
+              return (
+                <Link key={tm.id} href={`/teams/${tm.team.id}`}>
+                  <div className="flex items-center justify-between px-4 py-3 hover:bg-gray-50/50 transition-colors cursor-pointer group">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
+                        <Users size={14} strokeWidth={1.5} className="text-gray-500" />
+                      </div>
+                      <p className="text-[14px] font-medium text-gray-900">{tm.team.name}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={trb.variant}>{trb.label}</Badge>
+                      <ChevronRight
+                        size={16}
+                        strokeWidth={1.5}
+                        className="text-gray-300 group-hover:text-gray-500 transition-colors"
+                      />
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </Card>
+
+      {/* Evaluations */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Evaluations</CardTitle>
+        </CardHeader>
+        <div className="px-4 pb-4">
+          <Tabs value={evalTab} onValueChange={(v) => setEvalTab(v as "receiving" | "giving")}>
+            <TabsList>
+              <TabsTrigger value="receiving">
+                <ClipboardCheck size={15} strokeWidth={1.5} className="mr-1.5" />
+                Receiving
+                <span className="ml-1.5 text-[11px] font-normal bg-gray-200/80 text-gray-600 rounded-full px-1.5 py-0.5 min-w-[20px] text-center">
+                  {person.receivingEvaluations.length}
+                </span>
+              </TabsTrigger>
+              <TabsTrigger value="giving">
+                <FileEdit size={15} strokeWidth={1.5} className="mr-1.5" />
+                Giving
+                <span className="ml-1.5 text-[11px] font-normal bg-gray-200/80 text-gray-600 rounded-full px-1.5 py-0.5 min-w-[20px] text-center">
+                  {person.givingEvaluations.length}
+                </span>
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="receiving">
+              {receivingGroups.length === 0 ? (
+                <div className="flex flex-col items-center gap-2 py-8">
+                  <Inbox size={24} strokeWidth={1.5} className="text-gray-300" />
+                  <p className="text-[14px] text-gray-400">No evaluations received yet</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {receivingGroups.map((group) => (
+                    <div key={group.cycleId}>
+                      <Link href={`/cycles/${group.cycleId}`}>
+                        <p className="text-[13px] font-medium text-gray-500 mb-2 hover:text-gray-700 transition-colors">
+                          {group.cycleName}
+                        </p>
+                      </Link>
+                      <div className="rounded-xl border border-gray-100 divide-y divide-gray-50">
+                        {group.items.map((ev) => {
+                          const sb = statusBadge[ev.status] ?? { variant: "outline" as const, label: ev.status };
+                          return (
+                            <div key={ev.id} className="flex items-center justify-between px-3 py-2.5">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[14px] text-gray-900">{ev.reviewerName}</span>
+                                <Badge variant="outline">{relationshipLabels[ev.relationship] ?? ev.relationship}</Badge>
+                              </div>
+                              <Badge variant={sb.variant}>{sb.label}</Badge>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="giving">
+              {givingGroups.length === 0 ? (
+                <div className="flex flex-col items-center gap-2 py-8">
+                  <Inbox size={24} strokeWidth={1.5} className="text-gray-300" />
+                  <p className="text-[14px] text-gray-400">No evaluations given yet</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {givingGroups.map((group) => (
+                    <div key={group.cycleId}>
+                      <Link href={`/cycles/${group.cycleId}`}>
+                        <p className="text-[13px] font-medium text-gray-500 mb-2 hover:text-gray-700 transition-colors">
+                          {group.cycleName}
+                        </p>
+                      </Link>
+                      <div className="rounded-xl border border-gray-100 divide-y divide-gray-50">
+                        {group.items.map((ev) => {
+                          const sb = statusBadge[ev.status] ?? { variant: "outline" as const, label: ev.status };
+                          return (
+                            <div key={ev.id} className="flex items-center justify-between px-3 py-2.5">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[14px] text-gray-900">{ev.subjectName}</span>
+                                <Badge variant="outline">{relationshipLabels[ev.relationship] ?? ev.relationship}</Badge>
+                              </div>
+                              <Badge variant={sb.variant}>{sb.label}</Badge>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+        </div>
+      </Card>
+
+      {/* Change Role Dialog */}
+      <Dialog open={showRoleDialog} onOpenChange={setShowRoleDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Change Role</DialogTitle>
+            <DialogDescription>Update the role for {person.name}</DialogDescription>
+          </DialogHeader>
+          <form
+            className="space-y-4 mt-4"
+            onSubmit={(e) => { e.preventDefault(); handleChangeRole(); }}
+          >
+            <div className="space-y-1.5">
+              <label className="block text-[13px] font-medium text-gray-700">Role</label>
+              <Select value={newRole} onValueChange={setNewRole}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ADMIN">Admin</SelectItem>
+                  <SelectItem value="HR">HR</SelectItem>
+                  <SelectItem value="MEMBER">Employee</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <Button type="submit">Update Role</Button>
+              <Button type="button" variant="ghost" onClick={() => setShowRoleDialog(false)}>Cancel</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

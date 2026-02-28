@@ -6,6 +6,125 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { validateCuidParam } from "@/lib/validation";
 import { writeAuditLog } from "@/lib/audit";
 
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const rl = applyRateLimit(request);
+  if (rl) return rl;
+  const invalid = validateCuidParam(params.id);
+  if (invalid) return invalid;
+
+  const authResult = await requireAdminOrHR();
+  if (isAuthError(authResult)) return authResult;
+
+  try {
+    const user = await prisma.user.findFirst({
+      where: { id: params.id, companyId: authResult.companyId },
+      include: {
+        teamMemberships: {
+          include: {
+            team: { select: { id: true, name: true } },
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "User not found", code: "NOT_FOUND" },
+        { status: 404 }
+      );
+    }
+
+    // Fetch evaluation assignments in both directions
+    const [asSubject, asReviewer] = await Promise.all([
+      prisma.evaluationAssignment.findMany({
+        where: { subjectId: params.id, cycle: { companyId: authResult.companyId } },
+        select: {
+          id: true, cycleId: true, reviewerId: true,
+          relationship: true, status: true,
+          cycle: { select: { id: true, name: true, status: true } },
+        },
+      }),
+      prisma.evaluationAssignment.findMany({
+        where: { reviewerId: params.id, cycle: { companyId: authResult.companyId } },
+        select: {
+          id: true, cycleId: true, subjectId: true,
+          relationship: true, status: true,
+          cycle: { select: { id: true, name: true, status: true } },
+        },
+      }),
+    ]);
+
+    // Batch-resolve other user names
+    const otherUserIds = new Set<string>();
+    for (const a of asSubject) otherUserIds.add(a.reviewerId);
+    for (const a of asReviewer) otherUserIds.add(a.subjectId);
+
+    const otherUsers = otherUserIds.size > 0
+      ? await prisma.user.findMany({
+          where: { id: { in: Array.from(otherUserIds) } },
+          select: { id: true, name: true },
+        })
+      : [];
+    const userMap = new Map(otherUsers.map((u) => [u.id, u.name]));
+
+    const unknownUser = "Unknown";
+
+    const receivingEvaluations = asSubject.map((a) => ({
+      id: a.id,
+      cycleId: a.cycleId,
+      cycleName: a.cycle.name,
+      cycleStatus: a.cycle.status,
+      relationship: a.relationship,
+      status: a.status,
+      reviewerName: userMap.get(a.reviewerId) ?? unknownUser,
+    }));
+
+    const givingEvaluations = asReviewer.map((a) => ({
+      id: a.id,
+      cycleId: a.cycleId,
+      cycleName: a.cycle.name,
+      cycleStatus: a.cycle.status,
+      relationship: a.relationship,
+      status: a.status,
+      subjectName: userMap.get(a.subjectId) ?? unknownUser,
+    }));
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        avatar: user.avatar,
+        role: user.role,
+        createdAt: user.createdAt,
+        teamMemberships: user.teamMemberships.map((tm) => ({
+          id: tm.id,
+          role: tm.role,
+          team: tm.team,
+        })),
+        receivingEvaluations,
+        givingEvaluations,
+        stats: {
+          totalTeams: user.teamMemberships.length,
+          totalEvaluationsReceiving: asSubject.length,
+          totalEvaluationsGiving: asReviewer.length,
+          submittedReceiving: asSubject.filter((a) => a.status === "SUBMITTED").length,
+          submittedGiving: asReviewer.filter((a) => a.status === "SUBMITTED").length,
+        },
+      },
+    });
+  } catch {
+    return NextResponse.json(
+      { success: false, error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
 const updateUserSchema = z.object({
   role: z.enum(["ADMIN", "HR", "MEMBER"]).optional(),
   name: z.string().min(1).optional(),
