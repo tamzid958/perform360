@@ -26,12 +26,14 @@ import {
   MessageSquare,
   Shield,
   RefreshCcw,
+  Radar,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // ─── Section definitions ───
 
 const sections = [
+  { id: "how-360-works", label: "How 360° Works", icon: Radar },
   { id: "roles", label: "Team Roles", icon: Users },
   { id: "example-org", label: "Example Org", icon: GitBranch },
   { id: "creating-teams", label: "Creating Teams", icon: CheckCircle2 },
@@ -291,6 +293,295 @@ const techCompanyHierarchy: OrgNode[] = [
 ];
 
 // ─── Section Content Components ───
+
+// ─── How 360° Works Section ───
+
+function How360WorksSection() {
+  return (
+    <div className="space-y-6">
+      {/* Concept overview */}
+      <Card>
+        <div className="flex gap-4">
+          <div className="p-3 rounded-xl bg-brand-50 h-fit">
+            <Radar size={24} strokeWidth={1.5} className="text-brand-500" />
+          </div>
+          <div>
+            <h2 className="text-title-small text-gray-900">What is 360° Feedback?</h2>
+            <p className="text-body text-gray-500 mt-2 leading-relaxed">
+              Traditional reviews are top-down &mdash; a manager evaluates their team. <strong>360° feedback</strong> collects
+              input from <em>every direction</em>: managers, direct reports, and peers. This gives a complete,
+              well-rounded picture of each employee&apos;s performance, strengths, and growth areas.
+            </p>
+          </div>
+        </div>
+      </Card>
+
+      {/* Three directions */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card padding="sm">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center text-[16px]">
+              &darr;
+            </div>
+            <h3 className="text-headline text-gray-900">Downward</h3>
+          </div>
+          <p className="text-callout text-gray-500">
+            <strong>Manager &rarr; Direct Report.</strong> The traditional review &mdash;
+            managers evaluate the people they supervise.
+          </p>
+        </Card>
+
+        <Card padding="sm">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-8 h-8 rounded-full bg-purple-50 flex items-center justify-center text-[16px]">
+              &uarr;
+            </div>
+            <h3 className="text-headline text-gray-900">Upward</h3>
+          </div>
+          <p className="text-callout text-gray-500">
+            <strong>Direct Report &rarr; Manager.</strong> Team members give feedback
+            on their manager&apos;s leadership, communication, and support.
+          </p>
+        </Card>
+
+        <Card padding="sm">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-[16px]">
+              &harr;
+            </div>
+            <h3 className="text-headline text-gray-900">Lateral</h3>
+          </div>
+          <p className="text-callout text-gray-500">
+            <strong>Peer &rarr; Peer.</strong> Colleagues at the same level evaluate
+            each other on collaboration, reliability, and teamwork.
+          </p>
+        </Card>
+      </div>
+
+      {/* TechCorp Platform Team — full assignment matrix */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-green-50">
+              <Users size={20} strokeWidth={1.5} className="text-green-500" />
+            </div>
+            <div>
+              <CardTitle>Example: TechCorp&apos;s Platform Team</CardTitle>
+              <CardDescription>
+                Every evaluation assignment generated for a single team of 4 people
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+
+        {/* Team roster */}
+        <div className="mt-4 mb-5">
+          <p className="text-callout text-gray-500 mb-3 font-medium">Team members:</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {[
+              { name: "Alex Rivera", title: "Solution Architect", role: "Manager" as const },
+              { name: "Jordan Lee", title: "Senior Engineer", role: "Direct Report" as const },
+              { name: "Maya Patel", title: "Engineer", role: "Direct Report" as const },
+              { name: "Chris Wu", title: "Junior Engineer", role: "Direct Report" as const },
+            ].map((m) => (
+              <div key={m.name} className="py-2.5 px-3 bg-gray-50 rounded-xl text-center">
+                <p className="text-[13px] font-medium text-gray-900">{m.name}</p>
+                <p className="text-[11px] text-gray-400 mt-0.5">{m.title}</p>
+                <Badge variant={m.role === "Manager" ? "warning" : "info"} className="mt-1.5">
+                  {m.role}
+                </Badge>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Downward evaluations */}
+        <div className="space-y-4">
+          <div className="border border-amber-100 bg-amber-50/40 rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Briefcase size={14} strokeWidth={1.5} className="text-amber-600" />
+              <span className="font-medium text-amber-900 text-[13px]">Downward Feedback</span>
+              <span className="text-[12px] text-amber-600/60 ml-auto">Manager evaluates Direct Reports</span>
+            </div>
+            <div className="space-y-1.5">
+              {[
+                { reviewer: "Alex Rivera", subject: "Jordan Lee" },
+                { reviewer: "Alex Rivera", subject: "Maya Patel" },
+                { reviewer: "Alex Rivera", subject: "Chris Wu" },
+              ].map((a, i) => (
+                <div key={i} className="flex items-center gap-2 py-1.5 px-3 bg-white rounded-lg text-[13px]">
+                  <span className="text-gray-900 font-medium">{a.reviewer}</span>
+                  <ArrowRight size={12} strokeWidth={1.5} className="text-amber-400 shrink-0" />
+                  <span className="text-gray-900 font-medium">{a.subject}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Upward evaluations */}
+          <div className="border border-purple-100 bg-purple-50/40 rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <UserCircle size={14} strokeWidth={1.5} className="text-purple-600" />
+              <span className="font-medium text-purple-900 text-[13px]">Upward Feedback</span>
+              <span className="text-[12px] text-purple-600/60 ml-auto">Direct Reports evaluate Manager</span>
+            </div>
+            <div className="space-y-1.5">
+              {[
+                { reviewer: "Jordan Lee", subject: "Alex Rivera" },
+                { reviewer: "Maya Patel", subject: "Alex Rivera" },
+                { reviewer: "Chris Wu", subject: "Alex Rivera" },
+              ].map((a, i) => (
+                <div key={i} className="flex items-center gap-2 py-1.5 px-3 bg-white rounded-lg text-[13px]">
+                  <span className="text-gray-900 font-medium">{a.reviewer}</span>
+                  <ArrowRight size={12} strokeWidth={1.5} className="text-purple-400 shrink-0" />
+                  <span className="text-gray-900 font-medium">{a.subject}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Peer evaluations */}
+          <div className="border border-blue-100 bg-blue-50/40 rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Users size={14} strokeWidth={1.5} className="text-blue-600" />
+              <span className="font-medium text-blue-900 text-[13px]">Lateral / Peer Feedback</span>
+              <span className="text-[12px] text-blue-600/60 ml-auto">Direct Reports evaluate each other</span>
+            </div>
+            <div className="space-y-1.5">
+              {[
+                { reviewer: "Jordan Lee", subject: "Maya Patel" },
+                { reviewer: "Jordan Lee", subject: "Chris Wu" },
+                { reviewer: "Maya Patel", subject: "Jordan Lee" },
+                { reviewer: "Maya Patel", subject: "Chris Wu" },
+                { reviewer: "Chris Wu", subject: "Jordan Lee" },
+                { reviewer: "Chris Wu", subject: "Maya Patel" },
+              ].map((a, i) => (
+                <div key={i} className="flex items-center gap-2 py-1.5 px-3 bg-white rounded-lg text-[13px]">
+                  <span className="text-gray-900 font-medium">{a.reviewer}</span>
+                  <ArrowRight size={12} strokeWidth={1.5} className="text-blue-400 shrink-0" />
+                  <span className="text-gray-900 font-medium">{a.subject}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <InfoBox>
+            That&apos;s <strong>12 evaluations</strong> automatically generated from just <strong>4 people</strong>.
+            Every team member both gives and receives feedback from multiple directions &mdash; that&apos;s the power of 360°.
+          </InfoBox>
+        </div>
+      </Card>
+
+      {/* Cross-team: Full picture for Alex Rivera */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-brand-50">
+              <UserCircle size={20} strokeWidth={1.5} className="text-brand-500" />
+            </div>
+            <div>
+              <CardTitle>The Full 360°: Alex Rivera Across Teams</CardTitle>
+              <CardDescription>
+                Most people belong to multiple teams. Here&apos;s how feedback aggregates across all of Alex&apos;s teams.
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+
+        <div className="mt-4 space-y-4">
+          <p className="text-callout text-gray-500">
+            Alex Rivera is a <strong>Manager</strong> of the Platform Team, but also a <strong>Direct Report</strong> in
+            the Engineering Management team (reporting to Sarah Chen). The 360° review combines feedback from both teams:
+          </p>
+
+          {/* What Alex receives */}
+          <div className="border border-green-100 bg-green-50/40 rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Star size={14} strokeWidth={1.5} className="text-green-600" />
+              <span className="font-medium text-green-900 text-[14px]">Feedback Alex receives (6 evaluations)</span>
+            </div>
+            <div className="space-y-1.5">
+              {[
+                { name: "Sarah Chen", rel: "Manager", team: "Engineering Management", color: "text-amber-600", bg: "bg-amber-50" },
+                { name: "Priya Sharma", rel: "Peer", team: "Engineering Management", color: "text-blue-600", bg: "bg-blue-50" },
+                { name: "Dan Kim", rel: "Peer", team: "Engineering Management", color: "text-blue-600", bg: "bg-blue-50" },
+                { name: "Jordan Lee", rel: "Direct Report", team: "Platform Team", color: "text-purple-600", bg: "bg-purple-50" },
+                { name: "Maya Patel", rel: "Direct Report", team: "Platform Team", color: "text-purple-600", bg: "bg-purple-50" },
+                { name: "Chris Wu", rel: "Direct Report", team: "Platform Team", color: "text-purple-600", bg: "bg-purple-50" },
+              ].map((f, i) => (
+                <div key={i} className="flex items-center gap-2 py-2 px-3 bg-white rounded-lg text-[13px]">
+                  <span className="text-gray-900 font-medium min-w-[110px]">{f.name}</span>
+                  <ArrowRight size={12} strokeWidth={1.5} className="text-gray-300 shrink-0" />
+                  <span className="text-gray-500">Alex</span>
+                  <span className="ml-auto flex items-center gap-2">
+                    <span className={cn("text-[11px] font-medium px-2 py-0.5 rounded-full", f.bg, f.color)}>{f.rel}</span>
+                    <span className="text-[11px] text-gray-400">{f.team}</span>
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* What Alex gives */}
+          <div className="border border-gray-100 bg-gray-50/40 rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <FileText size={14} strokeWidth={1.5} className="text-gray-600" />
+              <span className="font-medium text-gray-900 text-[14px]">Evaluations Alex gives (6 evaluations)</span>
+            </div>
+            <div className="space-y-1.5">
+              {[
+                { name: "Sarah Chen", rel: "Upward", team: "Engineering Management", note: "Evaluates their Manager" },
+                { name: "Priya Sharma", rel: "Peer", team: "Engineering Management", note: "Evaluates a Peer" },
+                { name: "Dan Kim", rel: "Peer", team: "Engineering Management", note: "Evaluates a Peer" },
+                { name: "Jordan Lee", rel: "Downward", team: "Platform Team", note: "Evaluates a Direct Report" },
+                { name: "Maya Patel", rel: "Downward", team: "Platform Team", note: "Evaluates a Direct Report" },
+                { name: "Chris Wu", rel: "Downward", team: "Platform Team", note: "Evaluates a Direct Report" },
+              ].map((f, i) => (
+                <div key={i} className="flex items-center gap-2 py-2 px-3 bg-white rounded-lg text-[13px]">
+                  <span className="text-gray-500">Alex</span>
+                  <ArrowRight size={12} strokeWidth={1.5} className="text-gray-300 shrink-0" />
+                  <span className="text-gray-900 font-medium min-w-[110px]">{f.name}</span>
+                  <span className="text-gray-400 ml-auto text-[11px]">{f.note}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <TipBox>
+            Alex&apos;s final report will show scores broken down by relationship type &mdash;{" "}
+            <strong>1 manager</strong>, <strong>2 peers</strong>, and <strong>3 direct reports</strong>.
+            This multi-perspective view reveals blind spots that a single manager review would miss.
+            For example, a manager might rate Alex&apos;s communication highly, while direct reports flag
+            that status updates could be more frequent.
+          </TipBox>
+        </div>
+      </Card>
+
+      {/* Why 360° matters */}
+      <Card padding="sm">
+        <div className="p-2">
+          <h3 className="text-headline text-gray-900 mb-3">Why 360° feedback matters</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {[
+              { title: "Reduces bias", desc: "One manager's opinion is just one data point. 360° feedback balances multiple perspectives." },
+              { title: "Surfaces blind spots", desc: "Peers and direct reports see behaviors that managers don't. Upward feedback improves leadership." },
+              { title: "Builds accountability", desc: "When feedback comes from all directions, everyone is accountable to everyone they work with." },
+              { title: "Drives growth", desc: "Employees get specific, actionable feedback from the people who interact with them daily." },
+            ].map((item, i) => (
+              <div key={i} className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl">
+                <CheckCircle2 size={16} strokeWidth={1.5} className="text-green-500 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-[13px] font-medium text-gray-900">{item.title}</p>
+                  <p className="text-[12px] text-gray-500 mt-0.5">{item.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+}
 
 function RolesSection() {
   return (
@@ -913,6 +1204,7 @@ function OrgPatternsSection() {
 // ─── Section Content Map ───
 
 const sectionComponents: Record<SectionId, () => React.JSX.Element> = {
+  "how-360-works": How360WorksSection,
   "roles": RolesSection,
   "example-org": ExampleOrgSection,
   "creating-teams": CreatingTeamsSection,
@@ -924,7 +1216,7 @@ const sectionComponents: Record<SectionId, () => React.JSX.Element> = {
 // ─── Page ───
 
 export default function GuidePage() {
-  const [activeSection, setActiveSection] = useState<SectionId>("roles");
+  const [activeSection, setActiveSection] = useState<SectionId>("how-360-works");
 
   const ActiveContent = sectionComponents[activeSection];
 
