@@ -14,7 +14,7 @@ export interface TeamMemberWithUser {
   id: string;
   userId: string;
   teamId: string;
-  role: "MANAGER" | "DIRECT_REPORT" | "MEMBER";
+  role: "MANAGER" | "MEMBER";
   user: {
     id: string;
     email: string;

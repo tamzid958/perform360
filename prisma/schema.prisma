@@ -165,7 +165,6 @@ model Team {
 
 enum TeamMemberRole {
   MANAGER
-  DIRECT_REPORT
   MEMBER
 }
 

@@ -31,7 +31,6 @@ export const ASSIGNMENT_STATUSES = {
 
 export const TEAM_ROLES = {
   MANAGER: "MANAGER",
-  DIRECT_REPORT: "DIRECT_REPORT",
   MEMBER: "MEMBER",
 } as const;
 
