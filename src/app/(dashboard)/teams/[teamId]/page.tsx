@@ -49,12 +49,12 @@ interface Team {
 
 const roleBadgeVariant: Record<string, "info" | "success"> = {
   MANAGER: "info",
-  DIRECT_REPORT: "success",
+  MEMBER: "success",
 };
 
 const roleLabels: Record<string, string> = {
   MANAGER: "Manager",
-  DIRECT_REPORT: "Direct Report",
+  MEMBER: "Member",
 };
 
 export default function TeamDetailPage() {
@@ -175,8 +175,15 @@ export default function TeamDetailPage() {
     );
   }
 
-  const managerCount = team.members.filter((m) => m.role === "MANAGER").length;
-  const reportCount = team.members.filter((m) => m.role === "DIRECT_REPORT").length;
+  const managers = team.members.filter((m) => m.role === "MANAGER");
+  const members = team.members.filter((m) => m.role === "MEMBER");
+
+  // Downward: Manager → Member (each manager evaluates each member)
+  const downwardCount = managers.length * members.length;
+  // Upward: Member → Manager (each member evaluates each manager)
+  const upwardCount = members.length * managers.length;
+  // Lateral: Member → Member (each member evaluates every other member)
+  const lateralCount = members.length * (members.length - 1);
 
   return (
     <div>
@@ -188,18 +195,21 @@ export default function TeamDetailPage() {
       </PageHeader>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-6 max-w-lg">
+      <div className="grid grid-cols-3 gap-4 mb-6 max-w-xl">
         <Card padding="sm" className="text-center">
-          <p className="text-title-small text-gray-900">{team.members.length}</p>
-          <p className="text-[12px] text-gray-500">Total</p>
+          <p className="text-title-small text-brand-500">{downwardCount}</p>
+          <p className="text-[12px] text-gray-500 mt-0.5">Downward</p>
+          <p className="text-[11px] text-gray-400">Manager → Member</p>
         </Card>
         <Card padding="sm" className="text-center">
-          <p className="text-title-small text-brand-500">{managerCount}</p>
-          <p className="text-[12px] text-gray-500">Managers</p>
+          <p className="text-title-small text-amber-500">{upwardCount}</p>
+          <p className="text-[12px] text-gray-500 mt-0.5">Upward</p>
+          <p className="text-[11px] text-gray-400">Member → Manager</p>
         </Card>
         <Card padding="sm" className="text-center">
-          <p className="text-title-small text-green-600">{reportCount}</p>
-          <p className="text-[12px] text-gray-500">Reports</p>
+          <p className="text-title-small text-green-600">{lateralCount}</p>
+          <p className="text-[12px] text-gray-500 mt-0.5">Lateral</p>
+          <p className="text-[11px] text-gray-400">Member → Member</p>
         </Card>
       </div>
 
@@ -284,7 +294,6 @@ export default function TeamDetailPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="MANAGER">Manager</SelectItem>
-                  <SelectItem value="DIRECT_REPORT">Direct Report</SelectItem>
                   <SelectItem value="MEMBER">Member</SelectItem>
                 </SelectContent>
               </Select>

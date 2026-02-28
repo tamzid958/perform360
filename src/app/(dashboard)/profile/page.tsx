@@ -31,9 +31,7 @@ const ROLE_BADGE_VARIANT: Record<string, "info" | "success" | "warning" | "defau
 
 const TEAM_ROLE_LABELS: Record<string, string> = {
   MANAGER: "Manager",
-  DIRECT_REPORT: "Direct Report",
   MEMBER: "Member",
-  PEER: "Peer",
 };
 
 export default function ProfilePage() {

@@ -172,11 +172,11 @@ const techCompanyHierarchy: OrgNode[] = [
         badge: { label: "Team", variant: "success" },
         children: [
           { title: "James Carter", role: "CTO / Director", badge: { label: "Manager", variant: "warning" } },
-          { title: "Sarah Chen", role: "Engineering Manager", badge: { label: "Direct Report", variant: "info" } },
-          { title: "Robert Hayes", role: "Finance Director", badge: { label: "Direct Report", variant: "info" } },
-          { title: "Emily Tran", role: "Accounts Lead", badge: { label: "Direct Report", variant: "info" } },
-          { title: "Maria Santos", role: "HR Director", badge: { label: "Direct Report", variant: "info" } },
-          { title: "David Liu", role: "Office Manager", badge: { label: "Direct Report", variant: "info" } },
+          { title: "Sarah Chen", role: "Engineering Manager", badge: { label: "Member", variant: "info" } },
+          { title: "Robert Hayes", role: "Finance Director", badge: { label: "Member", variant: "info" } },
+          { title: "Emily Tran", role: "Accounts Lead", badge: { label: "Member", variant: "info" } },
+          { title: "Maria Santos", role: "HR Director", badge: { label: "Member", variant: "info" } },
+          { title: "David Liu", role: "Office Manager", badge: { label: "Member", variant: "info" } },
         ],
       },
       {
@@ -190,9 +190,9 @@ const techCompanyHierarchy: OrgNode[] = [
             badge: { label: "Team", variant: "success" },
             children: [
               { title: "Sarah Chen", role: "Engineering Manager", badge: { label: "Manager", variant: "warning" } },
-              { title: "Alex Rivera", role: "Solution Architect — Platform", badge: { label: "Direct Report", variant: "info" } },
-              { title: "Priya Sharma", role: "Solution Architect — Frontend", badge: { label: "Direct Report", variant: "info" } },
-              { title: "Dan Kim", role: "Solution Architect - DevOps", badge: { label: "Direct Report", variant: "info" } },
+              { title: "Alex Rivera", role: "Solution Architect — Platform", badge: { label: "Member", variant: "info" } },
+              { title: "Priya Sharma", role: "Solution Architect — Frontend", badge: { label: "Member", variant: "info" } },
+              { title: "Dan Kim", role: "Solution Architect - DevOps", badge: { label: "Member", variant: "info" } },
             ],
           },
           {
@@ -201,9 +201,9 @@ const techCompanyHierarchy: OrgNode[] = [
             badge: { label: "Team", variant: "success" },
             children: [
               { title: "Alex Rivera", role: "Solution Architect", badge: { label: "Manager", variant: "warning" } },
-              { title: "Jordan Lee", role: "Senior Engineer", badge: { label: "Direct Report", variant: "info" } },
-              { title: "Maya Patel", role: "Engineer", badge: { label: "Direct Report", variant: "info" } },
-              { title: "Chris Wu", role: "Junior Engineer", badge: { label: "Direct Report", variant: "info" } },
+              { title: "Jordan Lee", role: "Senior Engineer", badge: { label: "Member", variant: "info" } },
+              { title: "Maya Patel", role: "Engineer", badge: { label: "Member", variant: "info" } },
+              { title: "Chris Wu", role: "Junior Engineer", badge: { label: "Member", variant: "info" } },
             ],
           },
           {
@@ -212,8 +212,8 @@ const techCompanyHierarchy: OrgNode[] = [
             badge: { label: "Team", variant: "success" },
             children: [
               { title: "Priya Sharma", role: "Solution Architect", badge: { label: "Manager", variant: "warning" } },
-              { title: "Tom Zhang", role: "Senior Engineer", badge: { label: "Direct Report", variant: "info" } },
-              { title: "Nina Costa", role: "Engineer", badge: { label: "Direct Report", variant: "info" } },
+              { title: "Tom Zhang", role: "Senior Engineer", badge: { label: "Member", variant: "info" } },
+              { title: "Nina Costa", role: "Engineer", badge: { label: "Member", variant: "info" } },
             ],
           },
           {
@@ -222,7 +222,7 @@ const techCompanyHierarchy: OrgNode[] = [
             badge: { label: "Team", variant: "success" },
             children: [
               { title: "Dan Kim", role: "Solution Architect", badge: { label: "Manager", variant: "warning" } },
-              { title: "Sam Ali", role: "DevOps Engineer", badge: { label: "Direct Report", variant: "info" } },
+              { title: "Sam Ali", role: "DevOps Engineer", badge: { label: "Member", variant: "info" } },
             ],
           },
         ],
@@ -238,8 +238,8 @@ const techCompanyHierarchy: OrgNode[] = [
             badge: { label: "Team", variant: "success" },
             children: [
               { title: "Robert Hayes", role: "Finance Director", badge: { label: "Manager", variant: "warning" } },
-              { title: "Lisa Park", role: "Financial Analyst", badge: { label: "Direct Report", variant: "info" } },
-              { title: "Mark Jensen", role: "Budget Analyst", badge: { label: "Direct Report", variant: "info" } },
+              { title: "Lisa Park", role: "Financial Analyst", badge: { label: "Member", variant: "info" } },
+              { title: "Mark Jensen", role: "Budget Analyst", badge: { label: "Member", variant: "info" } },
             ],
           },
           {
@@ -248,8 +248,8 @@ const techCompanyHierarchy: OrgNode[] = [
             badge: { label: "Team", variant: "success" },
             children: [
               { title: "Emily Tran", role: "Accounts Lead", badge: { label: "Manager", variant: "warning" } },
-              { title: "James Wong", role: "Accountant", badge: { label: "Direct Report", variant: "info" } },
-              { title: "Aisha Khan", role: "Accounts Payable", badge: { label: "Direct Report", variant: "info" } },
+              { title: "James Wong", role: "Accountant", badge: { label: "Member", variant: "info" } },
+              { title: "Aisha Khan", role: "Accounts Payable", badge: { label: "Member", variant: "info" } },
             ],
           },
         ],
@@ -265,8 +265,8 @@ const techCompanyHierarchy: OrgNode[] = [
             badge: { label: "Team", variant: "success" },
             children: [
               { title: "Maria Santos", role: "HR Director", badge: { label: "Manager", variant: "warning" } },
-              { title: "Kevin Brown", role: "HR Specialist", badge: { label: "Direct Report", variant: "info" } },
-              { title: "Rachel Adams", role: "Recruiter", badge: { label: "Direct Report", variant: "info" } },
+              { title: "Kevin Brown", role: "HR Specialist", badge: { label: "Member", variant: "info" } },
+              { title: "Rachel Adams", role: "Recruiter", badge: { label: "Member", variant: "info" } },
             ],
           },
         ],
@@ -282,8 +282,8 @@ const techCompanyHierarchy: OrgNode[] = [
             badge: { label: "Team", variant: "success" },
             children: [
               { title: "David Liu", role: "Office Manager", badge: { label: "Manager", variant: "warning" } },
-              { title: "Sophie Martin", role: "Executive Assistant", badge: { label: "Direct Report", variant: "info" } },
-              { title: "Omar Farooq", role: "Facilities Coordinator", badge: { label: "Direct Report", variant: "info" } },
+              { title: "Sophie Martin", role: "Executive Assistant", badge: { label: "Member", variant: "info" } },
+              { title: "Omar Farooq", role: "Facilities Coordinator", badge: { label: "Member", variant: "info" } },
             ],
           },
         ],
@@ -309,7 +309,7 @@ function How360WorksSection() {
             <h2 className="text-title-small text-gray-900">What is 360° Feedback?</h2>
             <p className="text-body text-gray-500 mt-2 leading-relaxed">
               Traditional reviews are top-down &mdash; a manager evaluates their team. <strong>360° feedback</strong> collects
-              input from <em>every direction</em>: managers, direct reports, and peers. This gives a complete,
+              input from <em>every direction</em>: managers, members, and peers. This gives a complete,
               well-rounded picture of each employee&apos;s performance, strengths, and growth areas.
             </p>
           </div>
@@ -326,7 +326,7 @@ function How360WorksSection() {
             <h3 className="text-headline text-gray-900">Downward</h3>
           </div>
           <p className="text-callout text-gray-500">
-            <strong>Manager &rarr; Direct Report.</strong> The traditional review &mdash;
+            <strong>Manager &rarr; Member.</strong> The traditional review &mdash;
             managers evaluate the people they supervise.
           </p>
         </Card>
@@ -339,7 +339,7 @@ function How360WorksSection() {
             <h3 className="text-headline text-gray-900">Upward</h3>
           </div>
           <p className="text-callout text-gray-500">
-            <strong>Direct Report &rarr; Manager.</strong> Team members give feedback
+            <strong>Member &rarr; Manager.</strong> Team members give feedback
             on their manager&apos;s leadership, communication, and support.
           </p>
         </Card>
@@ -352,7 +352,7 @@ function How360WorksSection() {
             <h3 className="text-headline text-gray-900">Lateral</h3>
           </div>
           <p className="text-callout text-gray-500">
-            <strong>Peer &rarr; Peer.</strong> Colleagues at the same level evaluate
+            <strong>Member &rarr; Member.</strong> Colleagues at the same level evaluate
             each other on collaboration, reliability, and teamwork.
           </p>
         </Card>
@@ -380,9 +380,9 @@ function How360WorksSection() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {[
               { name: "Alex Rivera", title: "Solution Architect", role: "Manager" as const },
-              { name: "Jordan Lee", title: "Senior Engineer", role: "Direct Report" as const },
-              { name: "Maya Patel", title: "Engineer", role: "Direct Report" as const },
-              { name: "Chris Wu", title: "Junior Engineer", role: "Direct Report" as const },
+              { name: "Jordan Lee", title: "Senior Engineer", role: "Member" as const },
+              { name: "Maya Patel", title: "Engineer", role: "Member" as const },
+              { name: "Chris Wu", title: "Junior Engineer", role: "Member" as const },
             ].map((m) => (
               <div key={m.name} className="py-2.5 px-3 bg-gray-50 rounded-xl text-center">
                 <p className="text-[13px] font-medium text-gray-900">{m.name}</p>
@@ -401,7 +401,7 @@ function How360WorksSection() {
             <div className="flex items-center gap-2 mb-3">
               <Briefcase size={14} strokeWidth={1.5} className="text-amber-600" />
               <span className="font-medium text-amber-900 text-[13px]">Downward Feedback</span>
-              <span className="text-[12px] text-amber-600/60 ml-auto">Manager evaluates Direct Reports</span>
+              <span className="text-[12px] text-amber-600/60 ml-auto">Manager evaluates Members</span>
             </div>
             <div className="space-y-1.5">
               {[
@@ -423,7 +423,7 @@ function How360WorksSection() {
             <div className="flex items-center gap-2 mb-3">
               <UserCircle size={14} strokeWidth={1.5} className="text-purple-600" />
               <span className="font-medium text-purple-900 text-[13px]">Upward Feedback</span>
-              <span className="text-[12px] text-purple-600/60 ml-auto">Direct Reports evaluate Manager</span>
+              <span className="text-[12px] text-purple-600/60 ml-auto">Members evaluate Manager</span>
             </div>
             <div className="space-y-1.5">
               {[
@@ -445,7 +445,7 @@ function How360WorksSection() {
             <div className="flex items-center gap-2 mb-3">
               <Users size={14} strokeWidth={1.5} className="text-blue-600" />
               <span className="font-medium text-blue-900 text-[13px]">Lateral / Peer Feedback</span>
-              <span className="text-[12px] text-blue-600/60 ml-auto">Direct Reports evaluate each other</span>
+              <span className="text-[12px] text-blue-600/60 ml-auto">Members evaluate each other</span>
             </div>
             <div className="space-y-1.5">
               {[
@@ -490,7 +490,7 @@ function How360WorksSection() {
 
         <div className="mt-4 space-y-4">
           <p className="text-callout text-gray-500">
-            Alex Rivera is a <strong>Manager</strong> of the Platform Team, but also a <strong>Direct Report</strong> in
+            Alex Rivera is a <strong>Manager</strong> of the Platform Team, but also a <strong>Member</strong> in
             the Engineering Management team (reporting to Sarah Chen). The 360° review combines feedback from both teams:
           </p>
 
@@ -505,9 +505,9 @@ function How360WorksSection() {
                 { name: "Sarah Chen", rel: "Manager", team: "Engineering Management", color: "text-amber-600", bg: "bg-amber-50" },
                 { name: "Priya Sharma", rel: "Peer", team: "Engineering Management", color: "text-blue-600", bg: "bg-blue-50" },
                 { name: "Dan Kim", rel: "Peer", team: "Engineering Management", color: "text-blue-600", bg: "bg-blue-50" },
-                { name: "Jordan Lee", rel: "Direct Report", team: "Platform Team", color: "text-purple-600", bg: "bg-purple-50" },
-                { name: "Maya Patel", rel: "Direct Report", team: "Platform Team", color: "text-purple-600", bg: "bg-purple-50" },
-                { name: "Chris Wu", rel: "Direct Report", team: "Platform Team", color: "text-purple-600", bg: "bg-purple-50" },
+                { name: "Jordan Lee", rel: "Member", team: "Platform Team", color: "text-purple-600", bg: "bg-purple-50" },
+                { name: "Maya Patel", rel: "Member", team: "Platform Team", color: "text-purple-600", bg: "bg-purple-50" },
+                { name: "Chris Wu", rel: "Member", team: "Platform Team", color: "text-purple-600", bg: "bg-purple-50" },
               ].map((f, i) => (
                 <div key={i} className="flex items-center gap-2 py-2 px-3 bg-white rounded-lg text-[13px]">
                   <span className="text-gray-900 font-medium min-w-[110px]">{f.name}</span>
@@ -533,9 +533,9 @@ function How360WorksSection() {
                 { name: "Sarah Chen", rel: "Upward", team: "Engineering Management", note: "Evaluates their Manager" },
                 { name: "Priya Sharma", rel: "Peer", team: "Engineering Management", note: "Evaluates a Peer" },
                 { name: "Dan Kim", rel: "Peer", team: "Engineering Management", note: "Evaluates a Peer" },
-                { name: "Jordan Lee", rel: "Downward", team: "Platform Team", note: "Evaluates a Direct Report" },
-                { name: "Maya Patel", rel: "Downward", team: "Platform Team", note: "Evaluates a Direct Report" },
-                { name: "Chris Wu", rel: "Downward", team: "Platform Team", note: "Evaluates a Direct Report" },
+                { name: "Jordan Lee", rel: "Downward", team: "Platform Team", note: "Evaluates a Member" },
+                { name: "Maya Patel", rel: "Downward", team: "Platform Team", note: "Evaluates a Member" },
+                { name: "Chris Wu", rel: "Downward", team: "Platform Team", note: "Evaluates a Member" },
               ].map((f, i) => (
                 <div key={i} className="flex items-center gap-2 py-2 px-3 bg-white rounded-lg text-[13px]">
                   <span className="text-gray-500">Alex</span>
@@ -549,9 +549,9 @@ function How360WorksSection() {
 
           <TipBox>
             Alex&apos;s final report will show scores broken down by relationship type &mdash;{" "}
-            <strong>1 manager</strong>, <strong>2 peers</strong>, and <strong>3 direct reports</strong>.
+            <strong>1 manager</strong>, <strong>2 peers</strong>, and <strong>3 members</strong> (upward feedback).
             This multi-perspective view reveals blind spots that a single manager review would miss.
-            For example, a manager might rate Alex&apos;s communication highly, while direct reports flag
+            For example, a manager might rate Alex&apos;s communication highly, while members flag
             that status updates could be more frequent.
           </TipBox>
         </div>
@@ -564,7 +564,7 @@ function How360WorksSection() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {[
               { title: "Reduces bias", desc: "One manager's opinion is just one data point. 360° feedback balances multiple perspectives." },
-              { title: "Surfaces blind spots", desc: "Peers and direct reports see behaviors that managers don't. Upward feedback improves leadership." },
+              { title: "Surfaces blind spots", desc: "Peers and members see behaviors that managers don't. Upward feedback improves leadership." },
               { title: "Builds accountability", desc: "When feedback comes from all directions, everyone is accountable to everyone they work with." },
               { title: "Drives growth", desc: "Employees get specific, actionable feedback from the people who interact with them daily." },
             ].map((item, i) => (
@@ -596,14 +596,15 @@ function RolesSection() {
             <p className="text-body text-gray-500 mt-2 leading-relaxed">
               In Perform360, <strong>teams</strong> are the building blocks of your evaluation cycles.
               Each team represents a functional group within your organization. Team members are assigned
-              one of three roles &mdash; <strong>Manager</strong>, <strong>Direct Report</strong>, or{" "}
-              <strong>Peer</strong> &mdash; which determines the evaluation relationship during review cycles.
+              one of two roles &mdash; <strong>Manager</strong> or <strong>Member</strong> &mdash;
+              which determines the evaluation relationships during review cycles. Peer feedback is
+              automatically derived &mdash; all Members in the same team evaluate each other as peers.
             </p>
           </div>
         </div>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card padding="sm">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2 rounded-lg bg-amber-50">
@@ -612,8 +613,8 @@ function RolesSection() {
             <h3 className="text-headline text-gray-900">Manager</h3>
           </div>
           <p className="text-callout text-gray-500">
-            Team leads, engineering managers, directors. They evaluate their direct reports
-            and receive upward feedback.
+            Team leads, engineering managers, directors. They evaluate their members (downward)
+            and receive upward feedback from them.
           </p>
         </Card>
 
@@ -622,27 +623,19 @@ function RolesSection() {
             <div className="p-2 rounded-lg bg-blue-50">
               <UserCircle size={18} strokeWidth={1.5} className="text-blue-500" />
             </div>
-            <h3 className="text-headline text-gray-900">Direct Report</h3>
+            <h3 className="text-headline text-gray-900">Member</h3>
           </div>
           <p className="text-callout text-gray-500">
-            Team members who report to a manager. They receive evaluations from their
-            manager and peers.
-          </p>
-        </Card>
-
-        <Card padding="sm">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="p-2 rounded-lg bg-gray-100">
-              <Users size={18} strokeWidth={1.5} className="text-gray-500" />
-            </div>
-            <h3 className="text-headline text-gray-900">Peer</h3>
-          </div>
-          <p className="text-callout text-gray-500">
-            Colleagues at a similar level. They provide lateral feedback to each other
-            during evaluation cycles.
+            Team members who report to a manager. They receive evaluations from their manager,
+            give upward feedback, and automatically evaluate each other as peers.
           </p>
         </Card>
       </div>
+
+      <InfoBox>
+        Only two roles to pick from when adding someone to a team: <strong>Manager</strong> or <strong>Member</strong>.
+        The system automatically generates all three feedback directions (downward, upward, lateral) from these two roles.
+      </InfoBox>
     </div>
   );
 }
@@ -734,23 +727,23 @@ function CreatingTeamsSection() {
                 </div>
                 <div className="flex items-center justify-between py-1.5 px-3 bg-white rounded-lg">
                   <span>Jordan Lee (Senior Engineer)</span>
-                  <Badge variant="info">Direct Report</Badge>
+                  <Badge variant="info">Member</Badge>
                 </div>
                 <div className="flex items-center justify-between py-1.5 px-3 bg-white rounded-lg">
                   <span>Maya Patel (Engineer)</span>
-                  <Badge variant="info">Direct Report</Badge>
+                  <Badge variant="info">Member</Badge>
                 </div>
                 <div className="flex items-center justify-between py-1.5 px-3 bg-white rounded-lg">
                   <span>Chris Wu (Junior Engineer)</span>
-                  <Badge variant="info">Direct Report</Badge>
+                  <Badge variant="info">Member</Badge>
                 </div>
               </div>
             </div>
           </Card>
           <div className="mt-3">
             <TipBox>
-              A person can be a <strong>Manager</strong> in one team and a <strong>Direct Report</strong> in
-              another. For example, Sarah Chen is a Direct Report in the Leadership Team (evaluated by the CTO),
+              A person can be a <strong>Manager</strong> in one team and a <strong>Member</strong> in
+              another. For example, Sarah Chen is a Member in the Leadership Team (evaluated by the CTO),
               while Alex Rivera is a Manager of the Platform Team. This is how directors evaluate their department heads.
             </TipBox>
           </div>
@@ -788,12 +781,12 @@ function RunningCyclesSection() {
               <p className="font-medium text-gray-900">Auto-generated assignments for Platform Team:</p>
               <div className="space-y-1.5">
                 {[
-                  { reviewer: "Alex Rivera", subject: "Jordan Lee", rel: "Manager \u2192 Direct Report" },
-                  { reviewer: "Alex Rivera", subject: "Maya Patel", rel: "Manager \u2192 Direct Report" },
-                  { reviewer: "Alex Rivera", subject: "Chris Wu", rel: "Manager \u2192 Direct Report" },
-                  { reviewer: "Jordan Lee", subject: "Alex Rivera", rel: "Direct Report \u2192 Manager" },
-                  { reviewer: "Maya Patel", subject: "Alex Rivera", rel: "Direct Report \u2192 Manager" },
-                  { reviewer: "Jordan Lee", subject: "Maya Patel", rel: "Peer \u2192 Peer" },
+                  { reviewer: "Alex Rivera", subject: "Jordan Lee", rel: "Manager \u2192 Member" },
+                  { reviewer: "Alex Rivera", subject: "Maya Patel", rel: "Manager \u2192 Member" },
+                  { reviewer: "Alex Rivera", subject: "Chris Wu", rel: "Manager \u2192 Member" },
+                  { reviewer: "Jordan Lee", subject: "Alex Rivera", rel: "Member \u2192 Manager" },
+                  { reviewer: "Maya Patel", subject: "Alex Rivera", rel: "Member \u2192 Manager" },
+                  { reviewer: "Jordan Lee", subject: "Maya Patel", rel: "Member \u2192 Member (Peer)" },
                 ].map((a, i) => (
                   <div key={i} className="flex items-center gap-2 py-1.5 px-3 bg-white rounded-lg text-[13px]">
                     <span className="text-gray-900 font-medium">{a.reviewer}</span>
@@ -852,13 +845,13 @@ function RunningCyclesSection() {
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <Mail size={14} strokeWidth={1.5} className="text-brand-500" />
-                  <p className="font-medium text-gray-900">Jordan Lee (Direct Report) receives 3 evaluation links:</p>
+                  <p className="font-medium text-gray-900">Jordan Lee (Member) receives 3 evaluation links:</p>
                 </div>
                 <div className="space-y-1.5 ml-5">
                   {[
-                    { subject: "Alex Rivera", note: "Evaluates as their Direct Report (upward feedback)" },
-                    { subject: "Maya Patel", note: "Evaluates as a Peer" },
-                    { subject: "Chris Wu", note: "Evaluates as a Peer" },
+                    { subject: "Alex Rivera", note: "Evaluates their Manager (upward feedback)" },
+                    { subject: "Maya Patel", note: "Evaluates a fellow Member (peer feedback)" },
+                    { subject: "Chris Wu", note: "Evaluates a fellow Member (peer feedback)" },
                   ].map((a, i) => (
                     <div key={i} className="flex items-center gap-2 py-1.5 px-3 bg-white rounded-lg text-[13px]">
                       <span className="text-gray-500">Evaluate</span>
@@ -912,7 +905,7 @@ function ReportsSection() {
         <StepCard
           step={6}
           title="Responses Collected from All Directions"
-          description="As reviewers submit their forms, the system collects feedback from every direction — manager, peers, and direct reports. Let's see what this looks like for one employee:"
+          description="As reviewers submit their forms, the system collects feedback from every direction — manager, peers, and members. Here's what this looks like for one employee:"
         >
           <Card padding="sm" className="bg-gray-50/50 border-gray-100">
             <div className="text-[14px] text-gray-600 space-y-4">
@@ -946,11 +939,11 @@ function ReportsSection() {
                 </div>
               </div>
 
-              {/* Direct Report feedback */}
+              {/* Upward feedback from members */}
               <div className="border border-purple-100 bg-purple-50/40 rounded-xl p-3">
                 <div className="flex items-center gap-2 mb-2">
                   <UserCircle size={14} strokeWidth={1.5} className="text-purple-600" />
-                  <span className="font-medium text-purple-900 text-[13px]">Direct Report Feedback</span>
+                  <span className="font-medium text-purple-900 text-[13px]">Upward Feedback (from Members)</span>
                   <span className="text-[12px] text-purple-600/60 ml-auto">from Platform Team</span>
                 </div>
                 <div className="space-y-1.5">
@@ -1013,7 +1006,7 @@ function ReportsSection() {
                     <p className="text-[16px] font-semibold text-amber-600">4.5</p>
                   </div>
                   <div className="text-center py-2 px-2 bg-white rounded-lg">
-                    <p className="text-[11px] text-gray-400 mb-0.5">Direct Report Avg</p>
+                    <p className="text-[11px] text-gray-400 mb-0.5">Member Avg</p>
                     <p className="text-[16px] font-semibold text-purple-600">4.3</p>
                   </div>
                   <div className="text-center py-2 px-2 bg-white rounded-lg">
@@ -1032,7 +1025,7 @@ function ReportsSection() {
           <div className="mt-3">
             <InfoBox>
               Each employee gets a comprehensive report showing scores from <strong>every direction</strong> —
-              manager feedback, peer feedback, and (if applicable) direct report feedback. Open-text
+              manager feedback, peer feedback, and (if applicable) upward feedback from members. Open-text
               comments are grouped by relationship type and kept <strong>anonymous</strong> so reviewers
               can be candid.
             </InfoBox>
@@ -1050,7 +1043,7 @@ function ReportsSection() {
               <div className="space-y-2">
                 {[
                   { icon: BarChart3, label: "Radar chart", desc: "Visual breakdown across all competency areas (communication, technical skills, leadership, etc.)" },
-                  { icon: Star, label: "Score breakdown by relationship", desc: "See how managers, peers, and direct reports scored the employee separately" },
+                  { icon: Star, label: "Score breakdown by relationship", desc: "See how managers, peers, and members scored the employee separately" },
                   { icon: MessageSquare, label: "Anonymized comments", desc: "Open-text feedback grouped by relationship type — reviewers stay anonymous" },
                   { icon: FileText, label: "Per-question detail", desc: "Score distribution for every question in the evaluation template" },
                   { icon: BarChart3, label: "Trend comparison", desc: "Compare against previous cycles to track growth over time" },
@@ -1129,12 +1122,12 @@ function OrgPatternsSection() {
             Small startups with minimal hierarchy. One founder/CEO manages everyone.
           </p>
           <div className="font-mono text-[13px] text-gray-600 bg-gray-50 rounded-lg p-4 leading-relaxed whitespace-pre">{`CEO / Founder
-├── Engineer 1      (Direct Report)
-├── Engineer 2      (Direct Report)
-├── Designer        (Direct Report)
-└── Marketing Lead  (Direct Report)`}</div>
+├── Engineer 1      (Member)
+├── Engineer 2      (Member)
+├── Designer        (Member)
+└── Marketing Lead  (Member)`}</div>
           <p className="text-caption mt-3">
-            Create a single team. CEO is Manager, everyone else is Direct Report.
+            Create a single team. CEO is Manager, everyone else is Member.
           </p>
         </div>
 
@@ -1146,14 +1139,14 @@ function OrgPatternsSection() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="font-mono text-[13px] text-gray-600 bg-gray-50 rounded-lg p-4 leading-relaxed whitespace-pre">{`Team: "Project Alpha"
 ├── Project Lead  (Manager)
-├── Engineer A    (Direct Report)
-├── Designer B    (Direct Report)
-└── QA Tester C   (Direct Report)`}</div>
+├── Engineer A    (Member)
+├── Designer B    (Member)
+└── QA Tester C   (Member)`}</div>
             <div className="font-mono text-[13px] text-gray-600 bg-gray-50 rounded-lg p-4 leading-relaxed whitespace-pre">{`Team: "Engineering Dept"
 ├── VP Engineering (Manager)
-├── Engineer A     (Direct Report)
-├── Engineer C     (Direct Report)
-└── Engineer D     (Direct Report)`}</div>
+├── Engineer A     (Member)
+├── Engineer C     (Member)
+└── Engineer D     (Member)`}</div>
           </div>
           <p className="text-caption mt-3">
             Create separate teams for each reporting line. Engineer A appears in both teams
@@ -1169,12 +1162,12 @@ function OrgPatternsSection() {
           <div className="font-mono text-[13px] text-gray-600 bg-gray-50 rounded-lg p-4 leading-relaxed whitespace-pre">{`Team: "Design Studio"
 ├── Creative Director   (Manager)
 ├── Art Director        (Manager)
-├── Senior Designer 1   (Direct Report)
-├── Senior Designer 2   (Direct Report)
-├── Junior Designer 1   (Direct Report)
-└── Junior Designer 2   (Direct Report)`}</div>
+├── Senior Designer 1   (Member)
+├── Senior Designer 2   (Member)
+├── Junior Designer 1   (Member)
+└── Junior Designer 2   (Member)`}</div>
           <p className="text-caption mt-3">
-            Perform360 supports multiple managers per team. Both managers evaluate all direct reports,
+            Perform360 supports multiple managers per team. Both managers evaluate all members,
             and reports show aggregated scores from each manager.
           </p>
         </div>
@@ -1182,18 +1175,18 @@ function OrgPatternsSection() {
         <div className="p-4 border border-gray-100 rounded-xl">
           <h4 className="text-headline text-gray-900 mb-1">Cross-Functional Squad</h4>
           <p className="text-callout text-gray-500 mb-3">
-            Members from different departments working on the same product. Use Peer roles for lateral feedback.
+            Members from different departments working on the same product. All non-managers are Members and automatically evaluate each other as peers.
           </p>
           <div className="font-mono text-[13px] text-gray-600 bg-gray-50 rounded-lg p-4 leading-relaxed whitespace-pre">{`Team: "Growth Squad"
 ├── Product Manager     (Manager)
-├── Backend Engineer    (Peer)
-├── Frontend Engineer   (Peer)
-├── Designer            (Peer)
-├── Data Analyst        (Peer)
-└── Marketing Specialist(Peer)`}</div>
+├── Backend Engineer    (Member)
+├── Frontend Engineer   (Member)
+├── Designer            (Member)
+├── Data Analyst        (Member)
+└── Marketing Specialist(Member)`}</div>
           <p className="text-caption mt-3">
-            Use Peer roles when team members don&apos;t have a direct reporting relationship
-            but collaborate closely and should provide feedback to each other.
+            All Members automatically evaluate each other as peers. The Product Manager evaluates
+            everyone (downward), and everyone evaluates the Product Manager (upward).
           </p>
         </div>
       </div>

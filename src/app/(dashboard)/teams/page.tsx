@@ -162,7 +162,7 @@ export default function TeamsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {teams.map((team) => {
               const managerCount = team.members.filter((m) => m.role === "MANAGER").length;
-              const reportCount = team.members.filter((m) => m.role === "DIRECT_REPORT").length;
+              const memberCount = team.members.filter((m) => m.role === "MEMBER").length;
               return (
                 <Card key={team.id} className="h-full flex flex-col hover:shadow-md transition-all duration-200 group">
                   <CardHeader>
@@ -202,7 +202,7 @@ export default function TeamsPage() {
                     <div className="flex items-center gap-2 mt-auto pt-4 flex-wrap">
                       <Badge variant="default">{team._count.members} members</Badge>
                       <Badge variant="info">{managerCount} managers</Badge>
-                      <Badge variant="outline">{reportCount} reports</Badge>
+                      <Badge variant="outline">{memberCount} members</Badge>
                     </div>
                   </Link>
                 </Card>
