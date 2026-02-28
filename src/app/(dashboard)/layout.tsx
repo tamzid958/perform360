@@ -17,6 +17,17 @@ export default async function DashboardLayout({ children }: { children: React.Re
     select: { name: true, email: true, avatar: true, role: true, companyId: true },
   });
 
+  // Super admin (SaaS owner) has no User record — redirect to superadmin panel
+  if (!appUser) {
+    const isSuperAdmin = await prisma.superAdmin.findUnique({
+      where: { email: session.user.email! },
+    });
+    if (isSuperAdmin) {
+      redirect("/superadmin");
+    }
+    redirect("/login");
+  }
+
   if (appUser?.role === "ADMIN") {
     const company = await prisma.company.findUnique({
       where: { id: appUser.companyId },
