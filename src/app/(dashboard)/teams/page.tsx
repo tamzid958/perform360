@@ -15,7 +15,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { Users, Plus, AlertCircle, Inbox, Search, MoreHorizontal, Eye, Trash2, ArrowDown, ArrowUp, ArrowLeftRight } from "lucide-react";
+import { Users, Plus, AlertCircle, Inbox, Search, MoreHorizontal, Eye, Trash2, ArrowDown, ArrowUp, ArrowLeftRight, RotateCcw, Upload } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { PaginationMeta } from "@/types/pagination";
@@ -106,6 +106,7 @@ export default function TeamsPage() {
     return (
       <div>
         <PageHeader title="Teams" description="Manage your organization's team structure">
+          <Link href="/teams/import"><Button variant="secondary"><Upload size={16} strokeWidth={1.5} className="mr-1.5" />Import CSV</Button></Link>
           <Link href="/teams/new"><Button><Plus size={16} strokeWidth={2} className="mr-1.5" />New Team</Button></Link>
         </PageHeader>
         <Card className="max-w-lg mx-auto mt-12 text-center">
@@ -122,6 +123,9 @@ export default function TeamsPage() {
   return (
     <div>
       <PageHeader title="Teams" description="Manage your organization's team structure">
+        <Link href="/teams/import">
+          <Button variant="secondary"><Upload size={16} strokeWidth={1.5} className="mr-1.5" />Import CSV</Button>
+        </Link>
         <Link href="/teams/new">
           <Button><Plus size={16} strokeWidth={2} className="mr-1.5" />New Team</Button>
         </Link>
@@ -166,6 +170,8 @@ export default function TeamsPage() {
               const hasDownward = managerCount > 0 && memberCount > 0;
               const hasUpward = managerCount > 0 && memberCount > 0;
               const hasLateral = memberCount >= 2;
+              const totalMembers = managerCount + memberCount;
+              const hasSelf = totalMembers > 0;
               return (
                 <Card key={team.id} className="h-full flex flex-col hover:shadow-md transition-all duration-200 group">
                   <CardHeader>
@@ -220,6 +226,12 @@ export default function TeamsPage() {
                         <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-600 bg-amber-50 rounded-full px-2 py-0.5">
                           <ArrowLeftRight size={11} strokeWidth={2} />
                           {memberCount * (memberCount - 1)}
+                        </span>
+                      )}
+                      {hasSelf && (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-green-600 bg-green-50 rounded-full px-2 py-0.5">
+                          <RotateCcw size={11} strokeWidth={2} />
+                          {totalMembers}
                         </span>
                       )}
                     </div>

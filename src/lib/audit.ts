@@ -14,7 +14,8 @@ type AuditAction =
   | "encryption_recovery"
   | "recovery_codes_regenerate"
   | "key_rotation"
-  | "impersonation";
+  | "impersonation"
+  | "bulk_import";
 
 interface AuditLogInput {
   companyId: string;

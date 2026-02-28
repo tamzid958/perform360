@@ -30,7 +30,7 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
-import { UserPlus, MoreHorizontal, Mail, Trash2, AlertCircle, ArrowDown, ArrowUp, ArrowLeftRight } from "lucide-react";
+import { UserPlus, MoreHorizontal, Mail, Trash2, AlertCircle, ArrowDown, ArrowUp, ArrowLeftRight, RotateCcw } from "lucide-react";
 
 interface TeamMember {
   id: string;
@@ -219,6 +219,8 @@ export default function TeamDetailPage() {
   const upwardCount = members.length * managers.length;
   // Lateral: Member → Member (each member evaluates every other member)
   const lateralCount = members.length * (members.length - 1);
+  // Self: Everyone evaluates themselves
+  const selfCount = managers.length + members.length;
 
   return (
     <div>
@@ -230,7 +232,7 @@ export default function TeamDetailPage() {
       </PageHeader>
 
       {/* Evaluation Direction Stats */}
-      <div className="grid grid-cols-3 gap-3 mb-6 max-w-xl">
+      <div className="grid grid-cols-4 gap-3 mb-6 max-w-2xl">
         <div className="flex items-center gap-3 rounded-2xl border border-emerald-100 bg-emerald-50/50 px-4 py-3">
           <div className="p-2 rounded-xl bg-emerald-100">
             <ArrowDown size={18} strokeWidth={1.5} className="text-emerald-600" />
@@ -256,6 +258,15 @@ export default function TeamDetailPage() {
           <div>
             <p className="text-title-small text-amber-700">{lateralCount}</p>
             <p className="text-[12px] font-medium text-amber-600/70">Lateral</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 rounded-2xl border border-green-100 bg-green-50/50 px-4 py-3">
+          <div className="p-2 rounded-xl bg-green-100">
+            <RotateCcw size={18} strokeWidth={1.5} className="text-green-600" />
+          </div>
+          <div>
+            <p className="text-title-small text-green-700">{selfCount}</p>
+            <p className="text-[12px] font-medium text-green-600/70">Self</p>
           </div>
         </div>
       </div>

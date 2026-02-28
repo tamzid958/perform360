@@ -143,6 +143,18 @@ export async function DELETE(
     }, { status: 404 });
   }
 
+  const linkedCycleCount = await prisma.cycleTeam.count({
+    where: { teamId: params.id },
+  });
+
+  if (linkedCycleCount > 0) {
+    return NextResponse.json({
+      success: false,
+      error: `Team is linked to ${linkedCycleCount} evaluation cycle(s)`,
+      code: "TEAM_IN_USE",
+    }, { status: 409 });
+  }
+
   await prisma.$transaction([
     prisma.teamMember.deleteMany({
       where: { teamId: params.id },

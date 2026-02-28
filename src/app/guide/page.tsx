@@ -309,7 +309,7 @@ function How360WorksSection() {
             <h2 className="text-title-small text-gray-900">What is 360° Feedback?</h2>
             <p className="text-body text-gray-500 mt-2 leading-relaxed">
               Traditional reviews are top-down &mdash; a manager evaluates their team. <strong>360° feedback</strong> collects
-              input from <em>every direction</em>: managers, members, and peers. This gives a complete,
+              input from <em>every direction</em>: managers, members, peers, and even a self-assessment. This gives a complete,
               well-rounded picture of each employee&apos;s performance, strengths, and growth areas.
             </p>
           </div>
@@ -317,7 +317,7 @@ function How360WorksSection() {
       </Card>
 
       {/* Three directions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Card padding="sm">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center text-[16px]">
@@ -354,6 +354,19 @@ function How360WorksSection() {
           <p className="text-callout text-gray-500">
             <strong>Member &rarr; Member.</strong> Colleagues at the same level evaluate
             each other on collaboration, reliability, and teamwork.
+          </p>
+        </Card>
+
+        <Card padding="sm">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center text-[16px]">
+              &#8635;
+            </div>
+            <h3 className="text-headline text-gray-900">Self</h3>
+          </div>
+          <p className="text-callout text-gray-500">
+            <strong>Self-assessment.</strong> Each person evaluates their own performance,
+            providing insight into self-awareness and personal growth areas.
           </p>
         </Card>
       </div>
@@ -465,8 +478,33 @@ function How360WorksSection() {
             </div>
           </div>
 
+          {/* Self evaluations */}
+          <div className="border border-green-100 bg-green-50/40 rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <UserCircle size={14} strokeWidth={1.5} className="text-green-600" />
+              <span className="font-medium text-green-900 text-[13px]">Self-Assessment</span>
+              <span className="text-[12px] text-green-600/60 ml-auto">Everyone evaluates themselves</span>
+            </div>
+            <div className="space-y-1.5">
+              {[
+                "Alex Rivera",
+                "Jordan Lee",
+                "Maya Patel",
+                "Chris Wu",
+              ].map((name, i) => (
+                <div key={i} className="flex items-center gap-2 py-1.5 px-3 bg-white rounded-lg text-[13px]">
+                  <span className="text-gray-900 font-medium">{name}</span>
+                  <ArrowRight size={12} strokeWidth={1.5} className="text-green-400 shrink-0" />
+                  <span className="text-gray-900 font-medium">{name}</span>
+                  <span className="text-gray-400 ml-auto text-[11px]">Self</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
           <InfoBox>
-            That&apos;s <strong>12 evaluations</strong> automatically generated from just <strong>4 people</strong>.
+            That&apos;s <strong>16 evaluations</strong> automatically generated from just <strong>4 people</strong>:
+            3 downward, 3 upward, 6 peer, and 4 self-assessments.
             Every team member both gives and receives feedback from multiple directions &mdash; that&apos;s the power of 360°.
           </InfoBox>
         </div>
@@ -498,7 +536,7 @@ function How360WorksSection() {
           <div className="border border-green-100 bg-green-50/40 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-3">
               <Star size={14} strokeWidth={1.5} className="text-green-600" />
-              <span className="font-medium text-green-900 text-[14px]">Feedback Alex receives (6 evaluations)</span>
+              <span className="font-medium text-green-900 text-[14px]">Feedback Alex receives (7 evaluations)</span>
             </div>
             <div className="space-y-1.5">
               {[
@@ -508,6 +546,7 @@ function How360WorksSection() {
                 { name: "Jordan Lee", rel: "Member", team: "Platform Team", color: "text-purple-600", bg: "bg-purple-50" },
                 { name: "Maya Patel", rel: "Member", team: "Platform Team", color: "text-purple-600", bg: "bg-purple-50" },
                 { name: "Chris Wu", rel: "Member", team: "Platform Team", color: "text-purple-600", bg: "bg-purple-50" },
+                { name: "Alex Rivera", rel: "Self", team: "Self-assessment", color: "text-green-600", bg: "bg-green-50" },
               ].map((f, i) => (
                 <div key={i} className="flex items-center gap-2 py-2 px-3 bg-white rounded-lg text-[13px]">
                   <span className="text-gray-900 font-medium min-w-[110px]">{f.name}</span>
@@ -526,7 +565,7 @@ function How360WorksSection() {
           <div className="border border-gray-100 bg-gray-50/40 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-3">
               <FileText size={14} strokeWidth={1.5} className="text-gray-600" />
-              <span className="font-medium text-gray-900 text-[14px]">Evaluations Alex gives (6 evaluations)</span>
+              <span className="font-medium text-gray-900 text-[14px]">Evaluations Alex gives (7 evaluations)</span>
             </div>
             <div className="space-y-1.5">
               {[
@@ -536,6 +575,7 @@ function How360WorksSection() {
                 { name: "Jordan Lee", rel: "Downward", team: "Platform Team", note: "Evaluates a Member" },
                 { name: "Maya Patel", rel: "Downward", team: "Platform Team", note: "Evaluates a Member" },
                 { name: "Chris Wu", rel: "Downward", team: "Platform Team", note: "Evaluates a Member" },
+                { name: "Alex Rivera", rel: "Self", team: "Self-assessment", note: "Self-assessment" },
               ].map((f, i) => (
                 <div key={i} className="flex items-center gap-2 py-2 px-3 bg-white rounded-lg text-[13px]">
                   <span className="text-gray-500">Alex</span>
@@ -549,9 +589,10 @@ function How360WorksSection() {
 
           <TipBox>
             Alex&apos;s final report will show scores broken down by relationship type &mdash;{" "}
-            <strong>1 manager</strong>, <strong>2 peers</strong>, and <strong>3 members</strong> (upward feedback).
+            <strong>1 manager</strong>, <strong>2 peers</strong>, <strong>3 members</strong> (upward feedback),
+            and <strong>1 self-assessment</strong>.
             This multi-perspective view reveals blind spots that a single manager review would miss.
-            For example, a manager might rate Alex&apos;s communication highly, while members flag
+            For example, Alex might rate their own communication highly, while members flag
             that status updates could be more frequent.
           </TipBox>
         </div>
@@ -634,7 +675,7 @@ function RolesSection() {
 
       <InfoBox>
         Only two roles to pick from when adding someone to a team: <strong>Manager</strong> or <strong>Member</strong>.
-        The system automatically generates all three feedback directions (downward, upward, lateral) from these two roles.
+        The system automatically generates all four feedback directions (downward, upward, lateral, and self) from these two roles.
       </InfoBox>
     </div>
   );
@@ -787,6 +828,8 @@ function RunningCyclesSection() {
                   { reviewer: "Jordan Lee", subject: "Alex Rivera", rel: "Member \u2192 Manager" },
                   { reviewer: "Maya Patel", subject: "Alex Rivera", rel: "Member \u2192 Manager" },
                   { reviewer: "Jordan Lee", subject: "Maya Patel", rel: "Member \u2192 Member (Peer)" },
+                  { reviewer: "Alex Rivera", subject: "Alex Rivera", rel: "Self-assessment" },
+                  { reviewer: "Jordan Lee", subject: "Jordan Lee", rel: "Self-assessment" },
                 ].map((a, i) => (
                   <div key={i} className="flex items-center gap-2 py-1.5 px-3 bg-white rounded-lg text-[13px]">
                     <span className="text-gray-900 font-medium">{a.reviewer}</span>
@@ -825,13 +868,14 @@ function RunningCyclesSection() {
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <Mail size={14} strokeWidth={1.5} className="text-brand-500" />
-                  <p className="font-medium text-gray-900">Alex Rivera (Manager) receives 3 evaluation links:</p>
+                  <p className="font-medium text-gray-900">Alex Rivera (Manager) receives 4 evaluation links:</p>
                 </div>
                 <div className="space-y-1.5 ml-5">
                   {[
                     { subject: "Jordan Lee", note: "Evaluates as their Manager" },
                     { subject: "Maya Patel", note: "Evaluates as their Manager" },
                     { subject: "Chris Wu", note: "Evaluates as their Manager" },
+                    { subject: "Alex Rivera", note: "Self-assessment" },
                   ].map((a, i) => (
                     <div key={i} className="flex items-center gap-2 py-1.5 px-3 bg-white rounded-lg text-[13px]">
                       <span className="text-gray-500">Evaluate</span>
@@ -845,13 +889,14 @@ function RunningCyclesSection() {
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <Mail size={14} strokeWidth={1.5} className="text-brand-500" />
-                  <p className="font-medium text-gray-900">Jordan Lee (Member) receives 3 evaluation links:</p>
+                  <p className="font-medium text-gray-900">Jordan Lee (Member) receives 4 evaluation links:</p>
                 </div>
                 <div className="space-y-1.5 ml-5">
                   {[
                     { subject: "Alex Rivera", note: "Evaluates their Manager (upward feedback)" },
                     { subject: "Maya Patel", note: "Evaluates a fellow Member (peer feedback)" },
                     { subject: "Chris Wu", note: "Evaluates a fellow Member (peer feedback)" },
+                    { subject: "Jordan Lee", note: "Self-assessment" },
                   ].map((a, i) => (
                     <div key={i} className="flex items-center gap-2 py-1.5 px-3 bg-white rounded-lg text-[13px]">
                       <span className="text-gray-500">Evaluate</span>
@@ -1000,7 +1045,7 @@ function ReportsSection() {
                   <BarChart3 size={14} strokeWidth={1.5} className="text-green-600" />
                   <span className="font-medium text-green-900 text-[13px]">Alex&apos;s Report Summary</span>
                 </div>
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-5 gap-2">
                   <div className="text-center py-2 px-2 bg-white rounded-lg">
                     <p className="text-[11px] text-gray-400 mb-0.5">Manager Avg</p>
                     <p className="text-[16px] font-semibold text-amber-600">4.5</p>
@@ -1014,8 +1059,12 @@ function ReportsSection() {
                     <p className="text-[16px] font-semibold text-blue-600">4.1</p>
                   </div>
                   <div className="text-center py-2 px-2 bg-white rounded-lg">
+                    <p className="text-[11px] text-gray-400 mb-0.5">Self</p>
+                    <p className="text-[16px] font-semibold text-green-600">4.0</p>
+                  </div>
+                  <div className="text-center py-2 px-2 bg-white rounded-lg">
                     <p className="text-[11px] text-gray-400 mb-0.5">Overall</p>
-                    <p className="text-[16px] font-semibold text-green-600">4.3</p>
+                    <p className="text-[16px] font-semibold text-gray-900">4.3</p>
                   </div>
                 </div>
               </div>
@@ -1025,9 +1074,9 @@ function ReportsSection() {
           <div className="mt-3">
             <InfoBox>
               Each employee gets a comprehensive report showing scores from <strong>every direction</strong> —
-              manager feedback, peer feedback, and (if applicable) upward feedback from members. Open-text
+              manager feedback, peer feedback, upward feedback from members, and their own self-assessment. Open-text
               comments are grouped by relationship type and kept <strong>anonymous</strong> so reviewers
-              can be candid.
+              can be candid. Self-assessment scores are shown separately to highlight self-awareness gaps.
             </InfoBox>
           </div>
         </StepCard>
