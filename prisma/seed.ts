@@ -963,6 +963,12 @@ async function main() {
     update: { name: SUPER_ADMIN_NAME },
     create: { email: SUPER_ADMIN_EMAIL, name: SUPER_ADMIN_NAME },
   });
+  // Ensure AuthUser exists so NextAuth adapter can resolve the session
+  await prisma.authUser.upsert({
+    where: { email: SUPER_ADMIN_EMAIL },
+    create: { email: SUPER_ADMIN_EMAIL, name: SUPER_ADMIN_NAME },
+    update: {},
+  });
   console.log(`  Super admin: ${SUPER_ADMIN_EMAIL}`);
 
   console.log("Seeding global evaluation templates...");

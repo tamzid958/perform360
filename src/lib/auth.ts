@@ -83,11 +83,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     async signIn({ user }) {
       if (!user?.email) return false;
-      const exists = await prisma.user.findFirst({
-        where: { email: user.email },
-        select: { id: true },
-      });
-      if (!exists) return false;
+      const [appUser, superAdmin] = await Promise.all([
+        prisma.user.findFirst({
+          where: { email: user.email },
+          select: { id: true },
+        }),
+        prisma.superAdmin.findUnique({
+          where: { email: user.email },
+          select: { id: true },
+        }),
+      ]);
+      if (!appUser && !superAdmin) return false;
       return true;
     },
     async session({ session, user }) {
