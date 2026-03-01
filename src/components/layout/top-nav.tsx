@@ -1,44 +1,31 @@
 "use client";
 
 import { signOut } from "next-auth/react";
+import { LogOut } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { MobileNav } from "@/components/layout/mobile-nav";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuLabel,
-} from "@/components/ui/dropdown-menu";
 
 interface TopNavProps {
   userName?: string;
-  userEmail?: string;
   userAvatar?: string | null;
 }
 
-export function TopNav({ userName = "User", userEmail = "", userAvatar }: TopNavProps) {
+export function TopNav({ userName = "User", userAvatar }: TopNavProps) {
   return (
     <header className="h-14 sm:h-16 border-b border-gray-200/50 bg-white/80 backdrop-blur-xl flex items-center justify-between px-4 sm:px-6">
       <MobileNav />
       <div className="flex items-center gap-3 ml-auto">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-gray-100 transition-colors">
-              <Avatar src={userAvatar} name={userName} size="sm" />
-              <span className="text-[14px] font-medium text-gray-700 hidden sm:block">{userName}</span>
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>
-              <div className="text-[14px] font-medium text-gray-900">{userName}</div>
-              <div className="text-[12px] text-gray-500">{userEmail}</div>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-red-600" onClick={() => signOut({ redirectTo: "/login" })}>Sign out</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex items-center gap-2.5 p-1.5">
+          <Avatar src={userAvatar} name={userName} size="sm" />
+          <span className="text-[14px] font-medium text-gray-700 hidden sm:block">{userName}</span>
+        </div>
+        <button
+          onClick={() => signOut({ redirectTo: "/login" })}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-[13px] font-medium text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+        >
+          <LogOut size={16} strokeWidth={1.5} />
+          <span className="hidden sm:inline">Sign out</span>
+        </button>
       </div>
     </header>
   );

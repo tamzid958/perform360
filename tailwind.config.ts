@@ -53,6 +53,20 @@ const config: Config = {
         lg: "16px",
         xl: "20px",
       },
+      keyframes: {
+        "slide-in-left": {
+          from: { transform: "translateX(-100%)" },
+          to: { transform: "translateX(0)" },
+        },
+        "fade-in": {
+          from: { opacity: "0" },
+          to: { opacity: "1" },
+        },
+      },
+      animation: {
+        "slide-in-left": "slide-in-left 0.2s ease-out",
+        "fade-in": "fade-in 0.2s ease-out",
+      },
       boxShadow: {
         xs: "0 1px 2px rgba(0, 0, 0, 0.04)",
         sm: "0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04)",

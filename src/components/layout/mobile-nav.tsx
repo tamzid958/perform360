@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { Menu, X, LayoutDashboard, RefreshCcw, Users, FileText, UserCircle, Settings } from "lucide-react";
+import { Menu, X, LayoutDashboard, RefreshCcw, Users, FileText, UserCircle, Settings, LogOut } from "lucide-react";
+import { signOut } from "next-auth/react";
 
 const navigation = [
   { name: "Dashboard", href: "/overview", icon: LayoutDashboard },
@@ -28,10 +30,10 @@ export function MobileNav() {
         <Menu size={20} strokeWidth={1.5} className="text-gray-600" />
       </button>
 
-      {open && (
+      {open && createPortal(
         <>
-          <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={() => setOpen(false)} />
-          <div className="fixed inset-y-0 left-0 z-50 w-[280px] bg-white shadow-xl p-4">
+          <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm animate-fade-in" onClick={() => setOpen(false)} />
+          <div className="fixed inset-y-0 left-0 z-50 w-[280px] bg-white shadow-xl p-4 flex flex-col animate-slide-in-left">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center">
@@ -44,7 +46,7 @@ export function MobileNav() {
               </button>
             </div>
 
-            <nav className="space-y-1">
+            <nav className="flex-1 space-y-1">
               {navigation.map((item) => {
                 const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
                 const Icon = item.icon;
@@ -64,8 +66,19 @@ export function MobileNav() {
                 );
               })}
             </nav>
+
+            <div className="border-t border-gray-200/50 pt-3">
+              <button
+                onClick={() => signOut({ redirectTo: "/login" })}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[15px] font-medium transition-all w-full text-gray-500 hover:text-red-600 hover:bg-red-50"
+              >
+                <LogOut size={20} strokeWidth={1.5} />
+                <span>Sign out</span>
+              </button>
+            </div>
           </div>
-        </>
+        </>,
+        document.body
       )}
     </div>
   );

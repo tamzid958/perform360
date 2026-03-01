@@ -83,27 +83,36 @@ export async function POST(request: NextRequest) {
       metadata: { email: validated.email, role: validated.role },
     });
 
-    // Send welcome email (fire-and-forget — don't block the response)
+    // Send welcome email
     const company = await prisma.company.findUnique({
       where: { id: authResult.companyId },
       select: { name: true },
     });
+    const companyName = company?.name ?? "your organization";
     const { html, text } = getUserInviteEmail(
       validated.name,
-      company?.name ?? "your organization",
+      companyName,
       `${APP_URL}/login`
     );
-    sendEmail({
-      to: validated.email,
-      subject: `You've been invited to ${company?.name ?? "Performs360"}`,
-      html,
-      text,
-      companyId: authResult.companyId,
-    }).catch((err) => console.error("Failed to send invite email:", err));
+
+    let emailSent = true;
+    try {
+      await sendEmail({
+        to: validated.email,
+        subject: `You've been invited to ${companyName}`,
+        html,
+        text,
+        companyId: authResult.companyId,
+      });
+    } catch (err) {
+      emailSent = false;
+      console.error("Failed to send invite email:", err);
+    }
 
     return NextResponse.json({
       success: true,
       data: result,
+      emailSent,
     }, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {

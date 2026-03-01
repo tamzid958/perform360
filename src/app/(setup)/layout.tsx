@@ -12,11 +12,15 @@ export default async function SetupLayout({ children }: { children: React.ReactN
 
   return (
     <ToastProvider>
-      <div className="min-h-screen bg-[var(--bg-secondary)] flex flex-col items-center justify-center p-6">
-        <div className="w-full max-w-xl">
-          {children}
+      <div className="min-h-screen bg-[var(--bg-secondary)] flex flex-col p-6">
+        <div className="flex justify-end">
+          <SetupSignOut />
         </div>
-        <SetupSignOut />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="w-full max-w-xl">
+            {children}
+          </div>
+        </div>
       </div>
     </ToastProvider>
   );
