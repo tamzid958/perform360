@@ -26,20 +26,8 @@ const DEFAULT_NOTIFICATIONS: NotificationSettings = {
   cycleCompletion: true,
 };
 
-interface ResendSettings {
-  apiKey: string;
-  from: string;
-}
-
-const DEFAULT_RESEND: ResendSettings = {
-  apiKey: "",
-  from: "onboarding@resend.dev",
-};
-
-
 interface CompanySettings {
   notifications?: NotificationSettings;
-  resend?: ResendSettings;
 }
 
 interface Company {
@@ -96,9 +84,6 @@ export default function SettingsPage() {
   const [destroyConfirmName, setDestroyConfirmName] = useState("");
   const [destroyExportFirst, setDestroyExportFirst] = useState(true);
   const [destroying, setDestroying] = useState(false);
-  const [resendSettings, setResendSettings] = useState<ResendSettings>(DEFAULT_RESEND);
-  const [savingResend, setSavingResend] = useState(false);
-  const [testingResend, setTestingResend] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { addToast } = useToast();
 
@@ -113,8 +98,6 @@ export default function SettingsPage() {
         setCompanySlug(json.data.slug);
         const saved = json.data.settings?.notifications;
         setNotifications(saved ? { ...DEFAULT_NOTIFICATIONS, ...saved } : DEFAULT_NOTIFICATIONS);
-        const savedResend = json.data.settings?.resend;
-        setResendSettings(savedResend ? { ...DEFAULT_RESEND, ...savedResend } : DEFAULT_RESEND);
       }
     } catch {
       addToast("Failed to load company settings", "error");
@@ -236,53 +219,6 @@ export default function SettingsPage() {
     }
   };
 
-  const handleSaveResend = async () => {
-    if (!resendSettings.apiKey) {
-      addToast("API key is required", "error");
-      return;
-    }
-    setSavingResend(true);
-    try {
-      const res = await fetch("/api/company", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ settings: { resend: resendSettings } }),
-      });
-      const json = await res.json();
-      if (!json.success) throw new Error(json.error || "Failed to save");
-      setCompany(json.data);
-      const savedResend = json.data.settings?.resend;
-      setResendSettings(savedResend ? { ...DEFAULT_RESEND, ...savedResend } : DEFAULT_RESEND);
-      addToast("Email settings saved", "success");
-    } catch (err) {
-      addToast(err instanceof Error ? err.message : "Failed to save email settings", "error");
-    } finally {
-      setSavingResend(false);
-    }
-  };
-
-  const handleTestResend = async () => {
-    if (!resendSettings.apiKey) {
-      addToast("API key is required", "error");
-      return;
-    }
-    setTestingResend(true);
-    try {
-      const res = await fetch("/api/company/email/test", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(resendSettings),
-      });
-      const json = await res.json();
-      if (!json.success) throw new Error(json.error || "Test failed");
-      addToast(`Test email sent to ${json.data.sentTo}`, "success");
-    } catch (err) {
-      addToast(err instanceof Error ? err.message : "Email test failed", "error");
-    } finally {
-      setTestingResend(false);
-    }
-  };
-
   const handleDestroyCompany = async () => {
     if (!destroyPassphrase || !destroyConfirmName) {
       addToast("All fields are required", "error");
@@ -363,11 +299,6 @@ export default function SettingsPage() {
       ({ key }) => notifications[key] !== (company.settings?.notifications?.[key] ?? true)
     );
 
-  const resendDirty =
-    company !== null &&
-    (resendSettings.apiKey !== (company.settings?.resend?.apiKey ?? "") ||
-      resendSettings.from !== (company.settings?.resend?.from ?? ""));
-
   return (
     <div>
       <PageHeader title="Settings" description="Manage your organization settings" />
@@ -376,7 +307,6 @@ export default function SettingsPage() {
         <TabsList>
           <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
-          <TabsTrigger value="email">Email</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general">
@@ -580,69 +510,6 @@ export default function SettingsPage() {
                     disabled={savingNotifications || !notificationsDirty}
                   >
                     {savingNotifications ? "Saving..." : "Save Preferences"}
-                  </Button>
-                </div>
-              </div>
-            )}
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="email">
-          <Card className="max-w-2xl">
-            <CardHeader>
-              <CardTitle>Email Configuration</CardTitle>
-              <CardDescription>
-                Your Resend API key is used to send evaluation invitations, reminders, and notifications.
-                Login and registration emails use the system key.
-              </CardDescription>
-            </CardHeader>
-            {loading ? (
-              <div className="space-y-4">
-                <Skeleton className="h-10 w-full rounded-xl" />
-                <Skeleton className="h-10 w-full rounded-xl" />
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <Input
-                  id="resend-api-key"
-                  label="Resend API Key"
-                  type="password"
-                  placeholder="re_xxxxxxxxxxxx"
-                  value={resendSettings.apiKey}
-                  onChange={(e) =>
-                    setResendSettings((prev) => ({ ...prev, apiKey: e.target.value }))
-                  }
-                />
-                <Input
-                  id="resend-from"
-                  label="From Address (optional)"
-                  placeholder="onboarding@resend.dev"
-                  value={resendSettings.from}
-                  onChange={(e) =>
-                    setResendSettings((prev) => ({ ...prev, from: e.target.value }))
-                  }
-                />
-                <p className="text-[12px] text-gray-400">
-                  Optional — set a custom from address by verifying your domain in Resend. If left blank, the system default address is used. Get your API key at resend.com/api-keys.
-                </p>
-                <div className="flex gap-3 pt-2">
-                  <Button
-                    type="button"
-                    onClick={handleSaveResend}
-                    disabled={savingResend || !resendDirty}
-                  >
-                    {savingResend ? "Saving..." : "Save Email Settings"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={handleTestResend}
-                    disabled={
-                      testingResend ||
-                      !resendSettings.apiKey
-                    }
-                  >
-                    {testingResend ? "Sending..." : "Send Test Email"}
                   </Button>
                 </div>
               </div>

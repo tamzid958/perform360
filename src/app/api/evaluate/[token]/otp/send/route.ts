@@ -105,7 +105,6 @@ export async function POST(
       subject: "Your Performs360 Verification Code",
       html,
       text,
-      companyId: assignment.cycle.companyId,
     });
 
     return NextResponse.json<ApiResponse<{ sent: true; expiresIn: number }>>({

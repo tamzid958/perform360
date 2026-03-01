@@ -176,7 +176,6 @@ export async function handleDataExport(
     subject: `Your ${company.name} data export is ready`,
     html,
     text,
-    companyId,
     attachments: [
       {
         filename: fileName,

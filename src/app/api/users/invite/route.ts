@@ -102,7 +102,6 @@ export async function POST(request: NextRequest) {
         subject: `You've been invited to ${companyName}`,
         html,
         text,
-        companyId: authResult.companyId,
       });
     } catch (err) {
       emailSent = false;

@@ -3,22 +3,12 @@ import { z } from "zod";
 import { requireAuth, requireRole, isAuthError } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 import { applyRateLimit } from "@/lib/rate-limit";
-import {
-  encryptApiKey,
-  invalidateResendConfigCache,
-  RESEND_KEY_MASK,
-} from "@/lib/email";
 
 const notificationSettingsSchema = z.object({
   evaluationInvitations: z.boolean(),
   submissionConfirmations: z.boolean(),
   cycleReminders: z.boolean(),
   cycleCompletion: z.boolean(),
-});
-
-const resendSettingsSchema = z.object({
-  apiKey: z.string().min(1),
-  from: z.string().optional().default(""),
 });
 
 const updateCompanySchema = z.object({
@@ -32,7 +22,6 @@ const updateCompanySchema = z.object({
   settings: z
     .object({
       notifications: notificationSettingsSchema.optional(),
-      resend: resendSettingsSchema.optional(),
     })
     .optional(),
 });
@@ -57,16 +46,7 @@ export async function GET(request: NextRequest) {
     }, { status: 404 });
   }
 
-  // Mask Resend API key before sending to client
-  const settings = company.settings as Record<string, unknown> | null;
-  if (settings?.resend) {
-    const resend = settings.resend as Record<string, unknown>;
-    if (resend.apiKey) {
-      settings.resend = { ...resend, apiKey: RESEND_KEY_MASK };
-    }
-  }
-
-  return NextResponse.json({ success: true, data: { ...company, settings } });
+  return NextResponse.json({ success: true, data: company });
 }
 
 export async function PATCH(request: NextRequest) {
@@ -103,21 +83,6 @@ export async function PATCH(request: NextRequest) {
         select: { settings: true },
       });
       const existingSettings = (existing?.settings as Record<string, unknown>) ?? {};
-
-      // Handle Resend API key: if masked, preserve existing encrypted key
-      if (validated.settings.resend) {
-        if (validated.settings.resend.apiKey === RESEND_KEY_MASK) {
-          const existingResend = existingSettings.resend as Record<string, unknown> | undefined;
-          if (existingResend?.apiKey) {
-            validated.settings.resend.apiKey = existingResend.apiKey as string;
-          }
-        } else {
-          validated.settings.resend.apiKey = encryptApiKey(
-            validated.settings.resend.apiKey
-          );
-        }
-      }
-
       updateData.settings = { ...existingSettings, ...validated.settings };
     }
 
@@ -127,21 +92,7 @@ export async function PATCH(request: NextRequest) {
       select: { id: true, name: true, slug: true, logo: true, settings: true },
     });
 
-    // Invalidate cache if Resend settings were updated
-    if (validated.settings?.resend) {
-      invalidateResendConfigCache(authResult.companyId);
-    }
-
-    // Mask Resend API key in response
-    const settings = company.settings as Record<string, unknown> | null;
-    if (settings?.resend) {
-      const resend = settings.resend as Record<string, unknown>;
-      if (resend.apiKey) {
-        settings.resend = { ...resend, apiKey: RESEND_KEY_MASK };
-      }
-    }
-
-    return NextResponse.json({ success: true, data: { ...company, settings } });
+    return NextResponse.json({ success: true, data: company });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({

@@ -78,7 +78,6 @@ export async function handleCycleActivate(
         subject: `Evaluation Invitation: ${subject.name} — ${cycle.name}`,
         html,
         text,
-        companyId,
       },
     });
   }
@@ -168,7 +167,6 @@ export async function handleCycleRemind(
         subject: `Reminder: Evaluation for ${subject.name} — ${cycle.name}`,
         html,
         text,
-        companyId,
       },
     });
   }
