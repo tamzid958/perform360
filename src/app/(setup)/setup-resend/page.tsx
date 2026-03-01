@@ -90,7 +90,7 @@ export default function SetupResendPage() {
             <div>
               <CardTitle>Set Up Email Sending</CardTitle>
               <CardDescription>
-                Connect your Resend account so your organization can send evaluation invitations, reminders, and notifications
+                Connect your Resend account so your organization can send evaluation invitations, reminders, and notifications. Only an API key is required — domain verification is optional.
               </CardDescription>
             </div>
           </div>
@@ -103,7 +103,7 @@ export default function SetupResendPage() {
               <p className="text-[14px] font-medium text-gray-800">Why is this needed?</p>
               <p className="text-[13px] text-gray-500">
                 Performs360 sends evaluation invitations and OTP codes via email.
-                Each organization uses its own Resend API key to send these emails.
+                Each organization uses its own Resend API key to send these emails. You can optionally verify a domain to send from your own address.
               </p>
             </div>
           </div>
