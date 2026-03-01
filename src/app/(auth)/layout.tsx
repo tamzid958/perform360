@@ -126,7 +126,7 @@ export default async function AuthLayout({
       </div>
 
       {/* Right panel — form area */}
-      <div className="flex-1 flex items-center justify-center bg-[#f5f5f7] p-6 sm:p-8">
+      <div className="flex-1 flex items-center justify-center lg:justify-start bg-[#f5f5f7] p-6 sm:p-8 lg:p-16 xl:p-24">
         <div className="w-full max-w-[420px]">{children}</div>
       </div>
     </div>
