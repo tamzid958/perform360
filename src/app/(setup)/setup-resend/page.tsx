@@ -30,7 +30,7 @@ export default function SetupResendPage() {
     checkExisting();
   }, [router]);
 
-  const canTest = apiKey.trim().length > 0 && from.trim().length > 0;
+  const canTest = apiKey.trim().length > 0;
   const canSave = canTest;
 
   async function handleTest() {
@@ -119,14 +119,14 @@ export default function SetupResendPage() {
 
           <Input
             id="resend-from"
-            label="From Address"
+            label="From Address (optional)"
             placeholder="Company Name <noreply@yourdomain.com>"
             value={from}
             onChange={(e) => { setFrom(e.target.value); setTestSuccess(false); }}
           />
 
           <p className="text-[12px] text-gray-400">
-            Get your API key at resend.com/api-keys. You can use any verified domain or the default onboarding@resend.dev address.
+            Get your API key at resend.com/api-keys. Optionally verify your domain in Resend to send from your own address. If left blank, the system default address is used.
           </p>
 
           {testSuccess && (

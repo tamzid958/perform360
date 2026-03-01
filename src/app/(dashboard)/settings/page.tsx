@@ -238,8 +238,8 @@ export default function SettingsPage() {
   };
 
   const handleSaveResend = async () => {
-    if (!resendSettings.apiKey || !resendSettings.from) {
-      addToast("API key and from address are required", "error");
+    if (!resendSettings.apiKey) {
+      addToast("API key is required", "error");
       return;
     }
     setSavingResend(true);
@@ -263,8 +263,8 @@ export default function SettingsPage() {
   };
 
   const handleTestResend = async () => {
-    if (!resendSettings.apiKey || !resendSettings.from) {
-      addToast("API key and from address are required", "error");
+    if (!resendSettings.apiKey) {
+      addToast("API key is required", "error");
       return;
     }
     setTestingResend(true);
@@ -616,7 +616,7 @@ export default function SettingsPage() {
                 />
                 <Input
                   id="resend-from"
-                  label="From Address"
+                  label="From Address (optional)"
                   placeholder="Company Name <noreply@yourdomain.com>"
                   value={resendSettings.from}
                   onChange={(e) =>
@@ -624,7 +624,7 @@ export default function SettingsPage() {
                   }
                 />
                 <p className="text-[12px] text-gray-400">
-                  Your domain must be verified in your Resend account. Get your API key at resend.com/api-keys.
+                  Optional — set a custom from address by verifying your domain in Resend. If left blank, the system default address is used. Get your API key at resend.com/api-keys.
                 </p>
                 <div className="flex gap-3 pt-2">
                   <Button
@@ -641,7 +641,6 @@ export default function SettingsPage() {
                     disabled={
                       testingResend ||
                       !resendSettings.apiKey ||
-                      !resendSettings.from ||
                       resendSettings.apiKey === RESEND_KEY_MASK
                     }
                   >

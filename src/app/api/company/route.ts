@@ -18,7 +18,7 @@ const notificationSettingsSchema = z.object({
 
 const resendSettingsSchema = z.object({
   apiKey: z.string().min(1),
-  from: z.string().min(1),
+  from: z.string().optional().default(""),
 });
 
 const updateCompanySchema = z.object({

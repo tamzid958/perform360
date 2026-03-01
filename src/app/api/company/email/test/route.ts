@@ -4,9 +4,12 @@ import { Resend } from "resend";
 import { requireRole, isAuthError } from "@/lib/api-auth";
 import { applyRateLimit } from "@/lib/rate-limit";
 
+const DEFAULT_TEST_FROM =
+  process.env.EMAIL_FROM || "Performs360 <noreply@performs360.com>";
+
 const testResendSchema = z.object({
   apiKey: z.string().min(1),
-  from: z.string().min(1),
+  from: z.string().optional().default(""),
 });
 
 export async function POST(request: NextRequest) {
@@ -30,7 +33,7 @@ export async function POST(request: NextRequest) {
     const resend = new Resend(apiKey);
 
     const { error } = await resend.emails.send({
-      from,
+      from: from || DEFAULT_TEST_FROM,
       to: authResult.email,
       subject: "Performs360 Email Test",
       html: "<p>Your Resend configuration is working correctly.</p>",
