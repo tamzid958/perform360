@@ -54,3 +54,14 @@ services:
       - .env.production
     environment:
       NODE_ENV: production
+
+  seed:
+    image: perform360:latest
+    container_name: perform360-seed
+    profiles: ["seed"]
+    command: ["npx", "tsx", "prisma/seed.ts"]
+    restart: "no"
+    env_file:
+      - .env.production
+    environment:
+      NODE_ENV: production
