@@ -162,6 +162,27 @@ export function getEvaluationReminderEmail(
   return { html, text };
 }
 
+// ─── Data Export Ready ───
+
+export function getDataExportEmail(
+  companyName: string,
+  exportedAt: string
+): { html: string; text: string } {
+  const html = emailWrapper(
+    "Data Export",
+    `
+    <p style="margin: 0 0 16px; font-size: 15px; color: #1d1d1f; line-height: 1.5;">Hi,</p>
+    <p style="margin: 0 0 16px; font-size: 15px; color: #48484a; line-height: 1.5;">Your data export for <strong>${escapeHtml(companyName)}</strong> is ready. The JSON file is attached to this email.</p>
+    <p style="margin: 0 0 4px; font-size: 13px; color: #86868b; line-height: 1.4;">Exported on ${escapeHtml(exportedAt)}.</p>
+    <p style="margin: 0; font-size: 13px; color: #86868b; line-height: 1.4;">This file contains decrypted evaluation responses. Please store it securely and delete it when no longer needed.</p>
+    `
+  );
+
+  const text = `Hi,\n\nYour data export for ${companyName} is ready. The JSON file is attached to this email.\n\nExported on ${exportedAt}.\n\nThis file contains decrypted evaluation responses. Please store it securely and delete it when no longer needed.`;
+
+  return { html, text };
+}
+
 // ─── User Invitation (Welcome) ───
 
 export function getUserInviteEmail(

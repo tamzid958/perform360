@@ -15,7 +15,8 @@ type AuditAction =
   | "recovery_codes_regenerate"
   | "key_rotation"
   | "impersonation"
-  | "bulk_import";
+  | "bulk_import"
+  | "data_export";
 
 interface AuditLogInput {
   companyId: string;

@@ -227,30 +227,16 @@ export default function SettingsPage() {
         body: JSON.stringify({ passphrase: exportPassphrase }),
       });
 
-      if (!res.ok) {
-        const json = await res.json();
-        throw new Error(json.error || "Failed to export company data");
+      const json = await res.json();
+      if (!json.success) {
+        throw new Error(json.error || "Failed to start data export");
       }
 
-      const disposition = res.headers.get("content-disposition");
-      const filenameMatch = disposition?.match(/filename=\"?([^"]+)\"?/);
-      const filename = filenameMatch?.[1] || "perform360-company-data-dump.json";
-
-      const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-
-      addToast("Company data exported", "success");
+      addToast("Export started — check your email shortly", "success");
       setShowExportDialog(false);
       setExportPassphrase("");
     } catch (err) {
-      addToast(err instanceof Error ? err.message : "Failed to export company data", "error");
+      addToast(err instanceof Error ? err.message : "Failed to start data export", "error");
     } finally {
       setExportingData(false);
     }
@@ -392,8 +378,8 @@ export default function SettingsPage() {
             <CardHeader>
               <CardTitle>Data Export</CardTitle>
               <CardDescription>
-                Download a full company data dump with decrypted evaluation responses.
-                You must enter the encryption passphrase before export.
+                Export a full company data dump with decrypted evaluation responses.
+                The export will be emailed to you as a JSON attachment.
               </CardDescription>
             </CardHeader>
             <div className="pt-2">
@@ -463,7 +449,7 @@ export default function SettingsPage() {
           <DialogHeader>
             <DialogTitle>Export Company Data</DialogTitle>
             <DialogDescription>
-              Enter your encryption passphrase to export all company data in readable JSON format.
+              Enter your encryption passphrase to export all company data. The export will be emailed to you as a JSON file.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-2">
@@ -492,7 +478,7 @@ export default function SettingsPage() {
                 disabled={!exportPassphrase || exportingData}
                 className="flex-1"
               >
-                {exportingData ? "Exporting..." : "Verify & Export"}
+                {exportingData ? "Starting export..." : "Verify & Export"}
               </Button>
             </div>
           </div>

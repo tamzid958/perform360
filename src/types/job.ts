@@ -9,6 +9,7 @@ export const JOB_TYPES = {
   CYCLE_AUTO_CLOSE: "cycle.auto-close",
   ENCRYPTION_ROTATE_KEY: "encryption.rotate-key",
   CLEANUP_OTP_SESSIONS: "cleanup.otp-sessions",
+  DATA_EXPORT: "data.export",
 } as const;
 
 export type JobType = (typeof JOB_TYPES)[keyof typeof JOB_TYPES];
@@ -47,6 +48,13 @@ export interface EncryptionRotateKeyPayload {
 
 export type CleanupOtpSessionsPayload = Record<string, never>;
 
+export interface DataExportPayload {
+  companyId: string;
+  userId: string;
+  userEmail: string;
+  dataKeyHex: string;
+}
+
 // ─── Payload Map ───
 
 export interface JobPayloadMap {
@@ -56,6 +64,7 @@ export interface JobPayloadMap {
   "cycle.auto-close": CycleAutoClosePayload;
   "encryption.rotate-key": EncryptionRotateKeyPayload;
   "cleanup.otp-sessions": CleanupOtpSessionsPayload;
+  "data.export": DataExportPayload;
 }
 
 // ─── Handler Interface ───
