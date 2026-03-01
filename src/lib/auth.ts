@@ -56,15 +56,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter,
   providers: [
     EmailProvider({
-      server: {
-        host: process.env.SMTP_HOST,
-        port: parseInt(process.env.SMTP_PORT || "587"),
-        auth: {
-          user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASSWORD,
-        },
-      },
-      from: process.env.SMTP_FROM || "noreply@performs360.com",
+      server: { host: "", port: 0, auth: { user: "", pass: "" } },
+      from: "noreply@performs360.com",
       async sendVerificationRequest({ identifier: email, url }) {
         const { html, text } = getMagicLinkEmail(url);
         await sendEmail({

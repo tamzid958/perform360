@@ -26,27 +26,8 @@ const DEFAULT_NOTIFICATIONS: NotificationSettings = {
   cycleCompletion: true,
 };
 
-interface SmtpSettings {
-  host: string;
-  port: number;
-  user: string;
-  password: string;
-  from: string;
-}
-
-const DEFAULT_SMTP: SmtpSettings = {
-  host: "",
-  port: 587,
-  user: "",
-  password: "",
-  from: "",
-};
-
-const SMTP_PASSWORD_MASK = "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022";
-
 interface CompanySettings {
   notifications?: NotificationSettings;
-  smtp?: SmtpSettings;
 }
 
 interface Company {
@@ -103,9 +84,6 @@ export default function SettingsPage() {
   const [destroyConfirmName, setDestroyConfirmName] = useState("");
   const [destroyExportFirst, setDestroyExportFirst] = useState(true);
   const [destroying, setDestroying] = useState(false);
-  const [smtp, setSmtp] = useState<SmtpSettings>(DEFAULT_SMTP);
-  const [savingSmtp, setSavingSmtp] = useState(false);
-  const [testingSmtp, setTestingSmtp] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { addToast } = useToast();
 
@@ -120,8 +98,6 @@ export default function SettingsPage() {
         setCompanySlug(json.data.slug);
         const saved = json.data.settings?.notifications;
         setNotifications(saved ? { ...DEFAULT_NOTIFICATIONS, ...saved } : DEFAULT_NOTIFICATIONS);
-        const savedSmtp = json.data.settings?.smtp;
-        setSmtp(savedSmtp ? { ...DEFAULT_SMTP, ...savedSmtp } : DEFAULT_SMTP);
       }
     } catch {
       addToast("Failed to load company settings", "error");
@@ -243,53 +219,6 @@ export default function SettingsPage() {
     }
   };
 
-  const handleSaveSmtp = async () => {
-    if (!smtp.host || !smtp.user || !smtp.password || !smtp.from) {
-      addToast("All SMTP fields are required", "error");
-      return;
-    }
-    setSavingSmtp(true);
-    try {
-      const res = await fetch("/api/company", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ settings: { smtp } }),
-      });
-      const json = await res.json();
-      if (!json.success) throw new Error(json.error || "Failed to save");
-      setCompany(json.data);
-      const savedSmtp = json.data.settings?.smtp;
-      setSmtp(savedSmtp ? { ...DEFAULT_SMTP, ...savedSmtp } : DEFAULT_SMTP);
-      addToast("SMTP settings saved", "success");
-    } catch (err) {
-      addToast(err instanceof Error ? err.message : "Failed to save SMTP settings", "error");
-    } finally {
-      setSavingSmtp(false);
-    }
-  };
-
-  const handleTestSmtp = async () => {
-    if (!smtp.host || !smtp.user || !smtp.password || !smtp.from) {
-      addToast("All SMTP fields are required", "error");
-      return;
-    }
-    setTestingSmtp(true);
-    try {
-      const res = await fetch("/api/company/smtp/test", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(smtp),
-      });
-      const json = await res.json();
-      if (!json.success) throw new Error(json.error || "SMTP test failed");
-      addToast(`Test email sent to ${json.data.sentTo}`, "success");
-    } catch (err) {
-      addToast(err instanceof Error ? err.message : "SMTP test failed", "error");
-    } finally {
-      setTestingSmtp(false);
-    }
-  };
-
   const handleDestroyCompany = async () => {
     if (!destroyPassphrase || !destroyConfirmName) {
       addToast("All fields are required", "error");
@@ -370,14 +299,6 @@ export default function SettingsPage() {
       ({ key }) => notifications[key] !== (company.settings?.notifications?.[key] ?? true)
     );
 
-  const smtpDirty =
-    company !== null &&
-    (smtp.host !== (company.settings?.smtp?.host ?? "") ||
-      smtp.port !== (company.settings?.smtp?.port ?? 587) ||
-      smtp.user !== (company.settings?.smtp?.user ?? "") ||
-      smtp.password !== (company.settings?.smtp?.password ?? "") ||
-      smtp.from !== (company.settings?.smtp?.from ?? ""));
-
   return (
     <div>
       <PageHeader title="Settings" description="Manage your organization settings" />
@@ -386,7 +307,6 @@ export default function SettingsPage() {
         <TabsList>
           <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
-          <TabsTrigger value="smtp">Email / SMTP</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general">
@@ -597,96 +517,6 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="smtp">
-          <Card className="max-w-2xl">
-            <CardHeader>
-              <CardTitle>SMTP Configuration</CardTitle>
-              <CardDescription>
-                Configure your own mail server for sending emails. If not configured, the system default will be used.
-              </CardDescription>
-            </CardHeader>
-            {loading ? (
-              <div className="space-y-4">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Skeleton key={i} className="h-10 w-full rounded-xl" />
-                ))}
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <Input
-                  id="smtp-host"
-                  label="SMTP Host"
-                  placeholder="smtp.example.com"
-                  value={smtp.host}
-                  onChange={(e) => setSmtp((prev) => ({ ...prev, host: e.target.value }))}
-                />
-                <Input
-                  id="smtp-port"
-                  label="Port"
-                  type="number"
-                  placeholder="587"
-                  value={String(smtp.port)}
-                  onChange={(e) =>
-                    setSmtp((prev) => ({
-                      ...prev,
-                      port: parseInt(e.target.value) || 587,
-                    }))
-                  }
-                />
-                <Input
-                  id="smtp-user"
-                  label="Username"
-                  placeholder="smtp-user"
-                  value={smtp.user}
-                  onChange={(e) => setSmtp((prev) => ({ ...prev, user: e.target.value }))}
-                />
-                <Input
-                  id="smtp-password"
-                  label="Password"
-                  type="password"
-                  placeholder="smtp-password"
-                  value={smtp.password}
-                  onChange={(e) => setSmtp((prev) => ({ ...prev, password: e.target.value }))}
-                />
-                <Input
-                  id="smtp-from"
-                  label="From Address"
-                  type="email"
-                  placeholder="noreply@example.com"
-                  value={smtp.from}
-                  onChange={(e) => setSmtp((prev) => ({ ...prev, from: e.target.value }))}
-                />
-                <p className="text-[12px] text-gray-400">
-                  Port 465 uses implicit TLS. Other ports use STARTTLS when available.
-                </p>
-                <div className="flex gap-3 pt-2">
-                  <Button
-                    type="button"
-                    onClick={handleSaveSmtp}
-                    disabled={savingSmtp || !smtpDirty}
-                  >
-                    {savingSmtp ? "Saving..." : "Save SMTP Settings"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={handleTestSmtp}
-                    disabled={
-                      testingSmtp ||
-                      !smtp.host ||
-                      !smtp.user ||
-                      !smtp.password ||
-                      !smtp.from ||
-                      smtp.password === SMTP_PASSWORD_MASK
-                    }
-                  >
-                    {testingSmtp ? "Sending..." : "Send Test Email"}
-                  </Button>
-                </div>
-              </div>
-            )}
-          </Card>
-        </TabsContent>
       </Tabs>
 
       <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
