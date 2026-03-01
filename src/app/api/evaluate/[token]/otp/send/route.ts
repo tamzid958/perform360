@@ -3,7 +3,7 @@ import prisma from "@/lib/prisma";
 import { createOTP, hashOTP } from "@/lib/otp";
 import { sendEmail, getOTPEmail } from "@/lib/email";
 import { OTP_CONFIG } from "@/lib/constants";
-import { requireTurnstile } from "@/lib/turnstile";
+import { requireRecaptcha } from "@/lib/recaptcha";
 
 type ApiResponse<T> =
   | { success: true; data: T }
@@ -14,16 +14,15 @@ export async function POST(
   { params }: { params: { token: string } }
 ) {
   try {
-    // Turnstile verification
-    let turnstileToken: string | null = null;
+    let recaptchaToken: string | null = null;
     try {
       const body = await _request.json();
-      turnstileToken = body.turnstileToken ?? null;
+      recaptchaToken = body.recaptchaToken ?? null;
     } catch {
-      // Body may be empty for legacy calls
+      // Body may be empty
     }
-    const turnstileError = await requireTurnstile(turnstileToken);
-    if (turnstileError) return turnstileError;
+    const recaptchaError = await requireRecaptcha(recaptchaToken);
+    if (recaptchaError) return recaptchaError;
 
     const { token } = params;
 

@@ -146,14 +146,14 @@ export default function CyclesPage() {
       </PageHeader>
 
       <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <div className="flex items-center justify-between gap-4 mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4">
           <TabsList>
             <TabsTrigger value="all">All</TabsTrigger>
             <TabsTrigger value="active">Active</TabsTrigger>
             <TabsTrigger value="draft">Draft</TabsTrigger>
             <TabsTrigger value="closed">Closed</TabsTrigger>
           </TabsList>
-          <div className="relative max-w-xs">
+          <div className="relative w-full sm:max-w-xs">
             <Search size={16} strokeWidth={1.5} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               type="text"

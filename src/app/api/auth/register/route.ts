@@ -9,7 +9,7 @@ import {
   getClientIp,
   AUTH_RATE_LIMIT,
 } from "@/lib/rate-limit";
-import { requireTurnstile } from "@/lib/turnstile";
+import { requireRecaptcha } from "@/lib/recaptcha";
 
 const registerSchema = z.object({
   companyName: z.string().min(2, "Company name must be at least 2 characters").max(100),
@@ -24,8 +24,8 @@ export async function POST(request: NextRequest) {
     if (!rl.allowed) return rateLimitResponse(rl.retryAfterSeconds);
     const body = await request.json();
 
-    const turnstileError = await requireTurnstile(body.turnstileToken);
-    if (turnstileError) return turnstileError;
+    const recaptchaError = await requireRecaptcha(body.recaptchaToken);
+    if (recaptchaError) return recaptchaError;
 
     const parsed = registerSchema.safeParse(body);
 

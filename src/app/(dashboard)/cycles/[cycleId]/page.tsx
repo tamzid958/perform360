@@ -625,9 +625,9 @@ export default function CycleDetailPage() {
         {/* ─── Assignments Tab ─── */}
         <TabsContent value="assignments">
           {/* Filter Bar */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-4 flex-wrap">
             {/* Status segmented control */}
-            <div className="inline-flex items-center gap-0.5 rounded-xl bg-gray-100 p-1">
+            <div className="inline-flex items-center gap-0.5 rounded-xl bg-gray-100 p-1 overflow-x-auto">
               {(
                 [
                   { value: "all", label: "All" },
@@ -685,7 +685,7 @@ export default function CycleDetailPage() {
             </Select>
 
             {/* Search input */}
-            <div className="relative flex-1 min-w-[180px]">
+            <div className="relative flex-1 w-full sm:min-w-[180px]">
               <Search
                 size={15}
                 strokeWidth={1.5}
@@ -874,7 +874,7 @@ export default function CycleDetailPage() {
           ) : cycleReport ? (
             <>
               {/* Summary Stats + Team Filter */}
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
                 <h3 className="text-headline text-gray-900">Summary</h3>
                 {cycle.teamTemplates.length > 1 && (
                   <Select

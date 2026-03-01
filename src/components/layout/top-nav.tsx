@@ -2,6 +2,7 @@
 
 import { signOut } from "next-auth/react";
 import { Avatar } from "@/components/ui/avatar";
+import { MobileNav } from "@/components/layout/mobile-nav";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -19,7 +20,8 @@ interface TopNavProps {
 
 export function TopNav({ userName = "User", userEmail = "", userAvatar }: TopNavProps) {
   return (
-    <header className="h-16 border-b border-gray-200/50 bg-white/80 backdrop-blur-xl flex items-center justify-end px-6">
+    <header className="h-14 sm:h-16 border-b border-gray-200/50 bg-white/80 backdrop-blur-xl flex items-center justify-between px-4 sm:px-6">
+      <MobileNav />
       <div className="flex items-center gap-3">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

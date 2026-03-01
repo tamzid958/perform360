@@ -301,7 +301,7 @@ export default function EncryptionSettingsPage() {
               </div>
             </div>
           </CardHeader>
-          <div className="grid grid-cols-2 gap-4 mt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
             <div>
               <p className="text-[12px] text-gray-500 uppercase tracking-wider">Algorithm</p>
               <p className="text-[14px] font-medium text-gray-900 mt-1">AES-256-GCM</p>

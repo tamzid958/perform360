@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { Menu, X, LayoutDashboard, RefreshCcw, Users, FileText, UserCircle, Settings } from "lucide-react";
 
 const navigation = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard },
+  { name: "Dashboard", href: "/overview", icon: LayoutDashboard },
   { name: "Cycles", href: "/cycles", icon: RefreshCcw },
   { name: "Teams", href: "/teams", icon: Users },
   { name: "Templates", href: "/templates", icon: FileText },

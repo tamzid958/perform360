@@ -29,7 +29,7 @@ const steps = [
 
 export function HowItWorksSection() {
   return (
-    <section id="how-it-works" className="bg-white py-28 px-6">
+    <section id="how-it-works" className="bg-white py-16 sm:py-28 px-4 sm:px-6">
       <div className="max-w-5xl mx-auto">
         <div className="text-center">
           <span className="inline-flex items-center rounded-full bg-[#eff6ff] text-[#0071e3] text-[13px] font-medium px-4 py-1.5 border border-[#0071e3]/10">

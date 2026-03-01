@@ -11,7 +11,7 @@ const bulletItems = [
 
 export function SecuritySection() {
   return (
-    <section id="security" className="bg-[#fafafa] py-28 px-6">
+    <section id="security" className="bg-[#fafafa] py-16 sm:py-28 px-4 sm:px-6">
       <div className="max-w-6xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-stretch">
           {/* Left column — text */}

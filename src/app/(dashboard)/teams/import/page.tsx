@@ -616,7 +616,7 @@ export default function TeamsImportPage() {
       {/* Step 3: Confirm */}
       {step === 3 && (
         <div className="max-w-2xl mx-auto">
-          <div className="grid grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
             <StatCard
               label="Teams to create"
               value={uniqueTeams.length}
@@ -770,7 +770,7 @@ export default function TeamsImportPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="p-3 rounded-xl bg-gray-50">
                 <p className="text-caption mb-1">Teams</p>
                 <p className="text-body-emphasis text-gray-900">

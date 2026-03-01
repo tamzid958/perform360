@@ -3,7 +3,7 @@ import { ArrowRight } from "lucide-react";
 
 export function CtaSection() {
   return (
-    <section className="relative py-28 px-6 overflow-hidden isolate">
+    <section className="relative py-16 sm:py-28 px-4 sm:px-6 overflow-hidden isolate">
       {/* Gradient background */}
       <div className="absolute inset-0 bg-gradient-to-br from-[#0071e3] via-[#004493] to-[#002a5c]" />
 

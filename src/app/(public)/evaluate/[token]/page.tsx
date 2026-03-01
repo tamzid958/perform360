@@ -2,9 +2,12 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Script from "next/script";
 import { Card } from "@/components/ui/card";
 import { Shield, Loader2, AlertCircle } from "lucide-react";
-import { TurnstileWidget } from "@/components/ui/turnstile-widget";
+import { executeRecaptcha } from "@/lib/recaptcha-client";
+
+const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 
 interface TokenData {
   subjectName: string;
@@ -23,18 +26,18 @@ export default function EvaluateOTPPage({ params }: { params: { token: string } 
   const [tokenError, setTokenError] = useState("");
   const [cooldown, setCooldown] = useState(0);
   const [tokenData, setTokenData] = useState<TokenData | null>(null);
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const [turnstileResetKey, setTurnstileResetKey] = useState(0);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  const sendOTP = useCallback(async (cfToken: string | null) => {
+  const sendOTP = useCallback(async () => {
     setIsSending(true);
     setError("");
     try {
+      const recaptchaToken = await executeRecaptcha("send_otp");
+
       const res = await fetch(`/api/evaluate/${params.token}/otp/send`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ turnstileToken: cfToken }),
+        body: JSON.stringify({ recaptchaToken }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -44,9 +47,6 @@ export default function EvaluateOTPPage({ params }: { params: { token: string } 
       setError("Failed to send verification code");
     } finally {
       setIsSending(false);
-      // Turnstile tokens are single-use; always reset after send
-      setTurnstileResetKey((k) => k + 1);
-      setTurnstileToken(null);
     }
   }, [params.token]);
 
@@ -69,14 +69,14 @@ export default function EvaluateOTPPage({ params }: { params: { token: string } 
     validate();
   }, [params.token]);
 
-  // Auto-send OTP once Turnstile completes (and token is validated)
+  // Auto-send OTP once token is validated
   const hasSentRef = useRef(false);
   useEffect(() => {
-    if (tokenData && turnstileToken && !hasSentRef.current) {
+    if (tokenData && !hasSentRef.current) {
       hasSentRef.current = true;
-      sendOTP(turnstileToken);
+      sendOTP();
     }
-  }, [tokenData, turnstileToken, sendOTP]);
+  }, [tokenData, sendOTP]);
 
   function handleChange(index: number, value: string) {
     if (!/^\d*$/.test(value)) return;
@@ -176,6 +176,12 @@ export default function EvaluateOTPPage({ params }: { params: { token: string } 
 
   return (
     <div className="min-h-screen bg-[#f5f5f7] flex items-center justify-center p-4">
+      {RECAPTCHA_SITE_KEY && (
+        <Script
+          src={`https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`}
+          strategy="afterInteractive"
+        />
+      )}
       <div className="w-full max-w-[420px] space-y-8">
         <div className="text-center">
           <div className="w-16 h-16 rounded-2xl bg-brand-50 flex items-center justify-center mx-auto mb-6">
@@ -204,7 +210,7 @@ export default function EvaluateOTPPage({ params }: { params: { token: string } 
             </div>
           ) : (
             <div className="space-y-6">
-              <div className="flex justify-center gap-3" onPaste={handlePaste}>
+              <div className="flex justify-center gap-2 sm:gap-3" onPaste={handlePaste}>
                 {otp.map((digit, index) => (
                   <input
                     key={index}
@@ -216,7 +222,7 @@ export default function EvaluateOTPPage({ params }: { params: { token: string } 
                     onChange={(e) => handleChange(index, e.target.value)}
                     onKeyDown={(e) => handleKeyDown(index, e)}
                     disabled={isLoading || cooldown > 0}
-                    className="w-12 h-14 text-center text-[20px] font-semibold rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all disabled:opacity-50"
+                    className="w-10 h-12 sm:w-12 sm:h-14 text-center text-[18px] sm:text-[20px] font-semibold rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all disabled:opacity-50"
                     autoFocus={index === 0}
                   />
                 ))}
@@ -232,17 +238,10 @@ export default function EvaluateOTPPage({ params }: { params: { token: string } 
                 </p>
               )}
 
-              <TurnstileWidget
-                onVerify={setTurnstileToken}
-                onError={() => setTurnstileToken(null)}
-                onExpire={() => setTurnstileToken(null)}
-                resetKey={turnstileResetKey}
-              />
-
               <div className="text-center">
                 <button
-                  onClick={() => turnstileToken && sendOTP(turnstileToken)}
-                  disabled={isSending || !turnstileToken}
+                  onClick={() => sendOTP()}
+                  disabled={isSending}
                   className="text-[14px] text-brand-500 hover:text-brand-600 font-medium transition-colors disabled:opacity-50"
                 >
                   Resend Code

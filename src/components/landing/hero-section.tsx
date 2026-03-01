@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 
 export function HeroSection() {
   return (
-    <section className="pt-32 pb-24 relative overflow-hidden">
+    <section className="pt-24 sm:pt-32 pb-16 sm:pb-24 relative overflow-hidden">
       {/* Gradient background */}
       <div
         className="absolute inset-0 -z-10"
@@ -14,7 +14,7 @@ export function HeroSection() {
         }}
       />
 
-      <div className="max-w-4xl mx-auto px-6 text-center">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
         {/* Badge */}
         <div className="animate-fade-in-up">
           <span className="inline-flex items-center gap-2 rounded-full bg-[#eff6ff] text-[#0071e3] text-[13px] font-medium px-4 py-1.5 border border-[#0071e3]/10">
@@ -31,14 +31,14 @@ export function HeroSection() {
         </h1>
 
         {/* Subtitle */}
-        <p className="text-[18px] text-gray-500 text-center max-w-2xl mx-auto mt-6 leading-relaxed animate-fade-in-up delay-200">
+        <p className="text-[16px] sm:text-[18px] text-gray-500 text-center max-w-2xl mx-auto mt-6 leading-relaxed animate-fade-in-up delay-200">
           Run 360-degree evaluation cycles with feedback from managers, peers,
           and direct reports. End-to-end encrypted, with one-click export of
           your company data anytime. No vendor lock-in.
         </p>
 
         {/* CTA Buttons */}
-        <div className="flex items-center justify-center gap-4 mt-10 animate-fade-in-up delay-300">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mt-8 sm:mt-10 animate-fade-in-up delay-300">
           <Button size="lg" asChild>
             <Link href="/register">Get Started Free</Link>
           </Button>

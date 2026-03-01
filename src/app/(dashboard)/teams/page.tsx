@@ -150,7 +150,7 @@ export default function TeamsPage() {
         </Link>
       </PageHeader>
 
-      <div className="flex items-center justify-between gap-4 mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4">
         <div className="flex items-center gap-1 rounded-xl bg-gray-100 p-1">
           <button
             onClick={() => { setShowArchived(false); setPage(1); }}
@@ -165,7 +165,7 @@ export default function TeamsPage() {
             Archived
           </button>
         </div>
-        <div className="relative max-w-xs">
+        <div className="relative w-full sm:max-w-xs">
           <Search size={16} strokeWidth={1.5} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"

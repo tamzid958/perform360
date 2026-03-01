@@ -60,7 +60,7 @@ const features = [
 
 export function FeaturesSection() {
   return (
-    <section id="features" className="bg-[#fafafa] py-28 px-6">
+    <section id="features" className="bg-[#fafafa] py-16 sm:py-28 px-4 sm:px-6">
       <div className="max-w-6xl mx-auto">
         <div className="text-center">
           <span className="inline-flex items-center rounded-full bg-[#eff6ff] text-[#0071e3] text-[13px] font-medium px-4 py-1.5 border border-[#0071e3]/10">
@@ -71,7 +71,7 @@ export function FeaturesSection() {
             <br />
             meaningful evaluations
           </h2>
-          <p className="text-[18px] text-gray-500 text-center mt-4 max-w-lg mx-auto">
+          <p className="text-[16px] sm:text-[18px] text-gray-500 text-center mt-4 max-w-lg mx-auto">
             A complete platform for running 360-degree performance reviews.
           </p>
         </div>

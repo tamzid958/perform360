@@ -176,6 +176,15 @@
   .text-display-small {
     font-size: 30px;
   }
+  .text-title-large {
+    font-size: 26px;
+  }
+  .text-title {
+    font-size: 22px;
+  }
+  .text-title-small {
+    font-size: 19px;
+  }
 }
 
 /* ── Landing page animations ── */

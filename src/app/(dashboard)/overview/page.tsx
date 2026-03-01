@@ -345,29 +345,29 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Breakdown mini cards */}
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="text-center p-4 rounded-xl bg-gray-50/80 border border-gray-100/50">
-                    <p className="text-[24px] font-bold text-gray-900 tracking-tight">
+                <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                  <div className="text-center p-3 sm:p-4 rounded-xl bg-gray-50/80 border border-gray-100/50">
+                    <p className="text-[20px] sm:text-[24px] font-bold text-gray-900 tracking-tight">
                       {activeCycle._count.assignments}
                     </p>
-                    <p className="text-[12px] font-medium text-gray-500 mt-0.5">Total</p>
+                    <p className="text-[11px] sm:text-[12px] font-medium text-gray-500 mt-0.5">Total</p>
                   </div>
-                  <div className="text-center p-4 rounded-xl bg-green-50/60 border border-green-100/50">
-                    <p className="text-[24px] font-bold text-green-700 tracking-tight">
+                  <div className="text-center p-3 sm:p-4 rounded-xl bg-green-50/60 border border-green-100/50">
+                    <p className="text-[20px] sm:text-[24px] font-bold text-green-700 tracking-tight">
                       {completedCount}
                     </p>
-                    <p className="text-[12px] font-medium text-green-600 mt-0.5">Completed</p>
+                    <p className="text-[11px] sm:text-[12px] font-medium text-green-600 mt-0.5">Completed</p>
                   </div>
-                  <div className="text-center p-4 rounded-xl bg-amber-50/60 border border-amber-100/50">
-                    <p className="text-[24px] font-bold text-amber-700 tracking-tight">
+                  <div className="text-center p-3 sm:p-4 rounded-xl bg-amber-50/60 border border-amber-100/50">
+                    <p className="text-[20px] sm:text-[24px] font-bold text-amber-700 tracking-tight">
                       {stats?.pendingReviews ?? 0}
                     </p>
-                    <p className="text-[12px] font-medium text-amber-600 mt-0.5">Pending</p>
+                    <p className="text-[11px] sm:text-[12px] font-medium text-amber-600 mt-0.5">Pending</p>
                   </div>
                 </div>
 
                 {/* Actions row + cycle navigation */}
-                <div className="flex items-center justify-between pt-1">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 pt-1">
                   <div className="flex items-center gap-3">
                     <Link
                       href={`/cycles/${activeCycle.id}`}

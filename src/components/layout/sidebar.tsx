@@ -33,7 +33,7 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        "h-screen bg-[#f5f5f7]/80 backdrop-blur-xl border-r border-gray-200/50 flex flex-col transition-all duration-300 ease-in-out",
+        "hidden lg:flex h-screen bg-[#f5f5f7]/80 backdrop-blur-xl border-r border-gray-200/50 flex-col transition-all duration-300 ease-in-out",
         collapsed ? "w-[72px]" : "w-[260px]"
       )}
     >

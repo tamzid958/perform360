@@ -3,13 +3,15 @@
 import { useState, useEffect, useCallback } from "react";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
+import Script from "next/script";
 import { ArrowRight, Building2, Loader2, User, Mail, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { TurnstileWidget } from "@/components/ui/turnstile-widget";
+import { executeRecaptcha } from "@/lib/recaptcha-client";
 
 const COOLDOWN_SECONDS = 60;
+const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 
 export default function RegisterPage() {
   const [companyName, setCompanyName] = useState("");
@@ -18,8 +20,6 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [cooldown, setCooldown] = useState(0);
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const [turnstileResetKey, setTurnstileResetKey] = useState(0);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -27,8 +27,7 @@ export default function RegisterPage() {
     return () => clearTimeout(timer);
   }, [cooldown]);
 
-  const turnstileEnabled = !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
-  const isDisabled = isLoading || cooldown > 0 || (turnstileEnabled && !turnstileToken);
+  const isDisabled = isLoading || cooldown > 0;
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
@@ -38,10 +37,12 @@ export default function RegisterPage() {
       setError("");
 
       try {
+        const recaptchaToken = await executeRecaptcha("register");
+
         const res = await fetch("/api/auth/register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ companyName, name, email, turnstileToken }),
+          body: JSON.stringify({ companyName, name, email, recaptchaToken }),
         });
 
         const data = await res.json();
@@ -53,8 +54,6 @@ export default function RegisterPage() {
           } else {
             setError(data.error || "Registration failed. Please try again.");
           }
-          setTurnstileResetKey((k) => k + 1);
-          setTurnstileToken(null);
           return;
         }
 
@@ -74,18 +73,22 @@ export default function RegisterPage() {
         }
       } catch {
         setError("Something went wrong. Please try again.");
-        setTurnstileResetKey((k) => k + 1);
-        setTurnstileToken(null);
       } finally {
         setIsLoading(false);
       }
     },
-    [companyName, name, email, turnstileToken, isDisabled]
+    [companyName, name, email, isDisabled]
   );
 
 
   return (
     <div className="space-y-8 animate-fade-in-up">
+      {RECAPTCHA_SITE_KEY && (
+        <Script
+          src={`https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`}
+          strategy="afterInteractive"
+        />
+      )}
       {/* Mobile-only logo */}
       <div className="flex items-center justify-center gap-3 lg:hidden">
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center">
@@ -159,13 +162,6 @@ export default function RegisterPage() {
               className="absolute left-4 top-[34px] text-gray-400 pointer-events-none"
             />
           </div>
-
-          <TurnstileWidget
-            onVerify={setTurnstileToken}
-            onError={() => setTurnstileToken(null)}
-            onExpire={() => setTurnstileToken(null)}
-            resetKey={turnstileResetKey}
-          />
 
           {error && (
             <div className="flex items-center gap-2 rounded-xl bg-red-50 border border-red-100 px-4 py-3">

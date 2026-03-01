@@ -19,7 +19,7 @@ export function SuperAdminShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-[#f5f5f7]">
       {/* Top Bar */}
       <header className="bg-gray-900 text-white">
-        <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center">
               <span className="text-[12px] font-bold">P</span>
@@ -36,7 +36,7 @@ export function SuperAdminShell({ children }: { children: React.ReactNode }) {
             Sign Out
           </button>
         </div>
-        <nav className="max-w-7xl mx-auto px-6 flex gap-1">
+        <nav className="max-w-7xl mx-auto px-4 sm:px-6 flex gap-1 overflow-x-auto">
           {navigation.map((item) => {
             const isActive =
               pathname === item.href ||
@@ -47,7 +47,7 @@ export function SuperAdminShell({ children }: { children: React.ReactNode }) {
                 key={item.name}
                 href={item.href}
                 className={cn(
-                  "flex items-center gap-2 px-4 py-2.5 text-[14px] font-medium border-b-2 transition-colors",
+                  "flex items-center gap-2 px-3 sm:px-4 py-2.5 text-[13px] sm:text-[14px] font-medium border-b-2 transition-colors whitespace-nowrap",
                   isActive
                     ? "border-white text-white"
                     : "border-transparent text-gray-400 hover:text-gray-200"
@@ -62,7 +62,7 @@ export function SuperAdminShell({ children }: { children: React.ReactNode }) {
       </header>
 
       {/* Content */}
-      <main className="max-w-7xl mx-auto px-6 py-8">{children}</main>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">{children}</main>
     </div>
   );
 }

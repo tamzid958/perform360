@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export function LandingFooter() {
   return (
-    <footer className="bg-[#1d1d1f] text-white py-12 px-6">
+    <footer className="bg-[#1d1d1f] text-white py-12 px-4 sm:px-6">
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           {/* Brand */}

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { signIn } from "@/lib/auth";
-import { requireTurnstile } from "@/lib/turnstile";
+import { requireRecaptcha } from "@/lib/recaptcha";
 import {
   checkRateLimit,
   rateLimitResponse,
@@ -21,8 +21,8 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
 
-    const turnstileError = await requireTurnstile(body.turnstileToken);
-    if (turnstileError) return turnstileError;
+    const recaptchaError = await requireRecaptcha(body.recaptchaToken);
+    if (recaptchaError) return recaptchaError;
 
     const parsed = loginSchema.safeParse(body);
     if (!parsed.success) {

@@ -132,10 +132,10 @@ export default function CompaniesPage() {
 
   return (
     <div>
-      <div className="flex items-start justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 mb-6 sm:mb-8">
         <div>
-          <h1 className="text-title text-gray-900">Companies</h1>
-          <p className="text-body text-gray-500 mt-1">
+          <h1 className="text-title-small sm:text-title text-gray-900">Companies</h1>
+          <p className="text-callout sm:text-body text-gray-500 mt-1">
             Manage tenant organizations
           </p>
         </div>
@@ -146,7 +146,7 @@ export default function CompaniesPage() {
       </div>
 
       {/* Search */}
-      <div className="relative max-w-md mb-6">
+      <div className="relative w-full sm:max-w-md mb-6">
         <Search
           size={16}
           strokeWidth={1.5}

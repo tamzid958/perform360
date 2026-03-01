@@ -182,9 +182,8 @@ export default function PeoplePage() {
         </Button>
       </PageHeader>
 
-      <div className="flex items-center justify-between gap-4 mb-4">
-        <div />
-        <div className="relative max-w-xs">
+      <div className="flex items-center justify-end mb-4">
+        <div className="relative w-full sm:max-w-xs">
           <Search size={16} strokeWidth={1.5} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
@@ -220,13 +219,13 @@ export default function PeoplePage() {
         </div>
       ) : (
         <Card padding="sm">
-          <div className="overflow-x-auto">
-            <table className="w-full">
+          <div className="overflow-x-auto -mx-4 sm:mx-0">
+            <table className="w-full min-w-[480px] sm:min-w-0">
               <thead>
                 <tr className="border-b border-gray-100">
                   <th className="text-left text-[12px] font-medium text-gray-400 uppercase tracking-wider px-4 py-3">User</th>
                   <th className="text-left text-[12px] font-medium text-gray-400 uppercase tracking-wider px-4 py-3">Role</th>
-                  <th className="text-left text-[12px] font-medium text-gray-400 uppercase tracking-wider px-4 py-3">Teams</th>
+                  <th className="text-left text-[12px] font-medium text-gray-400 uppercase tracking-wider px-4 py-3 hidden sm:table-cell">Teams</th>
                   <th className="text-right text-[12px] font-medium text-gray-400 uppercase tracking-wider px-4 py-3"></th>
                 </tr>
               </thead>
@@ -238,16 +237,16 @@ export default function PeoplePage() {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <Avatar name={user.name} src={user.avatar} size="sm" />
-                          <div>
-                            <p className="text-[14px] font-medium text-gray-900">{user.name}</p>
-                            <p className="text-[12px] text-gray-500">{user.email}</p>
+                          <div className="min-w-0">
+                            <p className="text-[14px] font-medium text-gray-900 truncate">{user.name}</p>
+                            <p className="text-[12px] text-gray-500 truncate">{user.email}</p>
                           </div>
                         </div>
                       </td>
                       <td className="px-4 py-3">
                         <Badge variant={badge.variant}>{badge.label}</Badge>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 hidden sm:table-cell">
                         <span className="text-[14px] text-gray-600">
                           {user.teamMemberships.length} teams
                         </span>
