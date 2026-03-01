@@ -267,8 +267,27 @@ export async function DELETE(
     }, { status: 403 });
   }
 
-  // Remove team memberships, then delete user
+  // Remove related records (leaf-to-root), then delete user
   await prisma.$transaction([
+    prisma.otpSession.deleteMany({
+      where: {
+        assignment: {
+          OR: [{ subjectId: params.id }, { reviewerId: params.id }],
+        },
+      },
+    }),
+    prisma.evaluationResponse.deleteMany({
+      where: {
+        assignment: {
+          OR: [{ subjectId: params.id }, { reviewerId: params.id }],
+        },
+      },
+    }),
+    prisma.evaluationAssignment.deleteMany({
+      where: {
+        OR: [{ subjectId: params.id }, { reviewerId: params.id }],
+      },
+    }),
     prisma.teamMember.deleteMany({
       where: { userId: params.id },
     }),

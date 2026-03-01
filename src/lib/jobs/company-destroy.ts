@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { writeAuditLog } from "@/lib/audit";
 import { sendEmail, getCompanyDestroyedEmail } from "@/lib/email";
 import { getJobStatus } from "@/lib/queue";
+import { cascadeDeleteCompany } from "@/lib/company-cascade-delete";
 import type { CompanyDestroyPayload } from "@/types/job";
 
 export async function handleCompanyDestroy(
@@ -93,87 +94,9 @@ export async function handleCompanyDestroy(
   );
   await Promise.all(emailPromises);
 
-  // ── Phase 5: Invalidate all sessions for company users ──
+  // ── Phase 5 & 6: Invalidate sessions + cascading delete ──
 
-  const companyUsers = await prisma.user.findMany({
-    where: { companyId },
-    select: { authUserId: true },
-  });
-
-  const authUserIds = companyUsers
-    .map((u) => u.authUserId)
-    .filter((id): id is string => id !== null);
-
-  if (authUserIds.length > 0) {
-    await prisma.session.deleteMany({
-      where: { userId: { in: authUserIds } },
-    });
-    console.log(
-      `[CompanyDestroy] Invalidated sessions for ${authUserIds.length} auth users`
-    );
-  }
-
-  // ── Phase 6: Cascading delete (leaf-to-root) ──
-
-  // OTP sessions (via assignment → cycle)
-  await prisma.otpSession.deleteMany({
-    where: { assignment: { cycle: { companyId } } },
-  });
-
-  // Evaluation responses (via assignment → cycle)
-  await prisma.evaluationResponse.deleteMany({
-    where: { assignment: { cycle: { companyId } } },
-  });
-
-  // Evaluation assignments (via cycle)
-  await prisma.evaluationAssignment.deleteMany({
-    where: { cycle: { companyId } },
-  });
-
-  // Cycle-team links (via cycle)
-  await prisma.cycleTeam.deleteMany({
-    where: { cycle: { companyId } },
-  });
-
-  // Evaluation cycles
-  await prisma.evaluationCycle.deleteMany({
-    where: { companyId },
-  });
-
-  // Team members (via team)
-  await prisma.teamMember.deleteMany({
-    where: { team: { companyId } },
-  });
-
-  // Teams
-  await prisma.team.deleteMany({
-    where: { companyId },
-  });
-
-  // Company-scoped templates
-  await prisma.evaluationTemplate.deleteMany({
-    where: { companyId },
-  });
-
-  // Recovery codes
-  await prisma.recoveryCode.deleteMany({
-    where: { companyId },
-  });
-
-  // Audit logs
-  await prisma.auditLog.deleteMany({
-    where: { companyId },
-  });
-
-  // Company-scoped users (NOT AuthUser)
-  await prisma.user.deleteMany({
-    where: { companyId },
-  });
-
-  // Company itself
-  await prisma.company.delete({
-    where: { id: companyId },
-  });
+  await cascadeDeleteCompany(companyId);
 
   console.log(
     `[CompanyDestroy] Company ${companyId} (${companyName}) permanently destroyed`

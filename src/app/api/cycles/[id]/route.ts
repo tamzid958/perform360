@@ -374,6 +374,12 @@ export async function DELETE(
   }
 
   await prisma.$transaction([
+    prisma.otpSession.deleteMany({
+      where: { assignment: { cycleId: params.id } },
+    }),
+    prisma.evaluationResponse.deleteMany({
+      where: { assignment: { cycleId: params.id } },
+    }),
     prisma.evaluationAssignment.deleteMany({
       where: { cycleId: params.id },
     }),

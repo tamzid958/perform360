@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import { withSuperAdmin } from "@/lib/middleware/super-admin";
 import { prisma } from "@/lib/prisma";
 import { validateCuidParam } from "@/lib/validation";
+import { cascadeDeleteCompany } from "@/lib/company-cascade-delete";
 import { z } from "zod";
 
 type Params = { id: string };
@@ -146,7 +147,7 @@ export const DELETE = withSuperAdmin<Params>(async (_request, { params }) => {
     );
   }
 
-  await prisma.company.delete({ where: { id: params.id } });
+  await cascadeDeleteCompany(params.id);
 
   return NextResponse.json({ success: true, data: { id: params.id } });
 });
