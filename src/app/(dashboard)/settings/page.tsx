@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import Image from "next/image";
 import Link from "next/link";
 
 interface NotificationSettings {
@@ -351,9 +352,11 @@ export default function SettingsPage() {
                   <label className="block text-[13px] font-medium text-gray-700">Logo</label>
                   <div className="flex items-center gap-4">
                     {company?.logo ? (
-                      <img
+                      <Image
                         src={company.logo}
                         alt={`${companyName} logo`}
+                        width={64}
+                        height={64}
                         className="w-16 h-16 rounded-2xl object-cover bg-gray-100"
                       />
                     ) : (

@@ -55,7 +55,7 @@ export default function EncryptionSettingsPage() {
   const [showRotateDialog, setShowRotateDialog] = useState(false);
   const [rotatePassphrase, setRotatePassphrase] = useState("");
   const [isRotating, setIsRotating] = useState(false);
-  const [rotationJobId, setRotationJobId] = useState<string | null>(null);
+  const [_rotationJobId, setRotationJobId] = useState<string | null>(null);
   const [rotationStatus, setRotationStatus] = useState<"idle" | "processing" | "completed" | "failed">("idle");
 
   const fetchStatus = useCallback(async () => {
