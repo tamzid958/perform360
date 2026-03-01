@@ -10,6 +10,10 @@ FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+ARG NEXT_PUBLIC_RECAPTCHA_SITE_KEY
+ARG NEXT_PUBLIC_APP_URL
+ARG NEXT_PUBLIC_MIXPANEL_TOKEN
+
 ENV NODE_ENV=production
 RUN npx prisma generate
 RUN npm run build
