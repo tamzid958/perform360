@@ -1,9 +1,115 @@
 import { Resend } from "resend";
+import {
+  createCipheriv,
+  createDecipheriv,
+  randomBytes,
+  createHash,
+} from "crypto";
+import { prisma } from "@/lib/prisma";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// ─── System-level Resend client (env key, used for auth emails) ───
+
+const systemResend = new Resend(process.env.RESEND_API_KEY);
 
 const DEFAULT_FROM =
   process.env.EMAIL_FROM || "Performs360 <noreply@performs360.com>";
+
+// ─── API Key Encryption ───
+
+export const RESEND_KEY_MASK = "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022";
+
+function getEncryptionKey(): Buffer {
+  const secret = process.env.NEXTAUTH_SECRET;
+  if (!secret)
+    throw new Error("NEXTAUTH_SECRET is required for API key encryption");
+  return createHash("sha256").update(secret).digest();
+}
+
+export function encryptApiKey(plaintext: string): string {
+  const key = getEncryptionKey();
+  const iv = randomBytes(16);
+  const cipher = createCipheriv("aes-256-gcm", key, iv);
+  const encrypted = Buffer.concat([
+    cipher.update(plaintext, "utf8"),
+    cipher.final(),
+  ]);
+  const tag = cipher.getAuthTag();
+  return Buffer.concat([iv, tag, encrypted]).toString("base64");
+}
+
+function decryptApiKey(encryptedBase64: string): string {
+  const key = getEncryptionKey();
+  const data = Buffer.from(encryptedBase64, "base64");
+  const iv = data.subarray(0, 16);
+  const tag = data.subarray(16, 32);
+  const encrypted = data.subarray(32);
+  const decipher = createDecipheriv("aes-256-gcm", key, iv);
+  decipher.setAuthTag(tag);
+  return Buffer.concat([decipher.update(encrypted), decipher.final()]).toString(
+    "utf8"
+  );
+}
+
+// ─── Per-Company Resend Config Resolution ───
+
+export interface ResendConfig {
+  apiKey: string;
+  from: string;
+}
+
+interface ResendCacheEntry {
+  config: ResendConfig | null;
+  expiry: number;
+}
+
+const RESEND_CACHE = new Map<string, ResendCacheEntry>();
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+export function invalidateResendConfigCache(companyId: string): void {
+  RESEND_CACHE.delete(companyId);
+}
+
+async function resolveResendConfig(
+  companyId?: string
+): Promise<{ client: Resend; from: string }> {
+  if (!companyId) {
+    return { client: systemResend, from: DEFAULT_FROM };
+  }
+
+  const cached = RESEND_CACHE.get(companyId);
+  if (cached && cached.expiry > Date.now()) {
+    if (!cached.config) return { client: systemResend, from: DEFAULT_FROM };
+    return {
+      client: new Resend(cached.config.apiKey),
+      from: cached.config.from,
+    };
+  }
+
+  const company = await prisma.company.findUnique({
+    where: { id: companyId },
+    select: { settings: true },
+  });
+
+  const settings = company?.settings as {
+    resend?: { apiKey: string; from: string };
+  } | null;
+
+  if (!settings?.resend?.apiKey) {
+    RESEND_CACHE.set(companyId, {
+      config: null,
+      expiry: Date.now() + CACHE_TTL_MS,
+    });
+    return { client: systemResend, from: DEFAULT_FROM };
+  }
+
+  const config: ResendConfig = {
+    apiKey: decryptApiKey(settings.resend.apiKey),
+    from: settings.resend.from || DEFAULT_FROM,
+  };
+
+  RESEND_CACHE.set(companyId, { config, expiry: Date.now() + CACHE_TTL_MS });
+  return { client: new Resend(config.apiKey), from: config.from };
+}
 
 // ─── Send Email ───
 
@@ -28,9 +134,11 @@ export async function sendEmail({
   subject,
   html,
   text,
+  companyId,
 }: SendEmailOptions) {
-  const { error } = await resend.emails.send({
-    from: DEFAULT_FROM,
+  const { client, from } = await resolveResendConfig(companyId);
+  const { error } = await client.emails.send({
+    from,
     to,
     subject,
     html,
@@ -47,10 +155,12 @@ export async function sendEmailWithAttachments({
   subject,
   html,
   text,
+  companyId,
   attachments,
 }: SendEmailWithAttachmentsOptions) {
-  const { error } = await resend.emails.send({
-    from: DEFAULT_FROM,
+  const { client, from } = await resolveResendConfig(companyId);
+  const { error } = await client.emails.send({
+    from,
     to,
     subject,
     html,
