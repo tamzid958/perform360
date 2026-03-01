@@ -74,7 +74,7 @@ export default function LoginPage() {
         />
       )}
       {/* Mobile-only logo */}
-      <div className="flex items-center gap-3 lg:hidden">
+      <div className="flex items-center justify-center gap-3 lg:hidden">
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center">
           <span className="text-white text-[18px] font-bold">P</span>
         </div>
@@ -83,7 +83,7 @@ export default function LoginPage() {
         </span>
       </div>
 
-      <div>
+      <div className="text-center lg:text-left">
         <h1 className="text-title text-gray-900">Welcome back</h1>
         <p className="text-body text-gray-500 mt-2">
           Sign in to your account to continue
