@@ -4,6 +4,7 @@ import { handleCycleActivate, handleCycleRemind, handleCycleAutoClose } from "./
 import { handleEncryptionRotateKey } from "./encryption";
 import { handleCleanupOtpSessions } from "./cleanup";
 import { handleDataExport } from "./data-export";
+import { handleCompanyDestroy } from "./company-destroy";
 
 export const jobHandlers = new Map<string, JobHandler<never>>([
   ["email.send", handleEmailSend as JobHandler<never>],
@@ -13,4 +14,5 @@ export const jobHandlers = new Map<string, JobHandler<never>>([
   ["encryption.rotate-key", handleEncryptionRotateKey as JobHandler<never>],
   ["cleanup.otp-sessions", handleCleanupOtpSessions as JobHandler<never>],
   ["data.export", handleDataExport as JobHandler<never>],
+  ["company.destroy", handleCompanyDestroy as JobHandler<never>],
 ]);

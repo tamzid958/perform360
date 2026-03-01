@@ -205,3 +205,39 @@ export function getUserInviteEmail(
   return { html, text };
 }
 
+// ─── Company Destroyed ───
+
+export function getCompanyDestroyedEmail(
+  companyName: string,
+  destroyedAt: string,
+  initiatedBy: string
+): { html: string; text: string } {
+  const html = emailWrapper(
+    "Company Deleted",
+    `
+    <p style="margin: 0 0 16px; font-size: 15px; color: #1d1d1f; line-height: 1.5;">Hi,</p>
+    <p style="margin: 0 0 16px; font-size: 15px; color: #48484a; line-height: 1.5;">
+      This email confirms that <strong>${escapeHtml(companyName)}</strong> and all associated data
+      have been permanently deleted from Perform360.
+    </p>
+    <div style="background: #fef2f2; border-radius: 12px; padding: 16px; margin-bottom: 24px;">
+      <p style="margin: 0 0 8px; font-size: 14px; font-weight: 600; color: #991b1b;">Deletion Details</p>
+      <p style="margin: 0 0 4px; font-size: 13px; color: #7f1d1d;">Company: ${escapeHtml(companyName)}</p>
+      <p style="margin: 0 0 4px; font-size: 13px; color: #7f1d1d;">Deleted on: ${escapeHtml(destroyedAt)}</p>
+      <p style="margin: 0; font-size: 13px; color: #7f1d1d;">Initiated by: ${escapeHtml(initiatedBy)}</p>
+    </div>
+    <p style="margin: 0 0 4px; font-size: 13px; color: #86868b; line-height: 1.4;">
+      This action is irreversible. All users, teams, evaluation cycles, responses, encryption keys,
+      and audit logs have been permanently removed.
+    </p>
+    <p style="margin: 0; font-size: 13px; color: #86868b; line-height: 1.4;">
+      If you did not initiate this action, please contact support immediately.
+    </p>
+    `
+  );
+
+  const text = `Hi,\n\nThis email confirms that ${companyName} and all associated data have been permanently deleted from Perform360.\n\nCompany: ${companyName}\nDeleted on: ${destroyedAt}\nInitiated by: ${initiatedBy}\n\nThis action is irreversible. All users, teams, evaluation cycles, responses, encryption keys, and audit logs have been permanently removed.\n\nIf you did not initiate this action, please contact support immediately.`;
+
+  return { html, text };
+}
+

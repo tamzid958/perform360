@@ -78,6 +78,11 @@ export default function SettingsPage() {
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [exportPassphrase, setExportPassphrase] = useState("");
   const [exportingData, setExportingData] = useState(false);
+  const [showDestroyDialog, setShowDestroyDialog] = useState(false);
+  const [destroyPassphrase, setDestroyPassphrase] = useState("");
+  const [destroyConfirmName, setDestroyConfirmName] = useState("");
+  const [destroyExportFirst, setDestroyExportFirst] = useState(true);
+  const [destroying, setDestroying] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { addToast } = useToast();
 
@@ -210,6 +215,48 @@ export default function SettingsPage() {
       addToast(err instanceof Error ? err.message : "Failed to save preferences", "error");
     } finally {
       setSavingNotifications(false);
+    }
+  };
+
+  const handleDestroyCompany = async () => {
+    if (!destroyPassphrase || !destroyConfirmName) {
+      addToast("All fields are required", "error");
+      return;
+    }
+
+    setDestroying(true);
+    try {
+      const res = await fetch("/api/company/destroy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          passphrase: destroyPassphrase,
+          confirmName: destroyConfirmName,
+          exportBeforeDestroy: destroyExportFirst,
+        }),
+      });
+
+      const json = await res.json();
+      if (!json.success) {
+        throw new Error(json.error || "Failed to destroy company");
+      }
+
+      addToast(
+        "Company deletion initiated. You will be signed out shortly.",
+        "success"
+      );
+      setShowDestroyDialog(false);
+
+      setTimeout(() => {
+        window.location.href = "/login";
+      }, 3000);
+    } catch (err) {
+      addToast(
+        err instanceof Error ? err.message : "Failed to destroy company",
+        "error"
+      );
+    } finally {
+      setDestroying(false);
     }
   };
 
@@ -395,6 +442,30 @@ export default function SettingsPage() {
               </Button>
             </div>
           </Card>
+
+          <Card className="max-w-2xl mt-6 border-red-200 bg-red-50/40">
+            <CardHeader>
+              <CardTitle className="text-red-700">Danger Zone</CardTitle>
+              <CardDescription className="text-red-600/80">
+                Permanently delete this company and all associated data. This action cannot be undone.
+              </CardDescription>
+            </CardHeader>
+            <div className="pt-2">
+              <Button
+                type="button"
+                variant="secondary"
+                className="border-red-300 bg-red-100 text-red-700 hover:bg-red-200"
+                onClick={() => {
+                  setShowDestroyDialog(true);
+                  setDestroyPassphrase("");
+                  setDestroyConfirmName("");
+                  setDestroyExportFirst(true);
+                }}
+              >
+                Delete Company
+              </Button>
+            </div>
+          </Card>
         </TabsContent>
 
         <TabsContent value="notifications">
@@ -479,6 +550,91 @@ export default function SettingsPage() {
                 className="flex-1"
               >
                 {exportingData ? "Starting export..." : "Verify & Export"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showDestroyDialog} onOpenChange={setShowDestroyDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-red-700">
+              Delete Company Permanently
+            </DialogTitle>
+            <DialogDescription>
+              This will permanently delete{" "}
+              <strong>{company?.name}</strong> and all associated data
+              including users, teams, evaluation cycles, responses, and
+              encryption keys. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <div className="bg-red-50 border border-red-200 rounded-xl p-3">
+              <p className="text-[13px] text-red-700">
+                All users will be signed out immediately. Company data will be
+                permanently erased.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 py-1">
+              <Toggle
+                checked={destroyExportFirst}
+                onChange={setDestroyExportFirst}
+              />
+              <div>
+                <p className="text-[14px] font-medium text-gray-700">
+                  Export data before deletion
+                </p>
+                <p className="text-[12px] text-gray-500">
+                  Receive a data export email before the company is deleted
+                </p>
+              </div>
+            </div>
+
+            <Input
+              id="destroy-confirm-name"
+              label={`Type "${company?.name}" to confirm`}
+              placeholder={company?.name ?? "Company name"}
+              value={destroyConfirmName}
+              onChange={(e) => setDestroyConfirmName(e.target.value)}
+            />
+
+            <Input
+              id="destroy-passphrase"
+              label="Encryption Passphrase"
+              type="password"
+              placeholder="Enter passphrase"
+              value={destroyPassphrase}
+              onChange={(e) => setDestroyPassphrase(e.target.value)}
+            />
+
+            <div className="flex gap-3">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  setShowDestroyDialog(false);
+                  setDestroyPassphrase("");
+                  setDestroyConfirmName("");
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                onClick={handleDestroyCompany}
+                disabled={
+                  destroying ||
+                  !destroyPassphrase ||
+                  destroyConfirmName.trim().toLowerCase() !==
+                    (company?.name ?? "").trim().toLowerCase()
+                }
+              >
+                {destroying
+                  ? "Deleting..."
+                  : "Permanently Delete Company"}
               </Button>
             </div>
           </div>

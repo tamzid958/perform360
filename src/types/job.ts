@@ -10,6 +10,7 @@ export const JOB_TYPES = {
   ENCRYPTION_ROTATE_KEY: "encryption.rotate-key",
   CLEANUP_OTP_SESSIONS: "cleanup.otp-sessions",
   DATA_EXPORT: "data.export",
+  COMPANY_DESTROY: "company.destroy",
 } as const;
 
 export type JobType = (typeof JOB_TYPES)[keyof typeof JOB_TYPES];
@@ -55,6 +56,15 @@ export interface DataExportPayload {
   dataKeyHex: string;
 }
 
+export interface CompanyDestroyPayload {
+  companyId: string;
+  userId: string;
+  userEmail: string;
+  companyName: string;
+  adminEmails: string[];
+  exportJobId?: string;
+}
+
 // ─── Payload Map ───
 
 export interface JobPayloadMap {
@@ -65,6 +75,7 @@ export interface JobPayloadMap {
   "encryption.rotate-key": EncryptionRotateKeyPayload;
   "cleanup.otp-sessions": CleanupOtpSessionsPayload;
   "data.export": DataExportPayload;
+  "company.destroy": CompanyDestroyPayload;
 }
 
 // ─── Handler Interface ───
