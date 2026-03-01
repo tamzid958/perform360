@@ -1,12 +1,7 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import "@fontsource-variable/inter";
 import MixpanelProvider from "@/components/MixpanelProvider";
 import "./globals.css";
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-});
 
 export const metadata: Metadata = {
   title: "Perform360 — 360° Performance Evaluation",
@@ -20,7 +15,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} antialiased`}>
+      <body className="antialiased" style={{ fontFamily: "'Inter Variable', sans-serif" }}>
         <MixpanelProvider>{children}</MixpanelProvider>
       </body>
     </html>
