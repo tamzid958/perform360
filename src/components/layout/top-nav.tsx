@@ -12,7 +12,7 @@ interface TopNavProps {
 
 export function TopNav({ userName = "User", userAvatar }: TopNavProps) {
   return (
-    <header className="h-14 sm:h-16 border-b border-gray-200/50 bg-white/80 backdrop-blur-xl flex items-center justify-between px-4 sm:px-6">
+    <header className="h-14 sm:h-16 border-b border-gray-200/50 bg-white/80 backdrop-blur-xl flex items-center px-4 sm:px-6">
       <MobileNav />
       <div className="flex items-center gap-3 ml-auto">
         <div className="flex items-center gap-2.5 p-1.5">
@@ -21,7 +21,7 @@ export function TopNav({ userName = "User", userAvatar }: TopNavProps) {
         </div>
         <button
           onClick={() => signOut({ redirectTo: "/login" })}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-[13px] font-medium text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+          className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-xl text-[13px] font-medium text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
         >
           <LogOut size={16} strokeWidth={1.5} />
           <span className="hidden sm:inline">Sign out</span>
