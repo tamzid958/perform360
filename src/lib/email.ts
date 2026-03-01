@@ -9,7 +9,13 @@ import { prisma } from "@/lib/prisma";
 
 // ─── System-level Resend client (env key, used for auth emails) ───
 
-const systemResend = new Resend(process.env.RESEND_API_KEY);
+let _systemResend: Resend | null = null;
+function getSystemResend(): Resend {
+  if (!_systemResend) {
+    _systemResend = new Resend(process.env.RESEND_API_KEY);
+  }
+  return _systemResend;
+}
 
 const DEFAULT_FROM =
   process.env.EMAIL_FROM || "Performs360 <noreply@performs360.com>";
@@ -73,12 +79,12 @@ async function resolveResendConfig(
   companyId?: string
 ): Promise<{ client: Resend; from: string }> {
   if (!companyId) {
-    return { client: systemResend, from: DEFAULT_FROM };
+    return { client: getSystemResend(), from: DEFAULT_FROM };
   }
 
   const cached = RESEND_CACHE.get(companyId);
   if (cached && cached.expiry > Date.now()) {
-    if (!cached.config) return { client: systemResend, from: DEFAULT_FROM };
+    if (!cached.config) return { client: getSystemResend(), from: DEFAULT_FROM };
     return {
       client: new Resend(cached.config.apiKey),
       from: cached.config.from,
@@ -99,7 +105,7 @@ async function resolveResendConfig(
       config: null,
       expiry: Date.now() + CACHE_TTL_MS,
     });
-    return { client: systemResend, from: DEFAULT_FROM };
+    return { client: getSystemResend(), from: DEFAULT_FROM };
   }
 
   const config: ResendConfig = {
