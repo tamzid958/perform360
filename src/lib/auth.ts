@@ -81,6 +81,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     verifyRequest: "/verify",
   },
   callbacks: {
+    async signIn({ user }) {
+      if (!user?.email) return false;
+      const exists = await prisma.user.findFirst({
+        where: { email: user.email },
+        select: { id: true },
+      });
+      if (!exists) return false;
+      return true;
+    },
     async session({ session, user }) {
       if (session.user) {
         session.user.id = user.id;

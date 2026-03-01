@@ -43,7 +43,7 @@ export default function LoginPage() {
             setError("Too many attempts. Please wait before trying again.");
             setCooldown(COOLDOWN_SECONDS);
           } else {
-            setError("Failed to send magic link. Please try again.");
+            setError("No account found with this email. Please check or register.");
           }
         } else {
           setCooldown(COOLDOWN_SECONDS);
