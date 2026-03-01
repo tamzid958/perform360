@@ -1,31 +1,184 @@
 import nodemailer from "nodemailer";
+import {
+  createCipheriv,
+  createDecipheriv,
+  randomBytes,
+  createHash,
+} from "crypto";
+import { prisma } from "@/lib/prisma";
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: parseInt(process.env.SMTP_PORT || "587"),
-  secure: false,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASSWORD,
-  },
-});
+// ─── SMTP Config Types ───
+
+export interface SmtpConfig {
+  host: string;
+  port: number;
+  user: string;
+  password: string;
+  from: string;
+}
+
+interface SmtpCacheEntry {
+  config: SmtpConfig | null;
+  expiry: number;
+}
+
+const SMTP_CACHE = new Map<string, SmtpCacheEntry>();
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+export const SMTP_PASSWORD_MASK = "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022";
+
+// ─── SMTP Password Encryption ───
+
+function getSmtpEncryptionKey(): Buffer {
+  const secret = process.env.NEXTAUTH_SECRET;
+  if (!secret)
+    throw new Error("NEXTAUTH_SECRET is required for SMTP password encryption");
+  return createHash("sha256").update(secret).digest();
+}
+
+export function encryptSmtpPassword(plaintext: string): string {
+  const key = getSmtpEncryptionKey();
+  const iv = randomBytes(16);
+  const cipher = createCipheriv("aes-256-gcm", key, iv);
+  const encrypted = Buffer.concat([
+    cipher.update(plaintext, "utf8"),
+    cipher.final(),
+  ]);
+  const tag = cipher.getAuthTag();
+  return Buffer.concat([iv, tag, encrypted]).toString("base64");
+}
+
+function decryptSmtpPassword(encryptedBase64: string): string {
+  const key = getSmtpEncryptionKey();
+  const data = Buffer.from(encryptedBase64, "base64");
+  const iv = data.subarray(0, 16);
+  const tag = data.subarray(16, 32);
+  const encrypted = data.subarray(32);
+  const decipher = createDecipheriv("aes-256-gcm", key, iv);
+  decipher.setAuthTag(tag);
+  return Buffer.concat([decipher.update(encrypted), decipher.final()]).toString(
+    "utf8"
+  );
+}
+
+// ─── SMTP Config Resolution ───
+
+function getEnvSmtpConfig(): SmtpConfig {
+  return {
+    host: process.env.SMTP_HOST ?? "",
+    port: parseInt(process.env.SMTP_PORT || "587"),
+    user: process.env.SMTP_USER ?? "",
+    password: process.env.SMTP_PASSWORD ?? "",
+    from: process.env.SMTP_FROM || "noreply@perform360.com",
+  };
+}
+
+async function resolveSmtpConfig(companyId?: string): Promise<SmtpConfig> {
+  if (!companyId) return getEnvSmtpConfig();
+
+  const cached = SMTP_CACHE.get(companyId);
+  if (cached && cached.expiry > Date.now()) {
+    return cached.config ?? getEnvSmtpConfig();
+  }
+
+  const company = await prisma.company.findUnique({
+    where: { id: companyId },
+    select: { settings: true },
+  });
+
+  const settings = company?.settings as {
+    smtp?: {
+      host: string;
+      port: number;
+      user: string;
+      password: string;
+      from: string;
+    };
+  } | null;
+
+  if (!settings?.smtp?.host) {
+    SMTP_CACHE.set(companyId, { config: null, expiry: Date.now() + CACHE_TTL_MS });
+    return getEnvSmtpConfig();
+  }
+
+  const config: SmtpConfig = {
+    host: settings.smtp.host,
+    port: settings.smtp.port,
+    user: settings.smtp.user,
+    password: decryptSmtpPassword(settings.smtp.password),
+    from: settings.smtp.from,
+  };
+
+  SMTP_CACHE.set(companyId, { config, expiry: Date.now() + CACHE_TTL_MS });
+  return config;
+}
+
+function createTransporter(config: SmtpConfig) {
+  return nodemailer.createTransport({
+    host: config.host,
+    port: config.port,
+    secure: config.port === 465,
+    auth: { user: config.user, pass: config.password },
+  });
+}
+
+export function invalidateSmtpConfigCache(companyId: string): void {
+  SMTP_CACHE.delete(companyId);
+}
+
+// ─── Send Email ───
 
 interface SendEmailOptions {
   to: string;
   subject: string;
   html: string;
   text?: string;
+  companyId?: string;
 }
 
-export async function sendEmail({ to, subject, html, text }: SendEmailOptions) {
-  const from = process.env.SMTP_FROM || "noreply@perform360.com";
+interface SendEmailWithAttachmentsOptions extends SendEmailOptions {
+  attachments: Array<{
+    filename: string;
+    content: string;
+    contentType: string;
+  }>;
+}
 
+export async function sendEmail({
+  to,
+  subject,
+  html,
+  text,
+  companyId,
+}: SendEmailOptions) {
+  const config = await resolveSmtpConfig(companyId);
+  const transporter = createTransporter(config);
   await transporter.sendMail({
-    from: `Perform360 <${from}>`,
+    from: `Perform360 <${config.from}>`,
     to,
     subject,
     html,
     ...(text ? { text } : {}),
+  });
+}
+
+export async function sendEmailWithAttachments({
+  to,
+  subject,
+  html,
+  text,
+  companyId,
+  attachments,
+}: SendEmailWithAttachmentsOptions) {
+  const config = await resolveSmtpConfig(companyId);
+  const transporter = createTransporter(config);
+  await transporter.sendMail({
+    from: `Perform360 <${config.from}>`,
+    to,
+    subject,
+    html,
+    ...(text ? { text } : {}),
+    attachments,
   });
 }
 

@@ -1,8 +1,7 @@
-import nodemailer from "nodemailer";
 import { prisma } from "@/lib/prisma";
 import { decrypt } from "@/lib/encryption";
 import { writeAuditLog } from "@/lib/audit";
-import { getDataExportEmail } from "@/lib/email";
+import { getDataExportEmail, sendEmailWithAttachments } from "@/lib/email";
 import type { DataExportPayload } from "@/types/job";
 
 function safeParseAnswers(
@@ -172,24 +171,12 @@ export async function handleDataExport(
 
   const { html, text } = getDataExportEmail(company.name, exportedAt.slice(0, 10));
 
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: parseInt(process.env.SMTP_PORT || "587"),
-    secure: false,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASSWORD,
-    },
-  });
-
-  const from = process.env.SMTP_FROM || "noreply@perform360.com";
-
-  await transporter.sendMail({
-    from: `Perform360 <${from}>`,
+  await sendEmailWithAttachments({
     to: userEmail,
     subject: `Your ${company.name} data export is ready`,
     html,
     text,
+    companyId,
     attachments: [
       {
         filename: fileName,

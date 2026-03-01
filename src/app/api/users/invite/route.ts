@@ -98,6 +98,7 @@ export async function POST(request: NextRequest) {
       subject: `You've been invited to ${company?.name ?? "Perform360"}`,
       html,
       text,
+      companyId: authResult.companyId,
     }).catch((err) => console.error("Failed to send invite email:", err));
 
     return NextResponse.json({

@@ -7,5 +7,6 @@ export async function handleEmailSend(payload: EmailSendPayload): Promise<void> 
     subject: payload.subject,
     html: payload.html,
     text: payload.text,
+    companyId: payload.companyId,
   });
 }

@@ -83,6 +83,7 @@ export async function handleCompanyDestroy(
       subject: `${companyName} has been permanently deleted from Perform360`,
       html,
       text,
+      companyId,
     }).catch((err) => {
       console.error(
         `[CompanyDestroy] Failed to email ${email}:`,

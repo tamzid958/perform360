@@ -3,12 +3,25 @@ import { z } from "zod";
 import { requireAuth, requireRole, isAuthError } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 import { applyRateLimit } from "@/lib/rate-limit";
+import {
+  encryptSmtpPassword,
+  invalidateSmtpConfigCache,
+  SMTP_PASSWORD_MASK,
+} from "@/lib/email";
 
 const notificationSettingsSchema = z.object({
   evaluationInvitations: z.boolean(),
   submissionConfirmations: z.boolean(),
   cycleReminders: z.boolean(),
   cycleCompletion: z.boolean(),
+});
+
+const smtpSettingsSchema = z.object({
+  host: z.string().min(1),
+  port: z.number().int().min(1).max(65535),
+  user: z.string().min(1),
+  password: z.string().min(1),
+  from: z.string().email(),
 });
 
 const updateCompanySchema = z.object({
@@ -22,6 +35,7 @@ const updateCompanySchema = z.object({
   settings: z
     .object({
       notifications: notificationSettingsSchema.optional(),
+      smtp: smtpSettingsSchema.optional(),
     })
     .optional(),
 });
@@ -46,7 +60,16 @@ export async function GET(request: NextRequest) {
     }, { status: 404 });
   }
 
-  return NextResponse.json({ success: true, data: company });
+  // Mask SMTP password before sending to client
+  const settings = company.settings as Record<string, unknown> | null;
+  if (settings?.smtp) {
+    const smtp = settings.smtp as Record<string, unknown>;
+    if (smtp.password) {
+      settings.smtp = { ...smtp, password: SMTP_PASSWORD_MASK };
+    }
+  }
+
+  return NextResponse.json({ success: true, data: { ...company, settings } });
 }
 
 export async function PATCH(request: NextRequest) {
@@ -83,6 +106,21 @@ export async function PATCH(request: NextRequest) {
         select: { settings: true },
       });
       const existingSettings = (existing?.settings as Record<string, unknown>) ?? {};
+
+      // Handle SMTP password: if masked, preserve existing encrypted password
+      if (validated.settings.smtp) {
+        if (validated.settings.smtp.password === SMTP_PASSWORD_MASK) {
+          const existingSmtp = existingSettings.smtp as Record<string, unknown> | undefined;
+          if (existingSmtp?.password) {
+            validated.settings.smtp.password = existingSmtp.password as string;
+          }
+        } else {
+          validated.settings.smtp.password = encryptSmtpPassword(
+            validated.settings.smtp.password
+          );
+        }
+      }
+
       updateData.settings = { ...existingSettings, ...validated.settings };
     }
 
@@ -92,7 +130,21 @@ export async function PATCH(request: NextRequest) {
       select: { id: true, name: true, slug: true, logo: true, settings: true },
     });
 
-    return NextResponse.json({ success: true, data: company });
+    // Invalidate SMTP config cache if SMTP settings were updated
+    if (validated.settings?.smtp) {
+      invalidateSmtpConfigCache(authResult.companyId);
+    }
+
+    // Mask SMTP password in response
+    const settings = company.settings as Record<string, unknown> | null;
+    if (settings?.smtp) {
+      const smtp = settings.smtp as Record<string, unknown>;
+      if (smtp.password) {
+        settings.smtp = { ...smtp, password: SMTP_PASSWORD_MASK };
+      }
+    }
+
+    return NextResponse.json({ success: true, data: { ...company, settings } });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({

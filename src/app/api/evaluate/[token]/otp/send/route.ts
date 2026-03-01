@@ -19,7 +19,7 @@ export async function POST(
     const assignment = await prisma.evaluationAssignment.findUnique({
       where: { token },
       include: {
-        cycle: { select: { status: true } },
+        cycle: { select: { status: true, companyId: true } },
       },
     });
 
@@ -94,6 +94,7 @@ export async function POST(
       subject: "Your Perform360 Verification Code",
       html,
       text,
+      companyId: assignment.cycle.companyId,
     });
 
     return NextResponse.json<ApiResponse<{ sent: true; expiresIn: number }>>({

@@ -22,6 +22,7 @@ export interface EmailSendPayload {
   subject: string;
   html: string;
   text?: string;
+  companyId?: string;
 }
 
 export interface CycleActivatePayload {
