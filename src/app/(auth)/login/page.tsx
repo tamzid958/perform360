@@ -24,7 +24,8 @@ export default function LoginPage() {
     return () => clearTimeout(timer);
   }, [cooldown]);
 
-  const isDisabled = isLoading || cooldown > 0 || !turnstileToken;
+  const turnstileEnabled = !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+  const isDisabled = isLoading || cooldown > 0 || (turnstileEnabled && !turnstileToken);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {

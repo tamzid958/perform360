@@ -39,15 +39,14 @@ export default function EvaluateOTPPage({ params }: { params: { token: string } 
       const data = await res.json();
       if (!res.ok) {
         setError(data.error || "Failed to send verification code");
-        setTurnstileResetKey((k) => k + 1);
-        setTurnstileToken(null);
       }
     } catch {
       setError("Failed to send verification code");
-      setTurnstileResetKey((k) => k + 1);
-      setTurnstileToken(null);
     } finally {
       setIsSending(false);
+      // Turnstile tokens are single-use; always reset after send
+      setTurnstileResetKey((k) => k + 1);
+      setTurnstileToken(null);
     }
   }, [params.token]);
 
@@ -242,13 +241,7 @@ export default function EvaluateOTPPage({ params }: { params: { token: string } 
 
               <div className="text-center">
                 <button
-                  onClick={() => {
-                    if (turnstileToken) {
-                      sendOTP(turnstileToken);
-                      setTurnstileResetKey((k) => k + 1);
-                      setTurnstileToken(null);
-                    }
-                  }}
+                  onClick={() => turnstileToken && sendOTP(turnstileToken)}
                   disabled={isSending || !turnstileToken}
                   className="text-[14px] text-brand-500 hover:text-brand-600 font-medium transition-colors disabled:opacity-50"
                 >

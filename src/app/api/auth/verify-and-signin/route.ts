@@ -38,11 +38,14 @@ export async function POST(request: NextRequest) {
         redirect: false,
         redirectTo: "/overview",
       });
+      return NextResponse.json({ success: true });
     } catch (error: unknown) {
-      // NextAuth v5 server-side signIn throws NEXT_REDIRECT on success
+      // NextAuth v5 server-side signIn throws a Next.js redirect on success.
+      // The redirect error carries a `digest` property, not `message`.
       if (
         error instanceof Error &&
-        error.message === "NEXT_REDIRECT"
+        "digest" in error &&
+        String((error as Record<string, unknown>).digest).startsWith("NEXT_REDIRECT")
       ) {
         return NextResponse.json({ success: true });
       }
@@ -58,8 +61,6 @@ export async function POST(request: NextRequest) {
       }
       throw error;
     }
-
-    return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Login verification error:", error);
     return NextResponse.json(
