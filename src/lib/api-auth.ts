@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "./auth";
 import { prisma } from "./prisma";
+import { getImpersonation } from "./impersonation";
 
 type UserRole = "ADMIN" | "HR" | "MEMBER";
 
@@ -24,6 +25,17 @@ export async function requireAuth(): Promise<AuthResult | NextResponse> {
       { success: false, error: "Unauthorized" },
       { status: 401 }
     );
+  }
+
+  // Check for super-admin impersonation session
+  const impersonation = await getImpersonation();
+  if (impersonation) {
+    return {
+      userId: impersonation.userId,
+      email: impersonation.email,
+      role: impersonation.role,
+      companyId: impersonation.companyId,
+    };
   }
 
   // Scope by companyId from session to handle same email in multiple companies

@@ -296,7 +296,7 @@ export default function CompaniesPage() {
                               });
                               const json = await res.json();
                               if (json.success) {
-                                window.location.href = "/";
+                                window.location.href = "/overview";
                               } else {
                                 alert(json.error ?? "Failed to impersonate");
                               }

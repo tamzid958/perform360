@@ -1,8 +1,10 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getImpersonation } from "@/lib/impersonation";
 import { Sidebar } from "@/components/layout/sidebar";
 import { TopNav } from "@/components/layout/top-nav";
+import { ImpersonationBanner } from "@/components/layout/impersonation-banner";
 import { ToastProvider } from "@/components/ui/toast";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -12,10 +14,22 @@ export default async function DashboardLayout({ children }: { children: React.Re
     redirect("/login");
   }
 
-  const appUser = await prisma.user.findFirst({
-    where: { email: session.user.email! },
-    select: { name: true, email: true, avatar: true, role: true, companyId: true },
-  });
+  // Check for super-admin impersonation session
+  const impersonation = await getImpersonation();
+
+  let appUser;
+  if (impersonation) {
+    // Use the impersonated admin's identity
+    appUser = await prisma.user.findUnique({
+      where: { id: impersonation.userId },
+      select: { name: true, email: true, avatar: true, role: true, companyId: true },
+    });
+  } else {
+    appUser = await prisma.user.findFirst({
+      where: { email: session.user.email! },
+      select: { name: true, email: true, avatar: true, role: true, companyId: true },
+    });
+  }
 
   // Super admin (SaaS owner) has no User record — redirect to superadmin panel
   if (!appUser) {
@@ -28,7 +42,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     redirect("/login");
   }
 
-  if (appUser?.role === "ADMIN") {
+  if (appUser?.role === "ADMIN" && !impersonation) {
     const company = await prisma.company.findUnique({
       where: { id: appUser.companyId },
       select: { encryptionSetupAt: true },
@@ -44,6 +58,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <div className="flex h-screen overflow-hidden">
         <Sidebar />
         <div className="flex-1 flex flex-col overflow-hidden">
+          {impersonation && (
+            <ImpersonationBanner
+              adminEmail={impersonation.email}
+              companyId={impersonation.companyId}
+            />
+          )}
           <TopNav
             userName={appUser?.name}
             userEmail={appUser?.email}
