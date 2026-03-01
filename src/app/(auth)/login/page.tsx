@@ -1,41 +1,63 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
-import { ArrowRight, Loader2 } from "lucide-react";
+import { ArrowRight, Loader2, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+
+const COOLDOWN_SECONDS = 60;
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [cooldown, setCooldown] = useState(0);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setIsLoading(true);
-    setError("");
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [cooldown]);
 
-    try {
-      const result = await signIn("email", {
-        email,
-        redirect: false,
-        callbackUrl: "/overview",
-      });
+  const isDisabled = isLoading || cooldown > 0;
 
-      if (result?.error) {
-        setError("Failed to send magic link. Please try again.");
-      } else {
-        window.location.href = "/verify";
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (isDisabled) return;
+      setIsLoading(true);
+      setError("");
+
+      try {
+        const result = await signIn("email", {
+          email,
+          redirect: false,
+          callbackUrl: "/overview",
+        });
+
+        if (result?.error) {
+          if (result.error.includes("429") || result.status === 429) {
+            setError("Too many attempts. Please wait before trying again.");
+            setCooldown(COOLDOWN_SECONDS);
+          } else {
+            setError("Failed to send magic link. Please try again.");
+          }
+        } else {
+          setCooldown(COOLDOWN_SECONDS);
+          window.location.href = "/verify";
+        }
+      } catch {
+        setError("Something went wrong. Please try again.");
+      } finally {
+        setIsLoading(false);
       }
-    } catch {
-      setError("Something went wrong. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  }
+    },
+    [email, isDisabled]
+  );
+
 
   return (
     <div className="space-y-8 animate-fade-in-up">
@@ -75,11 +97,16 @@ export default function LoginPage() {
             </div>
           )}
 
-          <Button type="submit" className="w-full gap-2" disabled={isLoading}>
+          <Button type="submit" className="w-full gap-2" disabled={isDisabled}>
             {isLoading ? (
               <>
                 <Loader2 size={16} className="animate-spin" />
                 Sending link...
+              </>
+            ) : cooldown > 0 ? (
+              <>
+                <Clock size={16} strokeWidth={2} />
+                Retry in {cooldown}s
               </>
             ) : (
               <>

@@ -83,6 +83,12 @@ export const API_RATE_LIMIT: RateLimitConfig = {
   windowMs: 60 * 1000,
 };
 
+/** Auth actions (login/register): 5 per 15 minutes per IP */
+export const AUTH_RATE_LIMIT: RateLimitConfig = {
+  maxRequests: 5,
+  windowMs: 15 * 60 * 1000,
+};
+
 /** OTP sends: 5 per email per hour */
 export const OTP_SEND_RATE_LIMIT: RateLimitConfig = {
   maxRequests: 5,

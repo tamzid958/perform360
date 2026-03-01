@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
-import { ArrowRight, Building2, Loader2, User, Mail } from "lucide-react";
+import { ArrowRight, Building2, Loader2, User, Mail, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+
+const COOLDOWN_SECONDS = 60;
 
 export default function RegisterPage() {
   const [companyName, setCompanyName] = useState("");
@@ -14,45 +16,65 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [cooldown, setCooldown] = useState(0);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setIsLoading(true);
-    setError("");
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [cooldown]);
 
-    try {
-      const res = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ companyName, name, email }),
-      });
+  const isDisabled = isLoading || cooldown > 0;
 
-      const data = await res.json();
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (isDisabled) return;
+      setIsLoading(true);
+      setError("");
 
-      if (!res.ok) {
-        setError(data.error || "Registration failed. Please try again.");
-        return;
+      try {
+        const res = await fetch("/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ companyName, name, email }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          if (res.status === 429) {
+            setCooldown(COOLDOWN_SECONDS);
+            setError("Too many attempts. Please wait before trying again.");
+          } else {
+            setError(data.error || "Registration failed. Please try again.");
+          }
+          return;
+        }
+
+        const result = await signIn("email", {
+          email,
+          redirect: false,
+          callbackUrl: "/overview",
+        });
+
+        if (result?.error) {
+          setError(
+            "Account created but failed to send verification email. Please sign in."
+          );
+        } else {
+          setCooldown(COOLDOWN_SECONDS);
+          window.location.href = "/verify";
+        }
+      } catch {
+        setError("Something went wrong. Please try again.");
+      } finally {
+        setIsLoading(false);
       }
+    },
+    [companyName, name, email, isDisabled]
+  );
 
-      const result = await signIn("email", {
-        email,
-        redirect: false,
-        callbackUrl: "/overview",
-      });
-
-      if (result?.error) {
-        setError(
-          "Account created but failed to send verification email. Please sign in."
-        );
-      } else {
-        window.location.href = "/verify";
-      }
-    } catch {
-      setError("Something went wrong. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  }
 
   return (
     <div className="space-y-8 animate-fade-in-up">
@@ -136,11 +158,16 @@ export default function RegisterPage() {
             </div>
           )}
 
-          <Button type="submit" className="w-full gap-2" disabled={isLoading}>
+          <Button type="submit" className="w-full gap-2" disabled={isDisabled}>
             {isLoading ? (
               <>
                 <Loader2 size={16} className="animate-spin" />
                 Creating account...
+              </>
+            ) : cooldown > 0 ? (
+              <>
+                <Clock size={16} strokeWidth={2} />
+                Retry in {cooldown}s
               </>
             ) : (
               <>

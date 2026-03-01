@@ -3,6 +3,12 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/utils";
 import { randomBytes } from "crypto";
+import {
+  checkRateLimit,
+  rateLimitResponse,
+  getClientIp,
+  AUTH_RATE_LIMIT,
+} from "@/lib/rate-limit";
 
 const registerSchema = z.object({
   companyName: z.string().min(2, "Company name must be at least 2 characters").max(100),
@@ -12,6 +18,9 @@ const registerSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = getClientIp(request);
+    const rl = checkRateLimit(`auth:register:${ip}`, AUTH_RATE_LIMIT);
+    if (!rl.allowed) return rateLimitResponse(rl.retryAfterSeconds);
     const body = await request.json();
     const parsed = registerSchema.safeParse(body);
 
