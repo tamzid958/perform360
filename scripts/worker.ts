@@ -18,7 +18,7 @@ async function scheduleCronJobs(): Promise<void> {
 }
 
 async function main(): Promise<void> {
-  console.log("[Worker] Starting Perform360 job queue worker...");
+  console.log("[Worker] Starting Performs360 job queue worker...");
 
   const worker = createWorker(jobHandlers, {
     pollIntervalMs: JOB_CONFIG.pollIntervalMs,

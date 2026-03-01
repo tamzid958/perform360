@@ -162,7 +162,7 @@ export default function EncryptionSettingsPage() {
 
   function handleDownloadCodes() {
     const content = [
-      "Perform360 — Encryption Recovery Codes",
+      "Performs360 — Encryption Recovery Codes",
       "Generated: " + new Date().toISOString(),
       "",
       "IMPORTANT: Store these codes in a secure location.",
@@ -174,7 +174,7 @@ export default function EncryptionSettingsPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "perform360-recovery-codes.txt";
+    a.download = "performs360-recovery-codes.txt";
     a.click();
     URL.revokeObjectURL(url);
   }

@@ -3,8 +3,8 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 const SUPER_ADMIN_EMAIL =
-  process.env.SUPER_ADMIN_EMAIL ?? "admin@perform360.com";
-const SUPER_ADMIN_NAME = process.env.SUPER_ADMIN_NAME ?? "Perform360 Admin";
+  process.env.SUPER_ADMIN_EMAIL ?? "admin@performs360.com";
+const SUPER_ADMIN_NAME = process.env.SUPER_ADMIN_NAME ?? "Performs360 Admin";
 
 // ─────────────────────────────────────────────────────────
 // Global Evaluation Templates

@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
     );
     sendEmail({
       to: validated.email,
-      subject: `You've been invited to ${company?.name ?? "Perform360"}`,
+      subject: `You've been invited to ${company?.name ?? "Performs360"}`,
       html,
       text,
       companyId: authResult.companyId,

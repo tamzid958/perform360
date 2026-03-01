@@ -72,7 +72,7 @@ export default async function AuthLayout({
               <span className="text-white text-[18px] font-bold">P</span>
             </div>
             <span className="text-[20px] font-semibold tracking-tight text-gray-900 group-hover:text-gray-700 transition-colors">
-              Perform360
+              Performs360
             </span>
           </Link>
         </div>
@@ -120,7 +120,7 @@ export default async function AuthLayout({
         {/* Footer */}
         <div className="relative z-10">
           <p className="text-[12px] text-gray-300">
-            &copy; {new Date().getFullYear()} Perform360. All rights reserved.
+            &copy; {new Date().getFullYear()} Performs360. All rights reserved.
           </p>
         </div>
       </div>

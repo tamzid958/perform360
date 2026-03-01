@@ -3,7 +3,7 @@ import { encrypt, decrypt, deriveKey } from "./encryption";
 
 const COOKIE_NAME = "_enc_dk";
 const COOKIE_MAX_AGE = 4 * 60 * 60; // 4 hours in seconds
-const SESSION_KEY_SALT = "perform360-enc-session-key";
+const SESSION_KEY_SALT = "performs360-enc-session-key";
 
 /**
  * Derive a stable session encryption key from NEXTAUTH_SECRET.

@@ -4,8 +4,8 @@ services:
       context: .
       dockerfile: Dockerfile
       target: runner
-    image: perform360:latest
-    container_name: perform360-app
+    image: performs360:latest
+    container_name: performs360-app
     restart: unless-stopped
     init: true
     ports:
@@ -30,8 +30,8 @@ services:
       - no-new-privileges:true
 
   worker:
-    image: perform360:latest
-    container_name: perform360-worker
+    image: performs360:latest
+    container_name: performs360-worker
     restart: unless-stopped
     init: true
     profiles: ["worker"]
@@ -45,8 +45,8 @@ services:
       - no-new-privileges:true
 
   migrate:
-    image: perform360:latest
-    container_name: perform360-migrate
+    image: performs360:latest
+    container_name: performs360-migrate
     profiles: ["migrate"]
     command: ["npx", "prisma", "migrate", "deploy"]
     restart: "no"
@@ -56,8 +56,8 @@ services:
       NODE_ENV: production
 
   seed:
-    image: perform360:latest
-    container_name: perform360-seed
+    image: performs360:latest
+    container_name: performs360-seed
     profiles: ["seed"]
     command: ["npx", "tsx", "prisma/seed.ts"]
     restart: "no"

@@ -1,6 +1,6 @@
-# Perform360
+# Performs360
 
-Perform360 is a 360-degree performance evaluation platform built with Next.js, Prisma, and PostgreSQL.
+Performs360 is a 360-degree performance evaluation platform built with Next.js, Prisma, and PostgreSQL.
 
 ## Production Deployment (Docker Compose + External Postgres)
 
@@ -28,7 +28,7 @@ cp .env.production.example .env.production
 Edit `.env.production` with real values:
 
 ```env
-DATABASE_URL=postgresql://USER:PASSWORD@DB_HOST:5432/perform360?schema=public
+DATABASE_URL=postgresql://USER:PASSWORD@DB_HOST:5432/performs360?schema=public
 
 NEXTAUTH_SECRET=replace-with-a-strong-random-secret
 NEXTAUTH_URL=https://app.example.com
@@ -40,8 +40,8 @@ SMTP_USER=smtp-user
 SMTP_PASSWORD=smtp-password
 SMTP_FROM=noreply@example.com
 
-SUPER_ADMIN_EMAIL=admin@perform360.com
-SUPER_ADMIN_NAME=Perform360 Admin
+SUPER_ADMIN_EMAIL=admin@performs360.com
+SUPER_ADMIN_NAME=Performs360 Admin
 ```
 
 Notes:

@@ -81,7 +81,7 @@ export async function handleCompanyDestroy(
   const emailPromises = adminEmails.map((email) =>
     sendEmail({
       to: email,
-      subject: `${companyName} has been permanently deleted from Perform360`,
+      subject: `${companyName} has been permanently deleted from Performs360`,
       html,
       text,
       companyId,

@@ -2,7 +2,7 @@
 
 ## Overview
 
-Perform360 is a multi-tenant 360-degree performance evaluation SaaS platform. It uses Next.js App Router with route groups to separate concerns: `(auth)` for authentication, `(dashboard)` for the main app, `(public)` for OTP-gated evaluation forms, and `admin/` for the SaaS owner panel. Evaluation response data is encrypted at rest using envelope encryption — the SaaS owner has zero access to tenant data.
+Performs360 is a multi-tenant 360-degree performance evaluation SaaS platform. It uses Next.js App Router with route groups to separate concerns: `(auth)` for authentication, `(dashboard)` for the main app, `(public)` for OTP-gated evaluation forms, and `admin/` for the SaaS owner panel. Evaluation response data is encrypted at rest using envelope encryption — the SaaS owner has zero access to tenant data.
 
 ## Layer Diagram
 

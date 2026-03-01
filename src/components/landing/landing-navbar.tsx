@@ -34,7 +34,7 @@ export function LandingNavbar() {
               P
             </span>
           </div>
-          <span className="text-headline text-gray-900">Perform360</span>
+          <span className="text-headline text-gray-900">Performs360</span>
         </Link>
 
         {/* Center Nav Links — hidden on mobile */}

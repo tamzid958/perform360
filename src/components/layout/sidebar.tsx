@@ -52,7 +52,7 @@ export function Sidebar() {
             <span className="text-white text-[14px] font-bold">P</span>
           </div>
           {!collapsed && (
-            <span className="text-headline text-gray-900">Perform360</span>
+            <span className="text-headline text-gray-900">Performs360</span>
           )}
         </Link>
         <button

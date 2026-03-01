@@ -27,7 +27,7 @@ export function SecuritySection() {
             </h2>
 
             <p className="text-body text-gray-500 mt-6 leading-relaxed">
-              Perform360 uses envelope encryption with company-owned keys.
+              Performs360 uses envelope encryption with company-owned keys.
               Evaluation responses are encrypted at rest using AES-256-GCM, and
               only your organization&apos;s administrators can decrypt the data.
             </p>

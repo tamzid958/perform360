@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
 export const metadata = {
-  title: "Security Policy — Perform360",
+  title: "Security Policy — Performs360",
 };
 
 export default function SecurityPolicyPage() {
@@ -16,7 +16,7 @@ export default function SecurityPolicyPage() {
             className="inline-flex items-center gap-2 text-[14px] text-gray-500 hover:text-gray-900 transition-colors"
           >
             <ArrowLeft size={16} strokeWidth={1.5} />
-            Back to Perform360
+            Back to Performs360
           </Link>
         </div>
       </nav>
@@ -29,7 +29,7 @@ export default function SecurityPolicyPage() {
           <section>
             <h2 className="text-title-small text-gray-900 mb-3">1. Overview</h2>
             <p>
-              Security is foundational to Perform360. Our platform handles sensitive performance evaluation data,
+              Security is foundational to Performs360. Our platform handles sensitive performance evaluation data,
               and we have built our architecture around the principle of zero-trust and zero-access. This document
               outlines the technical and organizational measures we implement to protect your data.
             </p>
@@ -38,7 +38,7 @@ export default function SecurityPolicyPage() {
           <section>
             <h2 className="text-title-small text-gray-900 mb-3">2. Encryption Architecture</h2>
             <p className="mb-3">
-              Perform360 uses a multi-layered envelope encryption scheme:
+              Performs360 uses a multi-layered envelope encryption scheme:
             </p>
             <ul className="list-disc pl-6 space-y-2">
               <li>
@@ -51,7 +51,7 @@ export default function SecurityPolicyPage() {
                 to produce a master key, which encrypts the AES-256 data key.
               </li>
               <li>
-                <strong className="text-gray-900">Zero-access design:</strong> The platform operator (Perform360 team,
+                <strong className="text-gray-900">Zero-access design:</strong> The platform operator (Performs360 team,
                 including super admins) cannot decrypt evaluation data. The encryption passphrase is never transmitted to
                 or stored on our servers in plaintext.
               </li>
@@ -147,7 +147,7 @@ export default function SecurityPolicyPage() {
             <h2 className="text-title-small text-gray-900 mb-3">9. Responsible Disclosure</h2>
             <p>
               If you discover a security vulnerability, please report it to{" "}
-              <strong className="text-gray-900">security@perform360.com</strong>. We appreciate responsible disclosure
+              <strong className="text-gray-900">security@performs360.com</strong>. We appreciate responsible disclosure
               and will work with you to address any legitimate findings promptly.
             </p>
           </section>

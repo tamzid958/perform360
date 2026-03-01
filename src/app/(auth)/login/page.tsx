@@ -67,7 +67,7 @@ export default function LoginPage() {
           <span className="text-white text-[18px] font-bold">P</span>
         </div>
         <span className="text-[20px] font-semibold tracking-tight text-gray-900">
-          Perform360
+          Performs360
         </span>
       </div>
 

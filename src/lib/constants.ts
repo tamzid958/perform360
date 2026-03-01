@@ -1,4 +1,4 @@
-export const APP_NAME = "Perform360";
+export const APP_NAME = "Performs360";
 export const APP_DESCRIPTION = "360° Performance Evaluation Platform";
 
 export const OTP_CONFIG = {

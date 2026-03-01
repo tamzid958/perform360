@@ -37,7 +37,7 @@ export function MobileNav() {
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center">
                   <span className="text-white text-[14px] font-bold">P</span>
                 </div>
-                <span className="text-headline text-gray-900">Perform360</span>
+                <span className="text-headline text-gray-900">Performs360</span>
               </div>
               <button onClick={() => setOpen(false)} className="p-1.5 rounded-lg hover:bg-gray-100">
                 <X size={20} strokeWidth={1.5} className="text-gray-500" />

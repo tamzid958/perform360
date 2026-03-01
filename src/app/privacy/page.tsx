@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
 export const metadata = {
-  title: "Privacy Policy — Perform360",
+  title: "Privacy Policy — Performs360",
 };
 
 export default function PrivacyPolicyPage() {
@@ -16,7 +16,7 @@ export default function PrivacyPolicyPage() {
             className="inline-flex items-center gap-2 text-[14px] text-gray-500 hover:text-gray-900 transition-colors"
           >
             <ArrowLeft size={16} strokeWidth={1.5} />
-            Back to Perform360
+            Back to Performs360
           </Link>
         </div>
       </nav>
@@ -29,7 +29,7 @@ export default function PrivacyPolicyPage() {
           <section>
             <h2 className="text-title-small text-gray-900 mb-3">1. Introduction</h2>
             <p>
-              Perform360 (&quot;we&quot;, &quot;our&quot;, &quot;us&quot;) is a 360-degree performance evaluation platform.
+              Performs360 (&quot;we&quot;, &quot;our&quot;, &quot;us&quot;) is a 360-degree performance evaluation platform.
               This Privacy Policy explains how we collect, use, disclose, and safeguard your information
               when you use our service. We are committed to protecting the privacy and security of your data.
             </p>
@@ -57,7 +57,7 @@ export default function PrivacyPolicyPage() {
           <section>
             <h2 className="text-title-small text-gray-900 mb-3">3. How We Use Your Information</h2>
             <ul className="list-disc pl-6 space-y-2">
-              <li>To provide and maintain the Perform360 service</li>
+              <li>To provide and maintain the Performs360 service</li>
               <li>To authenticate users via magic links and OTP verification</li>
               <li>To send evaluation invitations, reminders, and system notifications</li>
               <li>To generate aggregated, anonymized analytics for platform improvement</li>
@@ -69,7 +69,7 @@ export default function PrivacyPolicyPage() {
             <h2 className="text-title-small text-gray-900 mb-3">4. Data Encryption & Access</h2>
             <p>
               All evaluation responses are encrypted at rest using AES-256-GCM with company-owned encryption keys.
-              The Perform360 platform operator (including super admins) has <strong className="text-gray-900">zero access</strong> to
+              The Performs360 platform operator (including super admins) has <strong className="text-gray-900">zero access</strong> to
               decrypted evaluation data. Only your company&apos;s authorized administrators can decrypt and view evaluation responses.
             </p>
             <p className="mt-3">
@@ -84,7 +84,7 @@ export default function PrivacyPolicyPage() {
             <ul className="list-disc pl-6 space-y-2 mt-3">
               <li>With infrastructure providers (hosting, email delivery) who process data on our behalf under strict agreements</li>
               <li>When required by law, regulation, or valid legal process</li>
-              <li>To protect the rights, safety, or property of Perform360, our users, or the public</li>
+              <li>To protect the rights, safety, or property of Performs360, our users, or the public</li>
             </ul>
           </section>
 
@@ -109,7 +109,7 @@ export default function PrivacyPolicyPage() {
             </ul>
             <p className="mt-3">
               To exercise these rights, contact your company administrator or reach out to us at{" "}
-              <strong className="text-gray-900">privacy@perform360.com</strong>.
+              <strong className="text-gray-900">privacy@performs360.com</strong>.
             </p>
           </section>
 
@@ -135,7 +135,7 @@ export default function PrivacyPolicyPage() {
             <h2 className="text-title-small text-gray-900 mb-3">10. Contact</h2>
             <p>
               For questions about this Privacy Policy, contact us at{" "}
-              <strong className="text-gray-900">privacy@perform360.com</strong>.
+              <strong className="text-gray-900">privacy@performs360.com</strong>.
             </p>
           </section>
         </div>

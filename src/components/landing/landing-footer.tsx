@@ -10,7 +10,7 @@ export function LandingFooter() {
             <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
               <span className="text-[15px] font-bold text-white">P</span>
             </div>
-            <span className="text-headline text-white">Perform360</span>
+            <span className="text-headline text-white">Performs360</span>
           </div>
 
           {/* Links */}
@@ -33,7 +33,7 @@ export function LandingFooter() {
         {/* Bottom bar */}
         <div className="border-t border-gray-800 mt-8 pt-6">
           <p className="text-[13px] text-gray-500 text-center">
-            &copy; 2026 Perform360. All rights reserved.
+            &copy; 2026 Performs360. All rights reserved.
           </p>
         </div>
       </div>

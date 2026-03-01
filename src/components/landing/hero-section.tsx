@@ -55,7 +55,7 @@ export function HeroSection() {
           <div className="rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.12)] border border-gray-200/60 overflow-hidden bg-white ring-1 ring-black/[0.03]">
             <Image
               src="/image.png"
-              alt="Perform360 Dashboard"
+              alt="Performs360 Dashboard"
               width={1200}
               height={750}
               className="w-full h-auto"

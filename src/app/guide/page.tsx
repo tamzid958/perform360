@@ -635,7 +635,7 @@ function RolesSection() {
           <div>
             <h2 className="text-title-small text-gray-900">Understanding Team Structure</h2>
             <p className="text-body text-gray-500 mt-2 leading-relaxed">
-              In Perform360, <strong>teams</strong> are the building blocks of your evaluation cycles.
+              In Performs360, <strong>teams</strong> are the building blocks of your evaluation cycles.
               Each team represents a functional group within your organization. Team members are assigned
               one of two roles &mdash; <strong>Manager</strong> or <strong>Member</strong> &mdash;
               which determines the evaluation relationships during review cycles. Peer feedback is
@@ -852,7 +852,7 @@ function RunningCyclesSection() {
           description="When you activate the cycle, each reviewer receives a unique evaluation link via email. No accounts needed — they verify via OTP."
         >
           <InfoBox>
-            Reviewers don&apos;t need a Perform360 account. They receive a secure link,
+            Reviewers don&apos;t need a Performs360 account. They receive a secure link,
             verify their identity with a one-time code sent to their email, and complete
             the evaluation form directly.
           </InfoBox>
@@ -1158,7 +1158,7 @@ function OrgPatternsSection() {
           <div>
             <CardTitle>Common Organizational Patterns</CardTitle>
             <CardDescription>
-              How different company structures map to Perform360 teams
+              How different company structures map to Performs360 teams
             </CardDescription>
           </div>
         </div>
@@ -1216,7 +1216,7 @@ function OrgPatternsSection() {
 ├── Junior Designer 1   (Member)
 └── Junior Designer 2   (Member)`}</div>
           <p className="text-caption mt-3">
-            Perform360 supports multiple managers per team. Both managers evaluate all members,
+            Performs360 supports multiple managers per team. Both managers evaluate all members,
             and reports show aggregated scores from each manager.
           </p>
         </div>

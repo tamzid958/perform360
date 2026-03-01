@@ -40,9 +40,9 @@ export async function POST(request: NextRequest) {
 
     await transporter.verify();
     await transporter.sendMail({
-      from: `Perform360 <${from}>`,
+      from: `Performs360 <${from}>`,
       to: authResult.email,
-      subject: "Perform360 SMTP Test",
+      subject: "Performs360 SMTP Test",
       html: "<p>Your SMTP configuration is working correctly.</p>",
       text: "Your SMTP configuration is working correctly.",
     });

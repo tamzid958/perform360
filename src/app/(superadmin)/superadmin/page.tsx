@@ -129,7 +129,7 @@ export default async function SuperAdminDashboard() {
       <div className="mb-8">
         <h1 className="text-title text-gray-900">Platform Overview</h1>
         <p className="text-body text-gray-500 mt-1">
-          Perform360 platform analytics and management
+          Performs360 platform analytics and management
         </p>
       </div>
 

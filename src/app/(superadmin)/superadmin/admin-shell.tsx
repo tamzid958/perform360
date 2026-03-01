@@ -24,7 +24,7 @@ export function SuperAdminShell({ children }: { children: React.ReactNode }) {
             <div className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center">
               <span className="text-[12px] font-bold">P</span>
             </div>
-            <span className="text-[15px] font-semibold">Perform360</span>
+            <span className="text-[15px] font-semibold">Performs360</span>
             <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[11px] font-medium">
               Super Admin
             </span>

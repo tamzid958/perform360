@@ -121,7 +121,7 @@ export default function SetupEncryptionPage() {
 
   function handleDownload() {
     const content = [
-      "Perform360 — Encryption Recovery Codes",
+      "Performs360 — Encryption Recovery Codes",
       "Generated: " + new Date().toISOString(),
       "",
       "IMPORTANT: Store these codes in a secure location.",
@@ -136,7 +136,7 @@ export default function SetupEncryptionPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "perform360-recovery-codes.txt";
+    a.download = "performs360-recovery-codes.txt";
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -147,7 +147,7 @@ export default function SetupEncryptionPage() {
         <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-[#0071e3] to-[#0058b9] mb-3">
           <span className="text-white text-[20px] font-bold">P</span>
         </div>
-        <p className="text-[13px] text-gray-500">Perform360</p>
+        <p className="text-[13px] text-gray-500">Performs360</p>
       </div>
 
       <StepIndicator currentStep={step} />
@@ -168,7 +168,7 @@ export default function SetupEncryptionPage() {
 
           <div className="space-y-4 mt-4">
             <p className="text-[15px] text-gray-700 leading-relaxed">
-              Perform360 uses end-to-end encryption to protect all evaluation responses.
+              Performs360 uses end-to-end encryption to protect all evaluation responses.
               You need to set an encryption passphrase that will be used to encrypt and decrypt evaluation data.
             </p>
 
@@ -183,7 +183,7 @@ export default function SetupEncryptionPage() {
               <div className="flex gap-3 p-3 rounded-xl bg-gray-50">
                 <Shield size={18} strokeWidth={1.5} className="text-gray-500 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-[14px] font-medium text-gray-800">Even Perform360 staff cannot access your data</p>
+                  <p className="text-[14px] font-medium text-gray-800">Even Performs360 staff cannot access your data</p>
                   <p className="text-[13px] text-gray-500">Encryption is enforced cryptographically, not just by permissions</p>
                 </div>
               </div>

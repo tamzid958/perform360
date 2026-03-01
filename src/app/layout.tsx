@@ -4,7 +4,7 @@ import MixpanelProvider from "@/components/MixpanelProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Perform360 — 360° Performance Evaluation",
+  title: "Performs360 — 360° Performance Evaluation",
   description: "Modern 360° performance evaluation platform for organizations",
 };
 

@@ -166,7 +166,7 @@ export async function handleDataExport(
     recoveryCodes,
   };
 
-  const fileName = `perform360-${company.slug}-data-dump-${exportedAt.slice(0, 10)}.json`;
+  const fileName = `performs360-${company.slug}-data-dump-${exportedAt.slice(0, 10)}.json`;
   const jsonContent = JSON.stringify(exportPayload, null, 2);
 
   const { html, text } = getDataExportEmail(company.name, exportedAt.slice(0, 10));

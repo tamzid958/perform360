@@ -69,7 +69,7 @@ function getEnvSmtpConfig(): SmtpConfig {
     port: parseInt(process.env.SMTP_PORT || "587"),
     user: process.env.SMTP_USER ?? "",
     password: process.env.SMTP_PASSWORD ?? "",
-    from: process.env.SMTP_FROM || "noreply@perform360.com",
+    from: process.env.SMTP_FROM || "noreply@performs360.com",
   };
 }
 
@@ -154,7 +154,7 @@ export async function sendEmail({
   const config = await resolveSmtpConfig(companyId);
   const transporter = createTransporter(config);
   await transporter.sendMail({
-    from: `Perform360 <${config.from}>`,
+    from: `Performs360 <${config.from}>`,
     to,
     subject,
     html,
@@ -173,7 +173,7 @@ export async function sendEmailWithAttachments({
   const config = await resolveSmtpConfig(companyId);
   const transporter = createTransporter(config);
   await transporter.sendMail({
-    from: `Perform360 <${config.from}>`,
+    from: `Performs360 <${config.from}>`,
     to,
     subject,
     html,
@@ -208,13 +208,13 @@ function emailWrapper(subtitle: string, bodyContent: string): string {
             <table width="480" cellpadding="0" cellspacing="0" style="background: white; border-radius: 16px; padding: 40px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
               <tr>
                 <td>
-                  <h1 style="margin: 0 0 8px; font-size: 22px; font-weight: 600; color: #1d1d1f;">Perform360</h1>
+                  <h1 style="margin: 0 0 8px; font-size: 22px; font-weight: 600; color: #1d1d1f;">Performs360</h1>
                   <p style="margin: 0 0 24px; font-size: 14px; color: #86868b;">${subtitle}</p>
                   ${bodyContent}
                 </td>
               </tr>
             </table>
-            <p style="margin: 24px 0 0; font-size: 12px; color: #a1a1a6; text-align: center;">Perform360 &mdash; 360&deg; Performance Evaluation</p>
+            <p style="margin: 24px 0 0; font-size: 12px; color: #a1a1a6; text-align: center;">Performs360 &mdash; 360&deg; Performance Evaluation</p>
           </td>
         </tr>
       </table>
@@ -234,14 +234,14 @@ export function getMagicLinkEmail(url: string): { html: string; text: string } {
     "Sign In",
     `
     <p style="margin: 0 0 16px; font-size: 15px; color: #1d1d1f; line-height: 1.5;">Hi,</p>
-    <p style="margin: 0 0 24px; font-size: 15px; color: #48484a; line-height: 1.5;">Click the button below to sign in to your Perform360 account. This link expires in 24 hours.</p>
-    ${ctaButton(url, "Sign In to Perform360")}
+    <p style="margin: 0 0 24px; font-size: 15px; color: #48484a; line-height: 1.5;">Click the button below to sign in to your Performs360 account. This link expires in 24 hours.</p>
+    ${ctaButton(url, "Sign In to Performs360")}
     <p style="margin: 24px 0 4px; font-size: 13px; color: #86868b; line-height: 1.4;">If you didn't request this email, you can safely ignore it.</p>
     <p style="margin: 0; font-size: 13px; color: #86868b; line-height: 1.4; word-break: break-all;">Or copy this link: ${escapeHtml(url)}</p>
     `
   );
 
-  const text = `Sign in to Perform360\n\nClick the link below to sign in:\n${url}\n\nThis link expires in 24 hours.\n\nIf you didn't request this email, you can safely ignore it.`;
+  const text = `Sign in to Performs360\n\nClick the link below to sign in:\n${url}\n\nThis link expires in 24 hours.\n\nIf you didn't request this email, you can safely ignore it.`;
 
   return { html, text };
 }
@@ -347,13 +347,13 @@ export function getUserInviteEmail(
     "Welcome",
     `
     <p style="margin: 0 0 16px; font-size: 15px; color: #1d1d1f; line-height: 1.5;">Hi ${escapeHtml(recipientName)},</p>
-    <p style="margin: 0 0 24px; font-size: 15px; color: #48484a; line-height: 1.5;">You've been invited to join <strong>${escapeHtml(companyName)}</strong> on Perform360, a 360-degree performance evaluation platform.</p>
+    <p style="margin: 0 0 24px; font-size: 15px; color: #48484a; line-height: 1.5;">You've been invited to join <strong>${escapeHtml(companyName)}</strong> on Performs360, a 360-degree performance evaluation platform.</p>
     ${ctaButton(loginUrl, "Sign In to Get Started")}
     <p style="margin: 24px 0 0; font-size: 13px; color: #86868b; line-height: 1.4;">You'll sign in using a magic link sent to your email — no password needed.</p>
     `
   );
 
-  const text = `Hi ${recipientName},\n\nYou've been invited to join ${companyName} on Perform360, a 360-degree performance evaluation platform.\n\nSign in to get started: ${loginUrl}\n\nYou'll sign in using a magic link sent to your email — no password needed.`;
+  const text = `Hi ${recipientName},\n\nYou've been invited to join ${companyName} on Performs360, a 360-degree performance evaluation platform.\n\nSign in to get started: ${loginUrl}\n\nYou'll sign in using a magic link sent to your email — no password needed.`;
 
   return { html, text };
 }
@@ -371,7 +371,7 @@ export function getCompanyDestroyedEmail(
     <p style="margin: 0 0 16px; font-size: 15px; color: #1d1d1f; line-height: 1.5;">Hi,</p>
     <p style="margin: 0 0 16px; font-size: 15px; color: #48484a; line-height: 1.5;">
       This email confirms that <strong>${escapeHtml(companyName)}</strong> and all associated data
-      have been permanently deleted from Perform360.
+      have been permanently deleted from Performs360.
     </p>
     <div style="background: #fef2f2; border-radius: 12px; padding: 16px; margin-bottom: 24px;">
       <p style="margin: 0 0 8px; font-size: 14px; font-weight: 600; color: #991b1b;">Deletion Details</p>
@@ -389,7 +389,7 @@ export function getCompanyDestroyedEmail(
     `
   );
 
-  const text = `Hi,\n\nThis email confirms that ${companyName} and all associated data have been permanently deleted from Perform360.\n\nCompany: ${companyName}\nDeleted on: ${destroyedAt}\nInitiated by: ${initiatedBy}\n\nThis action is irreversible. All users, teams, evaluation cycles, responses, encryption keys, and audit logs have been permanently removed.\n\nIf you did not initiate this action, please contact support immediately.`;
+  const text = `Hi,\n\nThis email confirms that ${companyName} and all associated data have been permanently deleted from Performs360.\n\nCompany: ${companyName}\nDeleted on: ${destroyedAt}\nInitiated by: ${initiatedBy}\n\nThis action is irreversible. All users, teams, evaluation cycles, responses, encryption keys, and audit logs have been permanently removed.\n\nIf you did not initiate this action, please contact support immediately.`;
 
   return { html, text };
 }

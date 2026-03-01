@@ -91,7 +91,7 @@ export async function POST(
     const { html, text } = getOTPEmail(otp, reviewer.name);
     await sendEmail({
       to: reviewer.email,
-      subject: "Your Perform360 Verification Code",
+      subject: "Your Performs360 Verification Code",
       html,
       text,
       companyId: assignment.cycle.companyId,

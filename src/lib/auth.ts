@@ -64,12 +64,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           pass: process.env.SMTP_PASSWORD,
         },
       },
-      from: process.env.SMTP_FROM || "noreply@perform360.com",
+      from: process.env.SMTP_FROM || "noreply@performs360.com",
       async sendVerificationRequest({ identifier: email, url }) {
         const { html, text } = getMagicLinkEmail(url);
         await sendEmail({
           to: email,
-          subject: "Sign in to Perform360",
+          subject: "Sign in to Performs360",
           html,
           text,
         });
