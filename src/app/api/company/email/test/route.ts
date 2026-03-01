@@ -3,6 +3,7 @@ import { z } from "zod";
 import { Resend } from "resend";
 import { requireRole, isAuthError } from "@/lib/api-auth";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { RESEND_KEY_MASK, resolveResendConfig } from "@/lib/email";
 
 const DEFAULT_TEST_FROM =
   process.env.EMAIL_FROM || "Performs360 <noreply@performs360.com>";
@@ -30,10 +31,21 @@ export async function POST(request: NextRequest) {
     }
 
     const { apiKey, from } = parsed.data;
-    const resend = new Resend(apiKey);
+
+    let resend: Resend;
+    let resolvedFrom: string;
+
+    if (apiKey === RESEND_KEY_MASK) {
+      const saved = await resolveResendConfig(authResult.companyId);
+      resend = saved.client;
+      resolvedFrom = from || saved.from;
+    } else {
+      resend = new Resend(apiKey);
+      resolvedFrom = from || DEFAULT_TEST_FROM;
+    }
 
     const { error } = await resend.emails.send({
-      from: from || DEFAULT_TEST_FROM,
+      from: resolvedFrom,
       to: authResult.email,
       subject: "Performs360 Email Test",
       html: "<p>Your Resend configuration is working correctly.</p>",

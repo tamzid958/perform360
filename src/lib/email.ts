@@ -75,7 +75,7 @@ export function invalidateResendConfigCache(companyId: string): void {
   RESEND_CACHE.delete(companyId);
 }
 
-async function resolveResendConfig(
+export async function resolveResendConfig(
   companyId?: string
 ): Promise<{ client: Resend; from: string }> {
   if (!companyId) {

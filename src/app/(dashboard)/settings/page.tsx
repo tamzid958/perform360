@@ -36,7 +36,6 @@ const DEFAULT_RESEND: ResendSettings = {
   from: "",
 };
 
-const RESEND_KEY_MASK = "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022";
 
 interface CompanySettings {
   notifications?: NotificationSettings;
@@ -640,8 +639,7 @@ export default function SettingsPage() {
                     onClick={handleTestResend}
                     disabled={
                       testingResend ||
-                      !resendSettings.apiKey ||
-                      resendSettings.apiKey === RESEND_KEY_MASK
+                      !resendSettings.apiKey
                     }
                   >
                     {testingResend ? "Sending..." : "Send Test Email"}
