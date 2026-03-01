@@ -12,7 +12,7 @@ export default function SetupResendPage() {
   const router = useRouter();
   const { addToast } = useToast();
   const [apiKey, setApiKey] = useState("");
-  const [from, setFrom] = useState("");
+  const [from, setFrom] = useState("onboarding@resend.dev");
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testSuccess, setTestSuccess] = useState(false);
@@ -120,7 +120,7 @@ export default function SetupResendPage() {
           <Input
             id="resend-from"
             label="From Address (optional)"
-            placeholder="Company Name <noreply@yourdomain.com>"
+            placeholder="onboarding@resend.dev"
             value={from}
             onChange={(e) => { setFrom(e.target.value); setTestSuccess(false); }}
           />

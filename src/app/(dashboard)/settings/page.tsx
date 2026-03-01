@@ -33,7 +33,7 @@ interface ResendSettings {
 
 const DEFAULT_RESEND: ResendSettings = {
   apiKey: "",
-  from: "",
+  from: "onboarding@resend.dev",
 };
 
 
@@ -616,7 +616,7 @@ export default function SettingsPage() {
                 <Input
                   id="resend-from"
                   label="From Address (optional)"
-                  placeholder="Company Name <noreply@yourdomain.com>"
+                  placeholder="onboarding@resend.dev"
                   value={resendSettings.from}
                   onChange={(e) =>
                     setResendSettings((prev) => ({ ...prev, from: e.target.value }))

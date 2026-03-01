@@ -11,8 +11,10 @@ import {
   UserCircle,
   Settings,
   ChevronLeft,
+  LogOut,
 } from "lucide-react";
 import { useState } from "react";
+import { signOut } from "next-auth/react";
 
 const navigation = [
   { name: "Dashboard", href: "/overview", icon: LayoutDashboard },
@@ -92,7 +94,7 @@ export function Sidebar() {
       </nav>
 
       {/* Bottom Navigation */}
-      <div className="px-3 py-3 border-t border-gray-200/50">
+      <div className="px-3 py-3 border-t border-gray-200/50 space-y-1">
         {bottomNav.map((item) => {
           const isActive = pathname.startsWith(item.href);
           const Icon = item.icon;
@@ -113,6 +115,16 @@ export function Sidebar() {
             </Link>
           );
         })}
+        <button
+          onClick={() => signOut({ redirectTo: "/login" })}
+          className={cn(
+            "flex items-center gap-3 px-3 py-2.5 rounded-xl text-[14px] font-medium transition-all duration-200 w-full text-gray-500 hover:text-red-600 hover:bg-red-50",
+            collapsed && "justify-center px-2"
+          )}
+        >
+          <LogOut size={20} strokeWidth={1.5} />
+          {!collapsed && <span>Sign out</span>}
+        </button>
       </div>
     </aside>
   );

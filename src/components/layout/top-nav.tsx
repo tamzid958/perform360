@@ -22,7 +22,7 @@ export function TopNav({ userName = "User", userEmail = "", userAvatar }: TopNav
   return (
     <header className="h-14 sm:h-16 border-b border-gray-200/50 bg-white/80 backdrop-blur-xl flex items-center justify-between px-4 sm:px-6">
       <MobileNav />
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 ml-auto">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-gray-100 transition-colors">
