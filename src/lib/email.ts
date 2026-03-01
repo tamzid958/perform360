@@ -84,7 +84,11 @@ async function resolveResendConfig(
 
   const cached = RESEND_CACHE.get(companyId);
   if (cached && cached.expiry > Date.now()) {
-    if (!cached.config) return { client: getSystemResend(), from: DEFAULT_FROM };
+    if (!cached.config) {
+      throw new Error(
+        "Email sending is not configured for this company. An admin must set up a Resend API key in Settings."
+      );
+    }
     return {
       client: new Resend(cached.config.apiKey),
       from: cached.config.from,
@@ -101,11 +105,9 @@ async function resolveResendConfig(
   } | null;
 
   if (!settings?.resend?.apiKey) {
-    RESEND_CACHE.set(companyId, {
-      config: null,
-      expiry: Date.now() + CACHE_TTL_MS,
-    });
-    return { client: getSystemResend(), from: DEFAULT_FROM };
+    throw new Error(
+      "Email sending is not configured for this company. An admin must set up a Resend API key in Settings."
+    );
   }
 
   const config: ResendConfig = {

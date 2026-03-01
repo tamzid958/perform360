@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Shield, Loader2, AlertCircle } from "lucide-react";
+import { TurnstileWidget } from "@/components/ui/turnstile-widget";
 
 interface TokenData {
   subjectName: string;
@@ -22,27 +23,37 @@ export default function EvaluateOTPPage({ params }: { params: { token: string } 
   const [tokenError, setTokenError] = useState("");
   const [cooldown, setCooldown] = useState(0);
   const [tokenData, setTokenData] = useState<TokenData | null>(null);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileResetKey, setTurnstileResetKey] = useState(0);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  const sendOTP = useCallback(async () => {
+  const sendOTP = useCallback(async (cfToken: string | null) => {
     setIsSending(true);
     setError("");
     try {
-      const res = await fetch(`/api/evaluate/${params.token}/otp/send`, { method: "POST" });
+      const res = await fetch(`/api/evaluate/${params.token}/otp/send`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ turnstileToken: cfToken }),
+      });
       const data = await res.json();
       if (!res.ok) {
         setError(data.error || "Failed to send verification code");
+        setTurnstileResetKey((k) => k + 1);
+        setTurnstileToken(null);
       }
     } catch {
       setError("Failed to send verification code");
+      setTurnstileResetKey((k) => k + 1);
+      setTurnstileToken(null);
     } finally {
       setIsSending(false);
     }
   }, [params.token]);
 
-  // Validate token on mount, then auto-send OTP
+  // Validate token on mount
   useEffect(() => {
-    async function validateAndSend() {
+    async function validate() {
       try {
         const res = await fetch(`/api/evaluate/${params.token}`);
         const data = await res.json();
@@ -52,25 +63,21 @@ export default function EvaluateOTPPage({ params }: { params: { token: string } 
         }
         setTokenData(data.data);
         setIsValidating(false);
-        // Auto-send OTP after token validation
-        setIsSending(true);
-        try {
-          const otpRes = await fetch(`/api/evaluate/${params.token}/otp/send`, { method: "POST" });
-          const otpData = await otpRes.json();
-          if (!otpRes.ok) {
-            setError(otpData.error || "Failed to send verification code");
-          }
-        } catch {
-          setError("Failed to send verification code");
-        } finally {
-          setIsSending(false);
-        }
       } catch {
         setTokenError("Failed to validate evaluation link");
       }
     }
-    validateAndSend();
+    validate();
   }, [params.token]);
+
+  // Auto-send OTP once Turnstile completes (and token is validated)
+  const hasSentRef = useRef(false);
+  useEffect(() => {
+    if (tokenData && turnstileToken && !hasSentRef.current) {
+      hasSentRef.current = true;
+      sendOTP(turnstileToken);
+    }
+  }, [tokenData, turnstileToken, sendOTP]);
 
   function handleChange(index: number, value: string) {
     if (!/^\d*$/.test(value)) return;
@@ -226,10 +233,23 @@ export default function EvaluateOTPPage({ params }: { params: { token: string } 
                 </p>
               )}
 
+              <TurnstileWidget
+                onVerify={setTurnstileToken}
+                onError={() => setTurnstileToken(null)}
+                onExpire={() => setTurnstileToken(null)}
+                resetKey={turnstileResetKey}
+              />
+
               <div className="text-center">
                 <button
-                  onClick={sendOTP}
-                  disabled={isSending}
+                  onClick={() => {
+                    if (turnstileToken) {
+                      sendOTP(turnstileToken);
+                      setTurnstileResetKey((k) => k + 1);
+                      setTurnstileToken(null);
+                    }
+                  }}
+                  disabled={isSending || !turnstileToken}
                   className="text-[14px] text-brand-500 hover:text-brand-600 font-medium transition-colors disabled:opacity-50"
                 >
                   Resend Code

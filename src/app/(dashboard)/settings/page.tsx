@@ -593,8 +593,8 @@ export default function SettingsPage() {
             <CardHeader>
               <CardTitle>Email Configuration</CardTitle>
               <CardDescription>
-                Use your own Resend API key to send emails from your domain. If not configured, the system default will be used.
-                Login and registration emails always use the system key.
+                Your Resend API key is used to send evaluation invitations, reminders, and notifications.
+                Login and registration emails use the system key.
               </CardDescription>
             </CardHeader>
             {loading ? (

@@ -45,11 +45,18 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (appUser?.role === "ADMIN" && !impersonation) {
     const company = await prisma.company.findUnique({
       where: { id: appUser.companyId },
-      select: { encryptionSetupAt: true },
+      select: { encryptionSetupAt: true, settings: true },
     });
 
     if (company && !company.encryptionSetupAt) {
       redirect("/setup-encryption");
+    }
+
+    if (company && company.encryptionSetupAt) {
+      const settings = company.settings as { resend?: { apiKey?: string } } | null;
+      if (!settings?.resend?.apiKey) {
+        redirect("/setup-resend");
+      }
     }
   }
 

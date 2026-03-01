@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { signIn } from "next-auth/react";
 import Link from "next/link";
 import { ArrowRight, Loader2, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { TurnstileWidget } from "@/components/ui/turnstile-widget";
 
 const COOLDOWN_SECONDS = 60;
 
@@ -15,6 +15,8 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [cooldown, setCooldown] = useState(0);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileResetKey, setTurnstileResetKey] = useState(0);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -22,7 +24,7 @@ export default function LoginPage() {
     return () => clearTimeout(timer);
   }, [cooldown]);
 
-  const isDisabled = isLoading || cooldown > 0;
+  const isDisabled = isLoading || cooldown > 0 || !turnstileToken;
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
@@ -32,30 +34,36 @@ export default function LoginPage() {
       setError("");
 
       try {
-        const result = await signIn("email", {
-          email,
-          redirect: false,
-          callbackUrl: "/overview",
+        const res = await fetch("/api/auth/verify-and-signin", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, turnstileToken }),
         });
 
-        if (result?.error) {
-          if (result.error.includes("429") || result.status === 429) {
+        const data = await res.json();
+
+        if (!res.ok) {
+          if (res.status === 429) {
             setError("Too many attempts. Please wait before trying again.");
             setCooldown(COOLDOWN_SECONDS);
           } else {
-            setError("No account found with this email. Please check or register.");
+            setError(data.error || "No account found with this email. Please check or register.");
           }
+          setTurnstileResetKey((k) => k + 1);
+          setTurnstileToken(null);
         } else {
           setCooldown(COOLDOWN_SECONDS);
           window.location.href = "/verify";
         }
       } catch {
         setError("Something went wrong. Please try again.");
+        setTurnstileResetKey((k) => k + 1);
+        setTurnstileToken(null);
       } finally {
         setIsLoading(false);
       }
     },
-    [email, isDisabled]
+    [email, turnstileToken, isDisabled]
   );
 
 
@@ -89,6 +97,13 @@ export default function LoginPage() {
             onChange={(e) => setEmail(e.target.value)}
             required
             autoFocus
+          />
+
+          <TurnstileWidget
+            onVerify={setTurnstileToken}
+            onError={() => setTurnstileToken(null)}
+            onExpire={() => setTurnstileToken(null)}
+            resetKey={turnstileResetKey}
           />
 
           {error && (

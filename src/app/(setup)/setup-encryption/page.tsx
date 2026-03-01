@@ -388,8 +388,8 @@ export default function SetupEncryptionPage() {
               </div>
             </div>
 
-            <Button onClick={() => router.push("/overview")} className="w-full">
-              Go to Dashboard
+            <Button onClick={() => router.push("/setup-resend")} className="w-full">
+              Continue Setup
               <ArrowRight size={16} strokeWidth={1.5} className="ml-2" />
             </Button>
           </div>

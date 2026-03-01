@@ -7,6 +7,7 @@ import { ArrowRight, Building2, Loader2, User, Mail, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { TurnstileWidget } from "@/components/ui/turnstile-widget";
 
 const COOLDOWN_SECONDS = 60;
 
@@ -17,6 +18,8 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [cooldown, setCooldown] = useState(0);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileResetKey, setTurnstileResetKey] = useState(0);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -24,7 +27,7 @@ export default function RegisterPage() {
     return () => clearTimeout(timer);
   }, [cooldown]);
 
-  const isDisabled = isLoading || cooldown > 0;
+  const isDisabled = isLoading || cooldown > 0 || !turnstileToken;
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
@@ -37,7 +40,7 @@ export default function RegisterPage() {
         const res = await fetch("/api/auth/register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ companyName, name, email }),
+          body: JSON.stringify({ companyName, name, email, turnstileToken }),
         });
 
         const data = await res.json();
@@ -49,6 +52,8 @@ export default function RegisterPage() {
           } else {
             setError(data.error || "Registration failed. Please try again.");
           }
+          setTurnstileResetKey((k) => k + 1);
+          setTurnstileToken(null);
           return;
         }
 
@@ -68,11 +73,13 @@ export default function RegisterPage() {
         }
       } catch {
         setError("Something went wrong. Please try again.");
+        setTurnstileResetKey((k) => k + 1);
+        setTurnstileToken(null);
       } finally {
         setIsLoading(false);
       }
     },
-    [companyName, name, email, isDisabled]
+    [companyName, name, email, turnstileToken, isDisabled]
   );
 
 
@@ -151,6 +158,13 @@ export default function RegisterPage() {
               className="absolute left-4 top-[34px] text-gray-400 pointer-events-none"
             />
           </div>
+
+          <TurnstileWidget
+            onVerify={setTurnstileToken}
+            onError={() => setTurnstileToken(null)}
+            onExpire={() => setTurnstileToken(null)}
+            resetKey={turnstileResetKey}
+          />
 
           {error && (
             <div className="flex items-center gap-2 rounded-xl bg-red-50 border border-red-100 px-4 py-3">
