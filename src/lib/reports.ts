@@ -79,14 +79,22 @@ export async function getDecryptedResponsesForSubject(
     },
   });
 
-  return responses.map((r) => ({
-    reviewerId: r.reviewerId,
-    subjectId: r.subjectId,
-    relationship: r.assignment.relationship,
-    templateId: r.assignment.templateId,
-    answers: decryptResponse(r.answersEncrypted, r.answersIv, r.answersTag, dataKey),
-    submittedAt: r.submittedAt,
-  }));
+  const results: DecryptedResponse[] = [];
+  for (const r of responses) {
+    try {
+      results.push({
+        reviewerId: r.reviewerId,
+        subjectId: r.subjectId,
+        relationship: r.assignment.relationship,
+        templateId: r.assignment.templateId,
+        answers: decryptResponse(r.answersEncrypted, r.answersIv, r.answersTag, dataKey),
+        submittedAt: r.submittedAt,
+      });
+    } catch {
+      // Skip responses that can't be decrypted (e.g. encrypted with a previous key)
+    }
+  }
+  return results;
 }
 
 // ─── Aggregation Helpers ───

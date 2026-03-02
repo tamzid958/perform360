@@ -48,6 +48,18 @@ export async function GET(
     );
   }
 
+  // Check if encryption is still set up (may have been reset by superadmin)
+  const company = await prisma.company.findUnique({
+    where: { id: companyId },
+    select: { encryptionSetupAt: true },
+  });
+  if (!company?.encryptionSetupAt) {
+    return NextResponse.json<ApiResponse<never>>(
+      { success: false, error: "Encryption key was changed. Data from the previous encryption key cannot be viewed.", code: "ENCRYPTION_RESET" },
+      { status: 403 }
+    );
+  }
+
   const dataKey = getDataKeyFromRequest(request);
   if (!dataKey) {
     return NextResponse.json<ApiResponse<never>>(

@@ -192,7 +192,7 @@ export default function CycleDetailPage() {
   const [closing, setClosing] = useState(false);
   const [showReopenDialog, setShowReopenDialog] = useState(false);
   const [reopening, setReopening] = useState(false);
-  const { locked, handleApiResponse, handleUnlocked } = useEncryptionUnlock();
+  const { locked, reset, handleApiResponse, handleUnlocked } = useEncryptionUnlock();
   const { addToast } = useToast();
 
   const fetchCycle = useCallback(async () => {
@@ -902,9 +902,10 @@ export default function CycleDetailPage() {
 
         {/* ─── Reports Tab ─── */}
         <TabsContent value="reports">
-          {locked ? (
+          {locked || reset ? (
             <UnlockGate
               locked={locked}
+              reset={reset}
               onUnlocked={() => {
                 handleUnlocked();
                 setCycleReport(null);

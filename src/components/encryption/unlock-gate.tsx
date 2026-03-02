@@ -11,6 +11,8 @@ interface UnlockGateProps {
   children: ReactNode;
   /** Whether the parent detected an ENCRYPTION_LOCKED error */
   locked: boolean;
+  /** Whether encryption was reset (key changed) — data is permanently inaccessible */
+  reset?: boolean;
   /** Called after a successful unlock so the parent can retry fetching data */
   onUnlocked: () => void;
 }
@@ -20,12 +22,32 @@ interface UnlockGateProps {
  * When `locked` is true, shows the passphrase entry form.
  * On successful unlock, calls `onUnlocked()` so the parent can retry.
  */
-export function UnlockGate({ children, locked, onUnlocked }: UnlockGateProps) {
+export function UnlockGate({ children, locked, reset, onUnlocked }: UnlockGateProps) {
   const [passphrase, setPassphrase] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  if (!locked) return <>{children}</>;
+  if (!locked && !reset) return <>{children}</>;
+
+  if (reset) {
+    return (
+      <Card className="max-w-md mx-auto mt-8">
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-amber-50">
+              <Shield size={20} strokeWidth={1.5} className="text-amber-500" />
+            </div>
+            <div>
+              <CardTitle>Encryption Key Changed</CardTitle>
+              <CardDescription>
+                The encryption key for this company was reset. Data encrypted with the previous key can no longer be viewed.
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+      </Card>
+    );
+  }
 
   async function handleUnlock(e: React.FormEvent) {
     e.preventDefault();
@@ -111,13 +133,19 @@ export function UnlockGate({ children, locked, onUnlocked }: UnlockGateProps) {
  */
 export function useEncryptionUnlock() {
   const [locked, setLocked] = useState(false);
+  const [reset, setReset] = useState(false);
 
   const handleApiResponse = useCallback((json: { success: boolean; code?: string }) => {
+    if (!json.success && json.code === "ENCRYPTION_RESET") {
+      setReset(true);
+      return true;
+    }
     if (!json.success && json.code === "ENCRYPTION_LOCKED") {
       setLocked(true);
       return true;
     }
     setLocked(false);
+    setReset(false);
     return false;
   }, []);
 
@@ -125,5 +153,5 @@ export function useEncryptionUnlock() {
     setLocked(false);
   }, []);
 
-  return { locked, setLocked, handleApiResponse, handleUnlocked };
+  return { locked, reset, setLocked, handleApiResponse, handleUnlocked };
 }

@@ -26,7 +26,7 @@ export default function IndividualReportPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedTeam, setSelectedTeam] = useState("all");
-  const { locked, handleApiResponse, handleUnlocked } = useEncryptionUnlock();
+  const { locked, reset, handleApiResponse, handleUnlocked } = useEncryptionUnlock();
 
   const fetchReport = useCallback(async () => {
     setLoading(true);
@@ -57,7 +57,7 @@ export default function IndividualReportPage() {
 
   if (loading) return <ReportSkeleton />;
 
-  if (locked) {
+  if (locked || reset) {
     return (
       <div>
         <div className="mb-6">
@@ -69,7 +69,7 @@ export default function IndividualReportPage() {
             Back to Cycle
           </Link>
         </div>
-        <UnlockGate locked={locked} onUnlocked={() => { handleUnlocked(); fetchReport(); }}>
+        <UnlockGate locked={locked} reset={reset} onUnlocked={() => { handleUnlocked(); fetchReport(); }}>
           <div />
         </UnlockGate>
       </div>
