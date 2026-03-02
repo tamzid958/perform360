@@ -1,0 +1,27 @@
+# Performs360 — robots.txt
+# https://performs360.com
+
+User-agent: *
+Allow: /
+Allow: /guide
+Allow: /pricing
+Allow: /privacy
+Allow: /security-policy
+Allow: /terms
+
+# Block authenticated/internal routes
+Disallow: /overview
+Disallow: /cycles
+Disallow: /people
+Disallow: /teams
+Disallow: /templates
+Disallow: /settings
+Disallow: /profile
+Disallow: /superadmin
+Disallow: /select-company
+Disallow: /api/
+Disallow: /evaluate/
+Disallow: /review/
+
+# Sitemap
+Sitemap: https://performs360.com/sitemap.xml

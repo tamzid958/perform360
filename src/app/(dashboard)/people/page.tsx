@@ -367,10 +367,10 @@ export default function PeoplePage() {
               </Select>
             </div>
             <div className="flex gap-3 pt-2">
-              <Button type="submit" disabled={inviteLoading}>
+              <Button type="button" variant="secondary" onClick={() => setShowInviteDialog(false)}>Cancel</Button>
+              <Button type="submit" className="flex-1" disabled={inviteLoading}>
                 {inviteLoading ? "Sending..." : "Send Invitation"}
               </Button>
-              <Button type="button" variant="ghost" onClick={() => setShowInviteDialog(false)}>Cancel</Button>
             </div>
           </form>
         </DialogContent>
@@ -407,8 +407,8 @@ export default function PeoplePage() {
               </Select>
             </div>
             <div className="flex gap-3 pt-2">
-              <Button type="submit">Update Role</Button>
-              <Button type="button" variant="ghost" onClick={() => setShowRoleDialog(false)}>Cancel</Button>
+              <Button type="button" variant="secondary" onClick={() => setShowRoleDialog(false)}>Cancel</Button>
+              <Button type="submit" className="flex-1">Update Role</Button>
             </div>
           </form>
         </DialogContent>

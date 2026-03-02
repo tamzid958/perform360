@@ -2,7 +2,9 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
 export const metadata = {
-  title: "Security Policy — Performs360",
+  title: "Security Policy",
+  description:
+    "Performs360 security architecture: AES-256-GCM encryption, zero-access design, passwordless authentication, and responsible disclosure program.",
 };
 
 export default function SecurityPolicyPage() {

@@ -186,7 +186,7 @@ function StepIndicator({
                   isDone
                     ? "bg-green-500 text-white"
                     : isActive
-                      ? "bg-[#0071e3] text-white"
+                      ? "bg-brand-500 text-white"
                       : "bg-gray-200 text-gray-500"
                 }`}
               >
@@ -357,7 +357,7 @@ export default function TeamsImportPage() {
           <div
             className={`border-2 border-dashed rounded-xl p-12 text-center transition-all cursor-pointer ${
               isDragging
-                ? "border-[#0071e3] bg-blue-50/50"
+                ? "border-brand-500 bg-brand-50/50"
                 : "border-gray-200 hover:border-gray-300"
             }`}
             onClick={() => fileInputRef.current?.click()}
@@ -411,7 +411,7 @@ export default function TeamsImportPage() {
                   e.stopPropagation();
                   downloadSampleCsv();
                 }}
-                className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[#0071e3] hover:text-[#0058b9] transition-colors"
+                className="inline-flex items-center gap-1.5 text-[13px] font-medium text-brand-500 hover:text-brand-600 transition-colors"
               >
                 <Download size={14} strokeWidth={1.5} />
                 Download sample

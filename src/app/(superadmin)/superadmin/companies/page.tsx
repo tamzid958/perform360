@@ -160,7 +160,7 @@ export default function CompaniesPage() {
             setSearchQuery(e.target.value);
             setPage(1);
           }}
-          className="w-full h-10 pl-9 pr-4 rounded-xl bg-white border border-gray-200 text-[14px] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0071e3]/20 focus:border-[#0071e3] transition-all"
+          className="w-full h-10 pl-9 pr-4 rounded-xl bg-white border border-gray-200 text-[14px] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500 transition-all"
         />
       </div>
 
@@ -234,7 +234,7 @@ export default function CompaniesPage() {
                           />
                         </div>
                         <div>
-                          <p className="text-[14px] font-medium text-gray-900 group-hover:text-[#0071e3] transition-colors">
+                          <p className="text-[14px] font-medium text-gray-900 group-hover:text-brand-500 transition-colors">
                             {company.name}
                           </p>
                           <p className="text-[12px] text-gray-500">

@@ -150,7 +150,7 @@ export function Combobox({
             aria-controls={listboxId}
             className={cn(
               "flex h-11 w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-4 text-[15px]",
-              "focus:outline-none focus:ring-2 focus:ring-[#0071e3]/20 focus:border-[#0071e3]",
+              "focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500",
               "transition-all duration-200",
               !value && "text-gray-400"
             )}
@@ -259,7 +259,7 @@ export function Combobox({
                       <Check
                         size={14}
                         strokeWidth={2}
-                        className="shrink-0 text-[#0071e3]"
+                        className="shrink-0 text-brand-500"
                       />
                     )}
                   </div>

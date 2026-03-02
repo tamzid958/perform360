@@ -17,8 +17,8 @@ export function HeroSection() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
         {/* Badge */}
         <div className="animate-fade-in-up">
-          <span className="inline-flex items-center gap-2 rounded-full bg-[#eff6ff] text-[#0071e3] text-[13px] font-medium px-4 py-1.5 border border-[#0071e3]/10">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#0071e3] animate-pulse" />
+          <span className="inline-flex items-center gap-2 rounded-full bg-brand-50 text-brand-500 text-[13px] font-medium px-4 py-1.5 border border-brand-500/10">
+            <span className="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse" />
             360-Degree Performance Evaluation
           </span>
         </div>
@@ -32,9 +32,9 @@ export function HeroSection() {
 
         {/* Subtitle */}
         <p className="text-[16px] sm:text-[18px] text-gray-500 text-center max-w-2xl mx-auto mt-6 leading-relaxed animate-fade-in-up delay-200">
-          Run 360-degree evaluation cycles with feedback from managers, peers,
-          and direct reports. End-to-end encrypted, with one-click export of
-          your company data anytime. No vendor lock-in.
+          Run encrypted 360-degree performance reviews with multi-rater feedback
+          from managers, peers, and direct reports. Own your data with one-click
+          export. Free forever — no credit card, no vendor lock-in.
         </p>
 
         {/* CTA Buttons */}
@@ -47,15 +47,19 @@ export function HeroSection() {
           </Button>
         </div>
 
+        <p className="text-[13px] text-gray-400 mt-4 animate-fade-in-up delay-300">
+          Free forever — no credit card required
+        </p>
+
         {/* Dashboard Preview */}
         <div className="max-w-5xl mx-auto mt-20 relative animate-fade-in-up delay-500">
           {/* Glow behind image */}
-          <div className="absolute -inset-4 bg-gradient-to-b from-[#0071e3]/10 via-[#0071e3]/5 to-transparent rounded-3xl blur-2xl -z-10" />
+          <div className="absolute -inset-4 bg-gradient-to-b from-brand-500/10 via-brand-500/5 to-transparent rounded-3xl blur-2xl -z-10" />
 
           <div className="rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.12)] border border-gray-200/60 overflow-hidden bg-white ring-1 ring-black/[0.03]">
             <Image
               src="/image.png"
-              alt="Performs360 Dashboard"
+              alt="Performs360 360-degree performance review dashboard showing evaluation cycles, team management, and encrypted feedback reports"
               width={1200}
               height={750}
               className="w-full h-auto"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { Users } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/layout/page-header";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/toast";
@@ -38,7 +39,9 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [name, setName] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { addToast } = useToast();
 
   const fetchProfile = useCallback(async () => {
@@ -83,6 +86,32 @@ export default function ProfilePage() {
       addToast(err instanceof Error ? err.message : "Failed to save profile", "error");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleAvatarUpload = async (file: File) => {
+    if (file.size > 1024 * 1024) {
+      addToast("File must be under 1 MB", "error");
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      addToast("File must be an image", "error");
+      return;
+    }
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("avatar", file);
+      const res = await fetch("/api/profile/avatar", { method: "POST", body: formData });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || "Upload failed");
+      setProfile((prev) => (prev ? { ...prev, avatar: json.data.avatar } : prev));
+      addToast("Photo uploaded", "success");
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : "Failed to upload photo", "error");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -159,10 +188,29 @@ export default function ProfilePage() {
                     <label className="block text-[13px] font-medium text-gray-700">Avatar</label>
                     <div className="flex items-center gap-4">
                       <Avatar src={profile.avatar} name={name || profile.name} size="lg" />
-                      <Button variant="secondary" type="button" size="sm">
-                        Upload Photo
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/png,image/jpeg,image/webp"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleAvatarUpload(file);
+                          }}
+                        />
+                        <Button
+                          variant="secondary"
+                          type="button"
+                          size="sm"
+                          disabled={uploading}
+                          onClick={() => fileInputRef.current?.click()}
+                        >
+                          {uploading ? "Uploading..." : "Upload Photo"}
+                        </Button>
+                      </div>
                     </div>
+                    <p className="text-[12px] text-gray-400">PNG, JPEG, or WebP. Max 1 MB.</p>
                   </div>
                 </div>
 
@@ -198,7 +246,7 @@ export default function ProfilePage() {
                         <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center">
                           <Users size={16} strokeWidth={1.5} className="text-gray-500" />
                         </div>
-                        <p className="text-[15px] font-medium text-gray-900">{team.name}</p>
+                        <p className="text-body font-medium text-gray-900">{team.name}</p>
                       </div>
                       <Badge variant="outline">
                         {TEAM_ROLE_LABELS[team.role] ?? team.role}
@@ -208,10 +256,12 @@ export default function ProfilePage() {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8">
-                <Users size={32} strokeWidth={1.5} className="text-gray-300 mx-auto mb-3" />
-                <p className="text-[15px] text-gray-500">You are not a member of any teams yet.</p>
-              </div>
+              <EmptyState
+                icon={Users}
+                title="No teams yet"
+                description="You are not a member of any teams yet."
+                compact
+              />
             )}
           </Card>
         </TabsContent>

@@ -34,7 +34,7 @@ export default function VerifyPage() {
                 className="text-brand-500"
               />
             </div>
-            <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#34c759] flex items-center justify-center ring-4 ring-white">
+            <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-success flex items-center justify-center ring-4 ring-white">
               <Inbox size={10} strokeWidth={2.5} className="text-white" />
             </div>
           </div>

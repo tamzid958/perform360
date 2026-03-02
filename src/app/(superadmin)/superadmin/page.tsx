@@ -243,7 +243,7 @@ export default async function SuperAdminDashboard() {
             </div>
             <Link
               href="/superadmin/companies"
-              className="text-[14px] font-medium text-[#0071e3] hover:text-[#0058b9] transition-colors"
+              className="text-[14px] font-medium text-brand-500 hover:text-brand-600 transition-colors"
             >
               View all
             </Link>
@@ -289,7 +289,7 @@ export default async function SuperAdminDashboard() {
                           {company.name[0]}
                         </div>
                         <div>
-                          <p className="text-[14px] font-medium text-gray-900 group-hover:text-[#0071e3] transition-colors">
+                          <p className="text-[14px] font-medium text-gray-900 group-hover:text-brand-500 transition-colors">
                             {company.name}
                           </p>
                           <p className="text-[12px] text-gray-500">{company.slug}</p>

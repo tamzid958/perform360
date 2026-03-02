@@ -7,7 +7,8 @@ const steps = [
     title: "Set Up Your Teams",
     description:
       "Create your team structure, add members, and define reporting relationships. Choose or build an evaluation template.",
-    color: "#0071e3",
+    colorClass: "text-brand-500",
+    bgClass: "bg-brand-50",
   },
   {
     number: "02",
@@ -15,7 +16,8 @@ const steps = [
     title: "Launch an Evaluation Cycle",
     description:
       "Activate a cycle and every reviewer receives a unique, secure link via email. No accounts or passwords needed.",
-    color: "#34c759",
+    colorClass: "text-green-500",
+    bgClass: "bg-green-50",
   },
   {
     number: "03",
@@ -23,7 +25,8 @@ const steps = [
     title: "Get Actionable Insights",
     description:
       "View encrypted reports with radar charts, score breakdowns, and anonymized feedback grouped by relationship type.",
-    color: "#af52de",
+    colorClass: "text-purple-500",
+    bgClass: "bg-purple-50",
   },
 ];
 
@@ -32,7 +35,7 @@ export function HowItWorksSection() {
     <section id="how-it-works" className="bg-white py-16 sm:py-28 px-4 sm:px-6">
       <div className="max-w-5xl mx-auto">
         <div className="text-center">
-          <span className="inline-flex items-center rounded-full bg-[#eff6ff] text-[#0071e3] text-[13px] font-medium px-4 py-1.5 border border-[#0071e3]/10">
+          <span className="inline-flex items-center rounded-full bg-brand-50 text-brand-500 text-[13px] font-medium px-4 py-1.5 border border-brand-500/10">
             How It Works
           </span>
           <h2 className="text-display-small text-gray-900 mt-6 text-center">
@@ -42,7 +45,7 @@ export function HowItWorksSection() {
 
         <div className="mt-20 relative">
           {/* Connecting line (desktop) */}
-          <div className="hidden md:block absolute top-14 left-[calc(16.67%+24px)] right-[calc(16.67%+24px)] h-px bg-gradient-to-r from-[#0071e3]/20 via-[#34c759]/20 to-[#af52de]/20" />
+          <div className="hidden md:block absolute top-14 left-[calc(16.67%+24px)] right-[calc(16.67%+24px)] h-px bg-gradient-to-r from-brand-500/20 via-green-500/20 to-purple-500/20" />
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
             {steps.map((step) => {
@@ -52,21 +55,19 @@ export function HowItWorksSection() {
                   {/* Step circle */}
                   <div className="relative inline-flex">
                     <div
-                      className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto relative z-10"
-                      style={{ backgroundColor: `${step.color}10` }}
+                      className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto relative z-10 ${step.bgClass}`}
                     >
                       <Icon
                         size={24}
                         strokeWidth={1.5}
-                        style={{ color: step.color }}
+                        className={step.colorClass}
                       />
                     </div>
                   </div>
 
                   <div className="mt-2">
                     <span
-                      className="text-[13px] font-bold tracking-wider"
-                      style={{ color: step.color }}
+                      className={`text-[13px] font-bold tracking-wider ${step.colorClass}`}
                     >
                       STEP {step.number}
                     </span>

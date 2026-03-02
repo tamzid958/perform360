@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/layout/page-header";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/toast";
+import { Toggle } from "@/components/ui/toggle";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import Image from "next/image";
 import Link from "next/link";
@@ -38,27 +39,6 @@ const NOTIFICATION_ITEMS: { key: keyof NotificationSettings; label: string; desc
   { key: "evaluationInvitations", label: "Evaluation invitations", description: "Notify reviewers when assigned a new evaluation" },
   { key: "cycleCompletion", label: "Cycle completion", description: "Notify admins when a cycle reaches 100% completion" },
 ];
-
-function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-6 w-10 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ${
-        checked ? "bg-brand-500" : "bg-gray-200"
-      }`}
-    >
-      <span
-        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform duration-200 ${
-          checked ? "translate-x-4" : "translate-x-0"
-        }`}
-        style={{ marginTop: "2px", marginLeft: "2px" }}
-      />
-    </button>
-  );
-}
 
 export default function SettingsPage() {
   const [company, setCompany] = useState<Company | null>(null);
@@ -450,8 +430,7 @@ export default function SettingsPage() {
             <div className="pt-2">
               <Button
                 type="button"
-                variant="secondary"
-                className="border-red-300 bg-red-100 text-red-700 hover:bg-red-200"
+                variant="danger"
                 onClick={() => {
                   setShowDestroyDialog(true);
                   setDestroyPassphrase("");

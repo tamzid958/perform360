@@ -60,7 +60,7 @@ export function TemplatePreview({ name, description, sections }: TemplatePreview
       {sections.map((section, sIndex) => (
         <div key={section.id}>
           <div className="flex items-center gap-2 mb-3">
-            <span className="flex items-center justify-center w-6 h-6 rounded-md bg-[#0071e3]/10 text-[#0071e3] text-[11px] font-semibold">
+            <span className="flex items-center justify-center w-6 h-6 rounded-md bg-brand-500/10 text-brand-500 text-[11px] font-semibold">
               {sIndex + 1}
             </span>
             <h4 className="text-[15px] font-semibold text-gray-800">{section.title || "Untitled Section"}</h4>

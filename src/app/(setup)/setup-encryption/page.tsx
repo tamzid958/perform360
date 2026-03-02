@@ -32,9 +32,9 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
             <div
               className={`w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-medium transition-all duration-300 ${
                 isCompleted
-                  ? "bg-[#34c759] text-white"
+                  ? "bg-success text-white"
                   : isActive
-                    ? "bg-[#0071e3] text-white"
+                    ? "bg-brand-500 text-white"
                     : "bg-gray-200 text-gray-500"
               }`}
             >
@@ -47,7 +47,7 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
             {i < STEPS.length - 1 && (
               <div
                 className={`w-8 h-[2px] transition-all duration-300 ${
-                  isCompleted ? "bg-[#34c759]" : "bg-gray-200"
+                  isCompleted ? "bg-success" : "bg-gray-200"
                 }`}
               />
             )}
@@ -151,7 +151,7 @@ export default function SetupEncryptionPage() {
   return (
     <div>
       <div className="text-center mb-6">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-[#0071e3] to-[#0058b9] mb-3">
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-600 mb-3">
           <span className="text-white text-[20px] font-bold">P</span>
         </div>
         <p className="text-[13px] text-gray-500">Performs360</p>
@@ -344,7 +344,7 @@ export default function SetupEncryptionPage() {
                 type="checkbox"
                 checked={acknowledged}
                 onChange={(e) => setAcknowledged(e.target.checked)}
-                className="mt-0.5 w-4 h-4 rounded border-gray-300 text-[#0071e3] focus:ring-[#0071e3]/20"
+                className="mt-0.5 w-4 h-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500/40"
               />
               <span className="text-[13px] text-gray-700 leading-relaxed">
                 I have saved these recovery codes in a secure location. I understand that if I lose

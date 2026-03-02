@@ -65,7 +65,7 @@ const ACTIVITY_ICONS: Record<ActivityItem["type"], typeof CheckCircle2> = {
 
 const ACTIVITY_COLORS: Record<ActivityItem["type"], string> = {
   submission: "text-green-500 bg-green-50",
-  cycle_status: "text-blue-500 bg-blue-50",
+  cycle_status: "text-brand-500 bg-brand-50",
   cycle_created: "text-indigo-500 bg-indigo-50",
   team_created: "text-purple-500 bg-purple-50",
   user_invited: "text-amber-500 bg-amber-50",
@@ -263,7 +263,7 @@ export default function DashboardPage() {
       label: "Active Cycles",
       value: stats?.activeCycles ?? 0,
       icon: RefreshCcw,
-      accent: "bg-blue-50 text-blue-500",
+      accent: "bg-brand-50 text-brand-500",
     },
     {
       label: "Total Teams",
@@ -453,7 +453,7 @@ export default function DashboardPage() {
             </Link>
             <Link href="/templates/new" className="group">
               <Card padding="sm" className="flex items-center gap-3 hover:shadow-md transition-all duration-200">
-                <div className="p-2 rounded-lg bg-blue-50 text-blue-500">
+                <div className="p-2 rounded-lg bg-brand-50 text-brand-500">
                   <ClipboardCheck size={16} strokeWidth={1.5} />
                 </div>
                 <div className="flex-1 min-w-0">

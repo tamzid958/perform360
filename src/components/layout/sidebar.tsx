@@ -4,30 +4,14 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import {
-  LayoutDashboard,
-  RefreshCcw,
-  Users,
-  FileText,
-  UserCircle,
-  Settings,
   ChevronLeft,
   LogOut,
+  type LucideIcon,
 } from "lucide-react";
 import { useState } from "react";
 import { signOut } from "next-auth/react";
 import { usePermissions } from "@/hooks/use-permissions";
-
-const navigation = [
-  { name: "Dashboard", href: "/overview", icon: LayoutDashboard },
-  { name: "Cycles", href: "/cycles", icon: RefreshCcw },
-  { name: "Teams", href: "/teams", icon: Users },
-  { name: "Templates", href: "/templates", icon: FileText },
-  { name: "People", href: "/people", icon: UserCircle },
-];
-
-const bottomNav = [
-  { name: "Settings", href: "/settings", icon: Settings },
-];
+import { navigation, bottomNav } from "./nav-items";
 
 interface SidebarProps {
   companyName?: string;
@@ -50,7 +34,7 @@ export function Sidebar({ companyName }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const { canManageSettings } = usePermissions();
 
-  function NavLink({ name, href, icon: Icon }: { name: string; href: string; icon: typeof LayoutDashboard }) {
+  function NavLink({ name, href, icon: Icon }: { name: string; href: string; icon: LucideIcon }) {
     const isActive = pathname === href || pathname.startsWith(href + "/");
     const link = (
       <Link

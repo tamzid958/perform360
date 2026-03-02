@@ -138,7 +138,6 @@
     font-size: 12px;
     font-weight: 400;
     line-height: 1.35;
-    color: var(--gray-500);
   }
 
   .text-display {
@@ -162,9 +161,6 @@
     background-clip: text;
   }
 
-  .transition-apple {
-    transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
-  }
 }
 
 @media (max-width: 768px) {

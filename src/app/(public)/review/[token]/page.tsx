@@ -170,7 +170,7 @@ export default function ReviewOTPPage({ params: paramsPromise }: { params: Promi
   // Checking existing session
   if (isCheckingSession) {
     return (
-      <div className="min-h-screen bg-[#f5f5f7] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
         <div className="flex flex-col items-center gap-3">
           <Loader2 size={24} className="text-brand-500 animate-spin" />
           <p className="text-[14px] text-gray-500">Checking session...</p>
@@ -182,7 +182,7 @@ export default function ReviewOTPPage({ params: paramsPromise }: { params: Promi
   // Token validation error
   if (tokenError) {
     return (
-      <div className="min-h-screen bg-[#f5f5f7] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
         <div className="w-full max-w-[420px] space-y-8">
           <div className="text-center">
             <div className="w-16 h-16 rounded-2xl bg-red-50 flex items-center justify-center mx-auto mb-6">
@@ -199,7 +199,7 @@ export default function ReviewOTPPage({ params: paramsPromise }: { params: Promi
   // Token still validating
   if (isValidating) {
     return (
-      <div className="min-h-screen bg-[#f5f5f7] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
         <div className="flex flex-col items-center gap-3">
           <Loader2 size={24} className="text-brand-500 animate-spin" />
           <p className="text-[14px] text-gray-500">Validating review link...</p>
@@ -209,7 +209,7 @@ export default function ReviewOTPPage({ params: paramsPromise }: { params: Promi
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f5f7] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
       {RECAPTCHA_SITE_KEY && (
         <Script
           src={`https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`}

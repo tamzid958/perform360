@@ -63,12 +63,12 @@ function DatePicker({
             className={cn(
               "flex w-full items-center h-11 px-4 rounded-xl border bg-white text-[15px]",
               "transition-all duration-200 text-left",
-              "focus:outline-none focus:ring-2 focus:ring-[#0071e3]/20 focus:border-[#0071e3]",
+              "focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500",
               "disabled:opacity-50 disabled:pointer-events-none",
               error
                 ? "border-red-300 focus:ring-red-500/20 focus:border-red-500"
                 : "border-gray-200",
-              open && !error && "ring-2 ring-[#0071e3]/20 border-[#0071e3]"
+              open && !error && "ring-2 ring-brand-500/40 border-brand-500"
             )}
           >
             <CalendarIcon

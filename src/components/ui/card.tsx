@@ -46,3 +46,11 @@ export function CardDescription({ className, children, ...props }: React.HTMLAtt
     </p>
   );
 }
+
+export function CardFooter({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div className={cn("mt-6 pt-4 border-t border-gray-100 dark:border-gray-800 flex items-center gap-3", className)} {...props}>
+      {children}
+    </div>
+  );
+}

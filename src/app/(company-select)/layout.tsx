@@ -12,7 +12,7 @@ export default async function CompanySelectLayout({
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f5f7] flex flex-col items-center justify-center p-6">
+    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-6">
       <div className="w-full max-w-lg">{children}</div>
     </div>
   );

@@ -10,60 +10,60 @@ import {
 const features = [
   {
     icon: RefreshCcw,
-    title: "360-Degree Feedback",
+    title: "Complete Performance Picture",
     description:
-      "Collect feedback from managers, peers, and direct reports in one unified evaluation cycle.",
-    color: "#0071e3",
-    bgColor: "#eff6ff",
+      "See how every team member is perceived across the organization. Collect 360-degree feedback from managers, peers, and direct reports in one unified cycle.",
+    iconClass: "text-brand-500",
+    bgClass: "bg-brand-50",
   },
   {
     icon: Users,
-    title: "Smart Assignments",
+    title: "Set It and Forget It",
     description:
-      "Auto-generate evaluation assignments based on your team structure and reporting relationships.",
-    color: "#34c759",
-    bgColor: "#f0fdf4",
+      "Stop mapping reviewers in spreadsheets. Auto-generate evaluation assignments from your org chart and reporting relationships.",
+    iconClass: "text-green-500",
+    bgClass: "bg-green-50",
   },
   {
     icon: FileText,
-    title: "Template Builder",
+    title: "Your Questions, Your Way",
     description:
-      "Build custom evaluation forms with rating scales, open text, and multiple choice questions.",
-    color: "#ff9f0a",
-    bgColor: "#fffbeb",
+      "Build custom evaluation templates with rating scales, open-text questions, and multiple choice. Tailor every cycle to what matters most.",
+    iconClass: "text-amber-500",
+    bgClass: "bg-amber-50",
   },
   {
     icon: Link2,
-    title: "Link-Based Submissions",
+    title: "Zero Friction for Reviewers",
     description:
-      "Reviewers submit via unique tokenized links with OTP verification. No accounts needed.",
-    color: "#af52de",
-    bgColor: "#faf5ff",
+      "Reviewers click a secure link, verify with a one-time code, and start. No accounts, no passwords, no onboarding.",
+    iconClass: "text-purple-500",
+    bgClass: "bg-purple-50",
   },
   {
     icon: Shield,
-    title: "End-to-End Encryption",
+    title: "Truly Private Feedback",
     description:
-      "Evaluation data encrypted with your company's key. Even the platform operator can't read it.",
-    color: "#ff3b30",
-    bgColor: "#fef2f2",
+      "Evaluation data is encrypted with your company's own key using AES-256-GCM. Not even Performs360 can read your data.",
+    iconClass: "text-red-500",
+    bgClass: "bg-red-50",
   },
   {
     icon: BarChart3,
-    title: "Insightful Reports",
+    title: "Actionable Insights, Instantly",
     description:
-      "Radar charts, score breakdowns, and anonymized feedback summaries at a glance.",
-    color: "#5ac8fa",
-    bgColor: "#eff6ff",
+      "Radar charts, score breakdowns, and anonymized feedback summaries grouped by relationship type. Export as PDF anytime.",
+    iconClass: "text-sky-500",
+    bgClass: "bg-sky-50",
   },
 ];
 
 export function FeaturesSection() {
   return (
-    <section id="features" className="bg-[#fafafa] py-16 sm:py-28 px-4 sm:px-6">
+    <section id="features" className="bg-gray-50 py-16 sm:py-28 px-4 sm:px-6">
       <div className="max-w-6xl mx-auto">
         <div className="text-center">
-          <span className="inline-flex items-center rounded-full bg-[#eff6ff] text-[#0071e3] text-[13px] font-medium px-4 py-1.5 border border-[#0071e3]/10">
+          <span className="inline-flex items-center rounded-full bg-brand-50 text-brand-500 text-[13px] font-medium px-4 py-1.5 border border-brand-500/10">
             Features
           </span>
           <h2 className="text-display-small text-gray-900 mt-6 text-center">
@@ -72,7 +72,8 @@ export function FeaturesSection() {
             meaningful evaluations
           </h2>
           <p className="text-[16px] sm:text-[18px] text-gray-500 text-center mt-4 max-w-lg mx-auto">
-            A complete platform for running 360-degree performance reviews.
+            A free, end-to-end encrypted platform for running 360-degree
+            performance reviews from start to finish.
           </p>
         </div>
 
@@ -85,13 +86,12 @@ export function FeaturesSection() {
                 className="group p-8 rounded-2xl bg-white border border-gray-100 hover:border-gray-200/80 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300"
               >
                 <div
-                  className="w-12 h-12 rounded-xl flex items-center justify-center mb-5 transition-transform duration-300 group-hover:scale-110"
-                  style={{ backgroundColor: feature.bgColor }}
+                  className={`w-12 h-12 rounded-xl flex items-center justify-center mb-5 transition-transform duration-300 group-hover:scale-110 ${feature.bgClass}`}
                 >
                   <Icon
                     size={24}
                     strokeWidth={1.5}
-                    style={{ color: feature.color }}
+                    className={feature.iconClass}
                   />
                 </div>
                 <h3 className="text-headline text-gray-900 mb-2">

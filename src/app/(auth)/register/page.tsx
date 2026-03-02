@@ -8,6 +8,7 @@ import { ArrowRight, Building2, Loader2, User, Mail, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { InlineAlert } from "@/components/ui/inline-alert";
 import { executeRecaptcha } from "@/lib/recaptcha-client";
 
 const COOLDOWN_SECONDS = 60;
@@ -108,66 +109,41 @@ export default function RegisterPage() {
 
       <Card padding="lg" className="animate-fade-in-up delay-100">
         <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="relative">
-            <Input
-              id="companyName"
-              label="Company name"
-              type="text"
-              placeholder="Acme Inc."
-              value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
-              required
-              autoFocus
-              className="pl-11"
-            />
-            <Building2
-              size={16}
-              strokeWidth={1.5}
-              className="absolute left-4 top-[40px] text-gray-400 pointer-events-none"
-            />
-          </div>
+          <Input
+            id="companyName"
+            label="Company name"
+            type="text"
+            placeholder="Acme Inc."
+            value={companyName}
+            onChange={(e) => setCompanyName(e.target.value)}
+            required
+            autoFocus
+            startIcon={<Building2 size={16} strokeWidth={1.5} />}
+          />
 
-          <div className="relative">
-            <Input
-              id="name"
-              label="Your name"
-              type="text"
-              placeholder="Jane Smith"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              className="pl-11"
-            />
-            <User
-              size={16}
-              strokeWidth={1.5}
-              className="absolute left-4 top-[40px] text-gray-400 pointer-events-none"
-            />
-          </div>
+          <Input
+            id="name"
+            label="Your name"
+            type="text"
+            placeholder="Jane Smith"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            startIcon={<User size={16} strokeWidth={1.5} />}
+          />
 
-          <div className="relative">
-            <Input
-              id="email"
-              label="Work email"
-              type="email"
-              placeholder="jane@acme.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="pl-11"
-            />
-            <Mail
-              size={16}
-              strokeWidth={1.5}
-              className="absolute left-4 top-[40px] text-gray-400 pointer-events-none"
-            />
-          </div>
+          <Input
+            id="email"
+            label="Work email"
+            type="email"
+            placeholder="jane@acme.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            startIcon={<Mail size={16} strokeWidth={1.5} />}
+          />
 
-          {error && (
-            <div className="flex items-center gap-2 rounded-xl bg-red-50 border border-red-100 px-4 py-3">
-              <p className="text-[13px] text-red-600">{error}</p>
-            </div>
-          )}
+          {error && <InlineAlert>{error}</InlineAlert>}
 
           <Button type="submit" className="w-full gap-2" disabled={isDisabled}>
             {isLoading ? (
@@ -192,6 +168,13 @@ export default function RegisterPage() {
         <p className="text-center text-[13px] text-gray-400 mt-5">
           By creating an account, you agree to our{" "}
           <Link
+            href="/terms"
+            className="text-gray-500 hover:text-gray-700 underline underline-offset-2 transition-colors"
+          >
+            Terms of Service
+          </Link>{" "}
+          and{" "}
+          <Link
             href="/privacy"
             className="text-gray-500 hover:text-gray-700 underline underline-offset-2 transition-colors"
           >
@@ -200,11 +183,11 @@ export default function RegisterPage() {
         </p>
       </Card>
 
-      <p className="text-center text-[14px] text-gray-500 animate-fade-in-up delay-200">
+      <p className="text-center text-callout text-gray-500 animate-fade-in-up delay-200">
         Already have an account?{" "}
         <Link
           href="/login"
-          className="text-[#0071e3] hover:text-[#0058b9] font-medium transition-colors"
+          className="text-brand-500 hover:text-brand-600 font-medium transition-colors"
         >
           Sign in
         </Link>

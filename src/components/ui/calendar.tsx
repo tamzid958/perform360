@@ -39,14 +39,14 @@ function Calendar({ className, classNames, ...props }: DayPickerProps) {
           "focus:outline-none cursor-pointer"
         ),
         selected: cn(
-          "!bg-[#0071e3] !text-white !font-medium",
-          "hover:!bg-[#0058b9]",
+          "!bg-brand-500 !text-white !font-medium",
+          "hover:!bg-brand-600",
           "shadow-sm"
         ),
-        today: "font-semibold text-[#0071e3]",
+        today: "font-semibold text-brand-500",
         outside: "text-gray-300",
         disabled: "text-gray-200 pointer-events-none",
-        range_middle: "bg-[#0071e3]/10 rounded-none",
+        range_middle: "bg-brand-500/10 rounded-none",
         range_start: "rounded-l-full",
         range_end: "rounded-r-full",
         hidden: "invisible",

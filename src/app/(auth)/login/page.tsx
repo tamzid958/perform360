@@ -7,6 +7,7 @@ import { ArrowRight, Loader2, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { InlineAlert } from "@/components/ui/inline-alert";
 import { executeRecaptcha } from "@/lib/recaptcha-client";
 
 const COOLDOWN_SECONDS = 60;
@@ -103,11 +104,7 @@ export default function LoginPage() {
             autoFocus
           />
 
-          {error && (
-            <div className="flex items-center gap-2 rounded-xl bg-red-50 border border-red-100 px-4 py-3">
-              <p className="text-[13px] text-red-600">{error}</p>
-            </div>
-          )}
+          {error && <InlineAlert>{error}</InlineAlert>}
 
           <Button type="submit" className="w-full gap-2" disabled={isDisabled}>
             {isLoading ? (
@@ -147,11 +144,11 @@ export default function LoginPage() {
         </p>
       </Card>
 
-      <p className="text-center text-[14px] text-gray-500 animate-fade-in-up delay-200">
+      <p className="text-center text-callout text-gray-500 animate-fade-in-up delay-200">
         Don&apos;t have an account?{" "}
         <Link
           href="/register"
-          className="text-[#0071e3] hover:text-[#0058b9] font-medium transition-colors"
+          className="text-brand-500 hover:text-brand-600 font-medium transition-colors"
         >
           Create one
         </Link>

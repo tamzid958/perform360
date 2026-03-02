@@ -172,7 +172,7 @@ export default async function CompanyAnalyticsPage({
       {/* Back link */}
       <Link
         href="/superadmin/companies"
-        className="inline-flex items-center gap-1.5 text-[14px] font-medium text-[#0071e3] hover:text-[#0058b9] transition-colors mb-6"
+        className="inline-flex items-center gap-1.5 text-[14px] font-medium text-brand-500 hover:text-brand-600 transition-colors mb-6"
       >
         <ArrowLeft size={16} strokeWidth={1.5} />
         Back to Companies

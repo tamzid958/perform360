@@ -61,7 +61,7 @@ export function QuestionEditor({ question, sectionId, onUpdate, onRemove }: Ques
           type="text"
           value={question.text}
           onChange={(e) => onUpdate({ text: e.target.value })}
-          className="w-full text-[14px] text-gray-900 bg-white border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071e3]/20 focus:border-[#0071e3] transition-all duration-200"
+          className="w-full text-[14px] text-gray-900 bg-white border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500 transition-all duration-200"
           placeholder="Enter question text..."
         />
 
@@ -86,7 +86,7 @@ export function QuestionEditor({ question, sectionId, onUpdate, onRemove }: Ques
               type="checkbox"
               checked={question.required}
               onChange={(e) => onUpdate({ required: e.target.checked })}
-              className="rounded border-gray-300 text-[#0071e3] focus:ring-[#0071e3]/20"
+              className="rounded border-gray-300 text-brand-500 focus:ring-brand-500/40"
             />
             Required
           </label>
@@ -151,7 +151,7 @@ function RatingScaleSettings({
           max={scaleMax - 1}
           value={scaleMin}
           onChange={(e) => onUpdate({ scaleMin: parseInt(e.target.value) || 0 })}
-          className="w-16 h-7 px-2 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0071e3]/20 focus:border-[#0071e3]"
+          className="w-16 h-7 px-2 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500"
         />
         <span className="text-[12px] text-gray-400">to</span>
         <input
@@ -160,7 +160,7 @@ function RatingScaleSettings({
           max={10}
           value={scaleMax}
           onChange={(e) => onUpdate({ scaleMax: parseInt(e.target.value) || 5 })}
-          className="w-16 h-7 px-2 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0071e3]/20 focus:border-[#0071e3]"
+          className="w-16 h-7 px-2 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500"
         />
       </div>
       <div className="space-y-1">
@@ -174,7 +174,7 @@ function RatingScaleSettings({
                 value={scaleLabels?.[i] ?? ""}
                 onChange={(e) => handleLabelChange(i, e.target.value)}
                 placeholder={i === 0 ? "Low" : i === count - 1 ? "High" : ""}
-                className="w-24 h-7 px-2 text-[12px] border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0071e3]/20 focus:border-[#0071e3]"
+                className="w-24 h-7 px-2 text-[12px] border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500"
               />
             </div>
           ))}
@@ -216,7 +216,7 @@ function MultipleChoiceSettings({
               type="text"
               value={opt}
               onChange={(e) => updateOption(i, e.target.value)}
-              className="flex-1 h-7 px-2 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0071e3]/20 focus:border-[#0071e3]"
+              className="flex-1 h-7 px-2 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500"
             />
             {options.length > 1 && (
               <button

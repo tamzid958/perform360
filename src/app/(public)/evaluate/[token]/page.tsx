@@ -149,7 +149,7 @@ export default function EvaluateOTPPage({ params: paramsPromise }: { params: Pro
   // Token validation error
   if (tokenError) {
     return (
-      <div className="min-h-screen bg-[#f5f5f7] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
         <div className="w-full max-w-[420px] space-y-8">
           <div className="text-center">
             <div className="w-16 h-16 rounded-2xl bg-red-50 flex items-center justify-center mx-auto mb-6">
@@ -166,7 +166,7 @@ export default function EvaluateOTPPage({ params: paramsPromise }: { params: Pro
   // Token still validating
   if (isValidating) {
     return (
-      <div className="min-h-screen bg-[#f5f5f7] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
         <div className="flex flex-col items-center gap-3">
           <Loader2 size={24} className="text-brand-500 animate-spin" />
           <p className="text-[14px] text-gray-500">Validating evaluation link...</p>
@@ -176,7 +176,7 @@ export default function EvaluateOTPPage({ params: paramsPromise }: { params: Pro
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f5f7] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
       {RECAPTCHA_SITE_KEY && (
         <Script
           src={`https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`}

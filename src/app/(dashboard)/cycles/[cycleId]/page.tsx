@@ -787,7 +787,7 @@ export default function CycleDetailPage() {
                 placeholder="Search by name\u2026"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-9 pl-9 pr-3 rounded-lg border border-gray-200 bg-white text-[13px] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0071e3]/20 focus:border-[#0071e3] transition-all duration-200"
+                className="w-full h-9 pl-9 pr-3 rounded-lg border border-gray-200 bg-white text-[13px] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500 transition-all duration-200"
               />
             </div>
 
@@ -795,7 +795,7 @@ export default function CycleDetailPage() {
             {activeFilterCount > 0 && (
               <button
                 onClick={clearFilters}
-                className="text-[12px] text-[#0071e3] hover:text-[#0058b9] font-medium whitespace-nowrap transition-colors"
+                className="text-[12px] text-brand-500 hover:text-brand-600 font-medium whitespace-nowrap transition-colors"
               >
                 Clear filters ({activeFilterCount})
               </button>
@@ -829,7 +829,7 @@ export default function CycleDetailPage() {
                 {activeFilterCount > 0 && (
                   <button
                     onClick={clearFilters}
-                    className="text-[13px] text-[#0071e3] hover:text-[#0058b9] font-medium transition-colors"
+                    className="text-[13px] text-brand-500 hover:text-brand-600 font-medium transition-colors"
                   >
                     Clear all filters
                   </button>

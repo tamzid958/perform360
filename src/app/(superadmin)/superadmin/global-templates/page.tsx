@@ -189,7 +189,7 @@ export default function GlobalTemplatesPage() {
                       <Globe
                         size={20}
                         strokeWidth={1.5}
-                        className="text-[#0071e3]"
+                        className="text-brand-500"
                       />
                     </Link>
                     <DropdownMenu>
@@ -225,7 +225,7 @@ export default function GlobalTemplatesPage() {
                     </DropdownMenu>
                   </div>
                   <Link href={`/superadmin/global-templates/${template.id}`} className="block">
-                    <CardTitle className="hover:text-[#0071e3] transition-colors">{template.name}</CardTitle>
+                    <CardTitle className="hover:text-brand-500 transition-colors">{template.name}</CardTitle>
                   </Link>
                   {template.description && (
                     <CardDescription>{template.description}</CardDescription>

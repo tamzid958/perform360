@@ -57,7 +57,7 @@ export function CompletionDonutChart({
       </div>
       <div className="flex items-center gap-4 mt-3">
         <div className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-[#34c759]" />
+          <span className="w-2 h-2 rounded-full bg-success" />
           <span className="text-[12px] text-gray-500">
             {completed} done
           </span>

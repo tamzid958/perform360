@@ -130,7 +130,7 @@ export default async function TemplateAnalyticsPage({
       {/* Back link */}
       <Link
         href="/superadmin/global-templates"
-        className="inline-flex items-center gap-1.5 text-[14px] font-medium text-[#0071e3] hover:text-[#0058b9] transition-colors mb-6"
+        className="inline-flex items-center gap-1.5 text-[14px] font-medium text-brand-500 hover:text-brand-600 transition-colors mb-6"
       >
         <ArrowLeft size={16} strokeWidth={1.5} />
         Back to Global Templates
@@ -140,7 +140,7 @@ export default async function TemplateAnalyticsPage({
       <div className="flex items-start justify-between mb-8">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center">
-            <Globe size={24} strokeWidth={1.5} className="text-[#0071e3]" />
+            <Globe size={24} strokeWidth={1.5} className="text-brand-500" />
           </div>
           <div>
             <h1 className="text-title text-gray-900">{template.name}</h1>
@@ -268,7 +268,7 @@ export default async function TemplateAnalyticsPage({
                     <div className="flex items-center gap-2 text-[12px] text-gray-400">
                       <Link
                         href={`/superadmin/companies/${cycle.companyId}`}
-                        className="hover:text-[#0071e3] transition-colors"
+                        className="hover:text-brand-500 transition-colors"
                       >
                         {cycle.companyName}
                       </Link>

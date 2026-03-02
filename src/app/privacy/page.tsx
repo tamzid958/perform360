@@ -2,7 +2,9 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
 export const metadata = {
-  title: "Privacy Policy — Performs360",
+  title: "Privacy Policy",
+  description:
+    "Learn how Performs360 protects your data. End-to-end encryption, zero-access architecture, and GDPR-ready privacy controls.",
 };
 
 export default function PrivacyPolicyPage() {

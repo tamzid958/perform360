@@ -56,7 +56,7 @@ export default function NewTeamPage() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-[15px] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0071e3]/20 focus:border-[#0071e3] transition-all duration-200 resize-none"
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-body placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500 transition-all duration-200 resize-none"
             />
           </div>
           <div className="flex items-center gap-3 pt-2">
