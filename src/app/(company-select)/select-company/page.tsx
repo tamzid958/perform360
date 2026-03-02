@@ -22,6 +22,25 @@ export default function SelectCompanyPage() {
   const [loading, setLoading] = useState(true);
   const [selecting, setSelecting] = useState<string | null>(null);
 
+  const selectCompany = useCallback(async (companyId: string) => {
+    setSelecting(companyId);
+    try {
+      const res = await fetch("/api/auth/select-company", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ companyId }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        router.push("/overview");
+        return;
+      }
+    } catch {
+      // Ignore and let user retry
+    }
+    setSelecting(null);
+  }, [router]);
+
   const fetchCompanies = useCallback(async () => {
     try {
       const res = await fetch("/api/auth/companies");
@@ -41,30 +60,11 @@ export default function SelectCompanyPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [selectCompany]);
 
   useEffect(() => {
     fetchCompanies();
   }, [fetchCompanies]);
-
-  async function selectCompany(companyId: string) {
-    setSelecting(companyId);
-    try {
-      const res = await fetch("/api/auth/select-company", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ companyId }),
-      });
-      const json = await res.json();
-      if (json.success) {
-        router.push("/overview");
-        return;
-      }
-    } catch {
-      // Ignore and let user retry
-    }
-    setSelecting(null);
-  }
 
   const roleBadgeVariant = (role: string) => {
     if (role === "ADMIN") return "info" as const;
