@@ -8,12 +8,10 @@ export default defineConfig({
     include: ["tests/contract/**/*.test.ts"],
     testTimeout: 30_000,
     hookTimeout: 30_000,
-    pool: "forks",
-    poolOptions: {
-      forks: {
-        singleFork: true,
-      },
+    sequence: {
+      concurrent: false,
     },
+    fileParallelism: false,
   },
   resolve: {
     alias: {
