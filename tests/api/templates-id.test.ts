@@ -12,7 +12,7 @@ describe("GET /api/templates/[id]", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("returns template (including global)", async () => {
-    mockAuth(fixtures.member);
+    mockAuth(fixtures.employee);
     vi.mocked(prisma.evaluationTemplate.findFirst).mockResolvedValue({
       id: validCuid,
       name: "Standard 360",
@@ -75,7 +75,7 @@ describe("PATCH /api/templates/[id]", () => {
   });
 
   it("rejects MEMBER role", async () => {
-    mockAuth(fixtures.member);
+    mockAuth(fixtures.employee);
     const req = createMockRequest(`http://localhost:3000/api/templates/${validCuid}`, {
       method: "PATCH",
       body: { name: "X" },

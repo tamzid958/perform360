@@ -13,7 +13,7 @@ export const OTP_CONFIG = {
 export const ROLES = {
   ADMIN: "ADMIN",
   HR: "HR",
-  MEMBER: "MEMBER",
+  EMPLOYEE: "EMPLOYEE",
 } as const;
 
 export const CYCLE_STATUSES = {

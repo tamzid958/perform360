@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { signOut } from "next-auth/react";
+import { usePermissions } from "@/hooks/use-permissions";
 
 const navigation = [
   { name: "Dashboard", href: "/overview", icon: LayoutDashboard },
@@ -28,9 +29,15 @@ const bottomNav = [
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  companyName?: string;
+  companyCount?: number;
+}
+
+export function Sidebar({ companyName }: SidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const { canManageSettings } = usePermissions();
 
   return (
     <aside
@@ -69,6 +76,15 @@ export function Sidebar() {
         </button>
       </div>
 
+      {/* Company name */}
+      {companyName && !collapsed && (
+        <div className="px-4 pb-2">
+          <p className="text-[12px] font-medium text-gray-400 uppercase tracking-wider truncate">
+            {companyName}
+          </p>
+        </div>
+      )}
+
       {/* Navigation */}
       <nav className="flex-1 px-3 py-2 space-y-1">
         {navigation.map((item) => {
@@ -95,7 +111,7 @@ export function Sidebar() {
 
       {/* Bottom Navigation */}
       <div className="px-3 py-3 border-t border-gray-200/50 space-y-1">
-        {bottomNav.map((item) => {
+        {canManageSettings && bottomNav.map((item) => {
           const isActive = pathname.startsWith(item.href);
           const Icon = item.icon;
           return (

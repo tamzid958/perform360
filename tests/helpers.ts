@@ -41,7 +41,7 @@ export async function parseResponse(response: Response) {
 export function mockAuth(user: {
   userId: string;
   email: string;
-  role: "ADMIN" | "HR" | "MEMBER";
+  role: "ADMIN" | "HR" | "EMPLOYEE";
   companyId: string;
 }) {
   vi.mocked(auth).mockResolvedValue({
@@ -81,10 +81,10 @@ export const fixtures = {
     role: "HR" as const,
     companyId: "ccompany-1",
   },
-  member: {
-    userId: "cuser-member-1",
-    email: "member@test.com",
-    role: "MEMBER" as const,
+  employee: {
+    userId: "cuser-employee-1",
+    email: "employee@test.com",
+    role: "EMPLOYEE" as const,
     companyId: "ccompany-1",
   },
 };

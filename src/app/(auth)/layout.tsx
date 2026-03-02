@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Shield, BarChart3, Users, Zap } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getSelectedCompanyId } from "@/lib/company-cookie";
 
 const features = [
   {
@@ -44,11 +45,25 @@ export default async function AuthLayout({
     }
 
     const appUser = await prisma.user.findFirst({
-      where: { email: session.user.email },
+      where: { email: session.user.email, archivedAt: null },
       select: { id: true },
     });
 
     if (appUser) {
+      // If user belongs to multiple companies and hasn't selected one, go to selector
+      const selectedCompany = await getSelectedCompanyId();
+      if (!selectedCompany) {
+        const companyCount = await prisma.user.count({
+          where: {
+            email: session.user.email!,
+            role: { not: "EMPLOYEE" },
+            archivedAt: null,
+          },
+        });
+        if (companyCount > 1) {
+          redirect("/select-company");
+        }
+      }
       redirect("/overview");
     }
   }

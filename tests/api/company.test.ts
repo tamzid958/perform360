@@ -95,7 +95,7 @@ describe("PATCH /api/company", () => {
   });
 
   it("rejects MEMBER role", async () => {
-    mockAuth(fixtures.member);
+    mockAuth(fixtures.employee);
     const req = createMockRequest("http://localhost:3000/api/company", {
       method: "PATCH",
       body: { name: "New Name" },

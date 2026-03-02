@@ -1,0 +1,2 @@
+-- RenameEnumValue
+ALTER TYPE "UserRole" RENAME VALUE 'MEMBER' TO 'EMPLOYEE';

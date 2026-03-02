@@ -124,19 +124,20 @@ model Company {
 enum UserRole {
   ADMIN
   HR
-  MEMBER
+  EMPLOYEE
 }
 
 model User {
-  id         String   @id @default(cuid())
-  email      String
-  name       String
-  avatar     String?
-  role       UserRole @default(MEMBER)
-  companyId  String
-  company    Company  @relation(fields: [companyId], references: [id])
-  authUserId String? // Links to AuthUser for NextAuth session resolution
-  createdAt  DateTime @default(now())
+  id            String    @id @default(cuid())
+  email         String
+  name          String
+  avatar        String?
+  role          UserRole  @default(EMPLOYEE)
+  companyId     String
+  company       Company   @relation(fields: [companyId], references: [id])
+  authUserId    String?   // Links to AuthUser for NextAuth session resolution
+  createdAt     DateTime  @default(now())
+  archivedAt    DateTime? // null = active, set = archived (soft delete)
 
   // Relations
   teamMemberships  TeamMember[]

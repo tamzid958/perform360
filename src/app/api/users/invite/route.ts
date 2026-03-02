@@ -11,7 +11,7 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 const inviteSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Invalid email address"),
-  role: z.enum(["ADMIN", "HR", "MEMBER"]),
+  role: z.enum(["ADMIN", "HR", "EMPLOYEE"]),
 });
 
 export async function POST(request: NextRequest) {
@@ -34,13 +34,12 @@ export async function POST(request: NextRequest) {
       }, { status: 403 });
     }
 
-    // Check if user already exists in company
-    const existingUser = await prisma.user.findUnique({
+    // Check if active user already exists in company
+    const existingUser = await prisma.user.findFirst({
       where: {
-        email_companyId: {
-          email: validated.email,
-          companyId: authResult.companyId,
-        },
+        email: validated.email,
+        companyId: authResult.companyId,
+        archivedAt: null,
       },
     });
 
@@ -52,16 +51,16 @@ export async function POST(request: NextRequest) {
       }, { status: 409 });
     }
 
-    // Create User record and AuthUser in a transaction
+    // Create AuthUser and User records in a transaction.
+    // All roles get an AuthUser record, but only ADMIN/HR can log in
+    // (enforced in the signIn callback).
     const result = await prisma.$transaction(async (tx) => {
-      // Upsert AuthUser for NextAuth login
       const authUser = await tx.authUser.upsert({
         where: { email: validated.email },
         create: { email: validated.email, name: validated.name },
         update: {},
       });
 
-      // Create company User record linked to AuthUser
       const user = await tx.user.create({
         data: {
           email: validated.email,
@@ -83,29 +82,33 @@ export async function POST(request: NextRequest) {
       metadata: { email: validated.email, role: validated.role },
     });
 
-    // Send welcome email
-    const company = await prisma.company.findUnique({
-      where: { id: authResult.companyId },
-      select: { name: true },
-    });
-    const companyName = company?.name ?? "your organization";
-    const { html, text } = getUserInviteEmail(
-      validated.name,
-      companyName,
-      `${APP_URL}/login`
-    );
-
-    let emailSent = true;
-    try {
-      await sendEmail({
-        to: validated.email,
-        subject: `You've been invited to ${companyName}`,
-        html,
-        text,
+    // Employees only receive evaluation links — no account welcome email.
+    // ADMIN and HR users get a welcome email with login URL.
+    let emailSent = false;
+    if (validated.role !== "EMPLOYEE") {
+      const company = await prisma.company.findUnique({
+        where: { id: authResult.companyId },
+        select: { name: true },
       });
-    } catch (err) {
-      emailSent = false;
-      console.error("Failed to send invite email:", err);
+      const companyName = company?.name ?? "your organization";
+      const { html, text } = getUserInviteEmail(
+        validated.name,
+        companyName,
+        `${APP_URL}/login`
+      );
+
+      emailSent = true;
+      try {
+        await sendEmail({
+          to: validated.email,
+          subject: `You've been invited to ${companyName}`,
+          html,
+          text,
+        });
+      } catch (err) {
+        emailSent = false;
+        console.error("Failed to send invite email:", err);
+      }
     }
 
     return NextResponse.json({

@@ -18,7 +18,8 @@ vi.mock("@/lib/prisma", () => {
     company: { findUnique: vi.fn(), findMany: vi.fn(), count: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() },
     session: { deleteMany: vi.fn() },
     recoveryCode: { findMany: vi.fn(), count: vi.fn(), create: vi.fn(), createMany: vi.fn(), deleteMany: vi.fn(), update: vi.fn() },
-    authUser: { findUnique: vi.fn(), create: vi.fn(), upsert: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
+    authUser: { findUnique: vi.fn(), create: vi.fn(), upsert: vi.fn(), update: vi.fn(), updateMany: vi.fn(), delete: vi.fn() },
+    account: { deleteMany: vi.fn() },
     $transaction: vi.fn((cb: unknown) =>
       typeof cb === "function" ? cb({}) : Promise.all(cb as Promise<unknown>[])
     ),
@@ -90,4 +91,11 @@ vi.mock("@/lib/rate-limit", () => ({
 // Mock audit
 vi.mock("@/lib/audit", () => ({
   writeAuditLog: vi.fn().mockResolvedValue(undefined),
+}));
+
+// Mock company cookie
+vi.mock("@/lib/company-cookie", () => ({
+  getSelectedCompanyId: vi.fn().mockResolvedValue(null),
+  setSelectedCompany: vi.fn().mockResolvedValue(undefined),
+  clearSelectedCompany: vi.fn().mockResolvedValue(undefined),
 }));

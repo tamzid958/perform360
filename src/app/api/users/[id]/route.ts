@@ -126,7 +126,7 @@ export async function GET(
 }
 
 const updateUserSchema = z.object({
-  role: z.enum(["ADMIN", "HR", "MEMBER"]).optional(),
+  role: z.enum(["ADMIN", "HR", "EMPLOYEE"]).optional(),
   name: z.string().min(1).optional(),
 });
 
@@ -234,6 +234,9 @@ export async function DELETE(
   const authResult = await requireAdminOrHR();
   if (isAuthError(authResult)) return authResult;
 
+  const { searchParams } = new URL(request.url);
+  const isHardDelete = searchParams.get("hard") === "true";
+
   const user = await prisma.user.findFirst({
     where: {
       id: params.id,
@@ -249,55 +252,98 @@ export async function DELETE(
     }, { status: 404 });
   }
 
-  // Prevent deleting yourself
+  // Prevent deleting/archiving yourself
   if (user.id === authResult.userId) {
     return NextResponse.json({
       success: false,
-      error: "Cannot delete your own account",
+      error: "Cannot remove your own account",
       code: "FORBIDDEN",
     }, { status: 403 });
   }
 
-  // Only ADMINs can delete other ADMINs
+  // Only ADMINs can remove other ADMINs
   if (user.role === "ADMIN" && authResult.role !== "ADMIN") {
     return NextResponse.json({
       success: false,
-      error: "Only admins can delete admin users",
+      error: "Only admins can remove admin users",
       code: "FORBIDDEN",
     }, { status: 403 });
   }
 
-  // Remove related records (leaf-to-root), then delete user
-  await prisma.$transaction([
-    prisma.otpSession.deleteMany({
-      where: {
-        assignment: {
+  if (isHardDelete) {
+    // Hard delete — permanently remove user and all related records
+    await prisma.$transaction([
+      prisma.otpSession.deleteMany({
+        where: {
+          assignment: {
+            OR: [{ subjectId: params.id }, { reviewerId: params.id }],
+          },
+        },
+      }),
+      prisma.evaluationResponse.deleteMany({
+        where: {
+          assignment: {
+            OR: [{ subjectId: params.id }, { reviewerId: params.id }],
+          },
+        },
+      }),
+      prisma.evaluationAssignment.deleteMany({
+        where: {
           OR: [{ subjectId: params.id }, { reviewerId: params.id }],
         },
-      },
-    }),
-    prisma.evaluationResponse.deleteMany({
-      where: {
-        assignment: {
-          OR: [{ subjectId: params.id }, { reviewerId: params.id }],
-        },
-      },
-    }),
-    prisma.evaluationAssignment.deleteMany({
-      where: {
-        OR: [{ subjectId: params.id }, { reviewerId: params.id }],
-      },
-    }),
-    prisma.teamMember.deleteMany({
-      where: { userId: params.id },
-    }),
-    prisma.user.delete({
-      where: { id: params.id },
-    }),
-  ]);
+      }),
+      prisma.teamMember.deleteMany({
+        where: { userId: params.id },
+      }),
+      prisma.user.delete({
+        where: { id: params.id },
+      }),
+    ]);
+
+    // Clean up AuthUser if no other User records reference it
+    if (user.authUserId) {
+      const remainingUsers = await prisma.user.count({
+        where: { authUserId: user.authUserId },
+      });
+      if (remainingUsers === 0) {
+        await prisma.$transaction([
+          prisma.session.deleteMany({ where: { userId: user.authUserId } }),
+          prisma.account.deleteMany({ where: { userId: user.authUserId } }),
+          prisma.authUser.delete({ where: { id: user.authUserId } }),
+        ]);
+      }
+    }
+
+    await writeAuditLog({
+      companyId: authResult.companyId,
+      userId: authResult.userId,
+      action: "user_deactivate",
+      target: `user:${params.id}`,
+      metadata: { email: user.email, role: user.role, type: "hard_delete" },
+    });
+
+    return NextResponse.json({
+      success: true,
+      data: { deleted: true },
+    });
+  }
+
+  // Soft delete — archive the user
+  await prisma.user.update({
+    where: { id: params.id },
+    data: { archivedAt: new Date() },
+  });
+
+  await writeAuditLog({
+    companyId: authResult.companyId,
+    userId: authResult.userId,
+    action: "user_deactivate",
+    target: `user:${params.id}`,
+    metadata: { email: user.email, role: user.role, type: "archive" },
+  });
 
   return NextResponse.json({
     success: true,
-    data: { deleted: true },
+    data: { archived: true },
   });
 }

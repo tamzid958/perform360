@@ -57,7 +57,7 @@ describe("API /api/templates", () => {
 
   describe("POST /api/templates", () => {
     it("returns 403 for MEMBER role", async () => {
-      mockAuth(fixtures.member);
+      mockAuth(fixtures.employee);
       const req = createMockRequest("http://localhost:3000/api/templates", {
         method: "POST",
         body: {

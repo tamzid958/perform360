@@ -11,9 +11,11 @@ describe("Integration: User Invite Workflow", () => {
     vi.clearAllMocks();
   });
 
-  it("ADMIN invites a new user and email is sent", async () => {
+  it("ADMIN invites a new HR user and email is sent", async () => {
     mockAuth(fixtures.admin);
-    vi.mocked(prisma.user.findUnique).mockResolvedValue(null);
+    vi.mocked(prisma.user.findFirst).mockResolvedValueOnce(
+      { id: fixtures.admin.userId, email: fixtures.admin.email, role: "ADMIN", companyId: fixtures.admin.companyId } as any
+    ).mockResolvedValueOnce(null);
     vi.mocked(prisma.$transaction).mockImplementation(async (cb: any) => {
       if (typeof cb === "function") {
         return cb({
@@ -23,7 +25,7 @@ describe("Integration: User Invite Workflow", () => {
               id: "user-new",
               email: "new@test.com",
               name: "New User",
-              role: "MEMBER",
+              role: "HR",
               companyId: fixtures.admin.companyId,
             }),
           },
@@ -35,7 +37,7 @@ describe("Integration: User Invite Workflow", () => {
 
     const req = createMockRequest("http://localhost:3000/api/users/invite", {
       method: "POST",
-      body: { name: "New User", email: "new@test.com", role: "MEMBER" },
+      body: { name: "New User", email: "new@test.com", role: "HR" },
     });
     const res = await POST(req as any);
     const { status, body } = await parseResponse(res);
@@ -46,19 +48,58 @@ describe("Integration: User Invite Workflow", () => {
     expect(writeAuditLog).toHaveBeenCalledWith(
       expect.objectContaining({
         action: "user_invite",
-        metadata: expect.objectContaining({ email: "new@test.com", role: "MEMBER" }),
+        metadata: expect.objectContaining({ email: "new@test.com", role: "HR" }),
       })
     );
     expect(sendEmail).toHaveBeenCalled();
   });
 
-  it("rejects duplicate email in same company", async () => {
+  it("ADMIN invites an EMPLOYEE — no welcome email sent", async () => {
     mockAuth(fixtures.admin);
-    vi.mocked(prisma.user.findUnique).mockResolvedValue({ id: "existing", email: "dup@test.com" } as any);
+    vi.mocked(prisma.user.findFirst).mockResolvedValueOnce(
+      { id: fixtures.admin.userId, email: fixtures.admin.email, role: "ADMIN", companyId: fixtures.admin.companyId } as any
+    ).mockResolvedValueOnce(null);
+    vi.mocked(prisma.$transaction).mockImplementation(async (cb: any) => {
+      if (typeof cb === "function") {
+        return cb({
+          authUser: { upsert: vi.fn().mockResolvedValue({ id: "auth-u1", email: "emp@test.com" }) },
+          user: {
+            create: vi.fn().mockResolvedValue({
+              id: "user-emp",
+              email: "emp@test.com",
+              name: "Employee",
+              role: "EMPLOYEE",
+              companyId: fixtures.admin.companyId,
+            }),
+          },
+        });
+      }
+      return null;
+    });
 
     const req = createMockRequest("http://localhost:3000/api/users/invite", {
       method: "POST",
-      body: { name: "Dupe", email: "dup@test.com", role: "MEMBER" },
+      body: { name: "Employee", email: "emp@test.com", role: "EMPLOYEE" },
+    });
+    const res = await POST(req as any);
+    const { status, body } = await parseResponse(res);
+
+    expect(status).toBe(201);
+    expect(body.success).toBe(true);
+    expect(body.emailSent).toBe(false);
+    expect(sendEmail).not.toHaveBeenCalled();
+  });
+
+  it("rejects duplicate email in same company", async () => {
+    mockAuth(fixtures.admin);
+    // First findFirst = auth lookup, second = duplicate check returns existing user
+    vi.mocked(prisma.user.findFirst)
+      .mockResolvedValueOnce({ id: fixtures.admin.userId, email: fixtures.admin.email, role: "ADMIN", companyId: fixtures.admin.companyId } as any)
+      .mockResolvedValueOnce({ id: "existing", email: "dup@test.com" } as any);
+
+    const req = createMockRequest("http://localhost:3000/api/users/invite", {
+      method: "POST",
+      body: { name: "Dupe", email: "dup@test.com", role: "EMPLOYEE" },
     });
     const res = await POST(req as any);
     const { status, body } = await parseResponse(res);
@@ -83,7 +124,9 @@ describe("Integration: User Invite Workflow", () => {
 
   it("ADMIN can assign ADMIN role", async () => {
     mockAuth(fixtures.admin);
-    vi.mocked(prisma.user.findUnique).mockResolvedValue(null);
+    vi.mocked(prisma.user.findFirst).mockResolvedValueOnce(
+      { id: fixtures.admin.userId, email: fixtures.admin.email, role: "ADMIN", companyId: fixtures.admin.companyId } as any
+    ).mockResolvedValueOnce(null);
     vi.mocked(prisma.$transaction).mockImplementation(async (cb: any) => {
       if (typeof cb === "function") {
         return cb({
@@ -113,12 +156,12 @@ describe("Integration: User Invite Workflow", () => {
     expect(status).toBe(201);
   });
 
-  it("MEMBER cannot invite users", async () => {
-    mockAuth(fixtures.member);
+  it("EMPLOYEE cannot invite users", async () => {
+    mockAuth(fixtures.employee);
 
     const req = createMockRequest("http://localhost:3000/api/users/invite", {
       method: "POST",
-      body: { name: "User", email: "user@test.com", role: "MEMBER" },
+      body: { name: "User", email: "user@test.com", role: "EMPLOYEE" },
     });
     const res = await POST(req as any);
     const { status } = await parseResponse(res);
@@ -128,7 +171,9 @@ describe("Integration: User Invite Workflow", () => {
 
   it("handles email send failure gracefully", async () => {
     mockAuth(fixtures.admin);
-    vi.mocked(prisma.user.findUnique).mockResolvedValue(null);
+    vi.mocked(prisma.user.findFirst).mockResolvedValueOnce(
+      { id: fixtures.admin.userId, email: fixtures.admin.email, role: "ADMIN", companyId: fixtures.admin.companyId } as any
+    ).mockResolvedValueOnce(null);
     vi.mocked(prisma.$transaction).mockImplementation(async (cb: any) => {
       if (typeof cb === "function") {
         return cb({
@@ -138,7 +183,7 @@ describe("Integration: User Invite Workflow", () => {
               id: "user-fail",
               email: "fail@test.com",
               name: "Fail",
-              role: "MEMBER",
+              role: "HR",
               companyId: fixtures.admin.companyId,
             }),
           },
@@ -151,7 +196,7 @@ describe("Integration: User Invite Workflow", () => {
 
     const req = createMockRequest("http://localhost:3000/api/users/invite", {
       method: "POST",
-      body: { name: "Fail", email: "fail@test.com", role: "MEMBER" },
+      body: { name: "Fail", email: "fail@test.com", role: "HR" },
     });
     const res = await POST(req as any);
     const { status, body } = await parseResponse(res);

@@ -18,8 +18,8 @@ describe("API /api/users", () => {
       expect(status).toBe(401);
     });
 
-    it("returns 403 for MEMBER role", async () => {
-      mockAuth(fixtures.member);
+    it("returns 403 for EMPLOYEE role", async () => {
+      mockAuth(fixtures.employee);
       const req = createMockRequest("http://localhost:3000/api/users");
       const res = await GET(req as any);
       const { status } = await parseResponse(res);
@@ -29,8 +29,8 @@ describe("API /api/users", () => {
     it("returns paginated users for ADMIN", async () => {
       mockAuth(fixtures.admin);
       const mockUsers = [
-        { id: "u1", name: "Alice", email: "alice@test.com", role: "MEMBER", teamMemberships: [] },
-        { id: "u2", name: "Bob", email: "bob@test.com", role: "MEMBER", teamMemberships: [] },
+        { id: "u1", name: "Alice", email: "alice@test.com", role: "EMPLOYEE", teamMemberships: [] },
+        { id: "u2", name: "Bob", email: "bob@test.com", role: "EMPLOYEE", teamMemberships: [] },
       ];
       vi.mocked(prisma.user.findMany).mockResolvedValue(mockUsers as any);
       vi.mocked(prisma.user.count).mockResolvedValue(2);
@@ -93,6 +93,35 @@ describe("API /api/users", () => {
           }),
         })
       );
+    });
+
+    it("filters out archived users by default", async () => {
+      mockAuth(fixtures.admin);
+      vi.mocked(prisma.user.findMany).mockResolvedValue([]);
+      vi.mocked(prisma.user.count).mockResolvedValue(0);
+
+      const req = createMockRequest("http://localhost:3000/api/users");
+      await GET(req as any);
+
+      expect(prisma.user.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            archivedAt: null,
+          }),
+        })
+      );
+    });
+
+    it("includes archived users when ?archived=true", async () => {
+      mockAuth(fixtures.admin);
+      vi.mocked(prisma.user.findMany).mockResolvedValue([]);
+      vi.mocked(prisma.user.count).mockResolvedValue(0);
+
+      const req = createMockRequest("http://localhost:3000/api/users?archived=true");
+      await GET(req as any);
+
+      const callArgs = vi.mocked(prisma.user.findMany).mock.calls[0][0] as any;
+      expect(callArgs.where.archivedAt).toBeUndefined();
     });
   });
 });

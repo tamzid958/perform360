@@ -3,8 +3,9 @@ import EmailProvider from "next-auth/providers/email";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "./prisma";
 import { sendEmail, getMagicLinkEmail } from "./email";
+import { getSelectedCompanyId, clearSelectedCompany } from "./company-cookie";
 
-type AppUserRole = "ADMIN" | "HR" | "MEMBER";
+type AppUserRole = "ADMIN" | "HR" | "EMPLOYEE";
 
 declare module "next-auth" {
   interface Session {
@@ -78,8 +79,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (!user?.email) return false;
       const [appUser, superAdmin] = await Promise.all([
         prisma.user.findFirst({
-          where: { email: user.email },
-          select: { id: true },
+          where: { email: user.email, archivedAt: null },
+          select: { id: true, role: true },
         }),
         prisma.superAdmin.findUnique({
           where: { email: user.email },
@@ -87,24 +88,60 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }),
       ]);
       if (!appUser && !superAdmin) return false;
+      // Only ADMIN and HR can log in — all other roles are rejected
+      if (appUser && appUser.role !== "ADMIN" && appUser.role !== "HR") return false;
       return true;
     },
     async session({ session, user }) {
       if (session.user) {
         session.user.id = user.id;
 
-        // Resolve app User via authUserId link (handles multi-company correctly)
-        // Falls back to email lookup for legacy users without authUserId set
-        const appUser = await prisma.user.findFirst({
-          where: {
-            OR: [
-              { authUserId: user.id },
-              { email: session.user.email },
-            ],
-          },
-          orderBy: { createdAt: "desc" },
-          select: { id: true, role: true, companyId: true },
-        });
+        // Check if user has a selected company (cookie-based, for multi-company support)
+        let selectedCompanyId: string | null = null;
+        try {
+          selectedCompanyId = await getSelectedCompanyId();
+        } catch {
+          // cookies() may not be available in all contexts
+        }
+
+        let appUser;
+        if (selectedCompanyId) {
+          // Validate ownership — user must belong to the selected company
+          appUser = await prisma.user.findFirst({
+            where: {
+              archivedAt: null,
+              OR: [
+                { authUserId: user.id, companyId: selectedCompanyId },
+                { email: session.user.email, companyId: selectedCompanyId },
+              ],
+            },
+            select: { id: true, role: true, companyId: true },
+          });
+
+          // Tampered or stale cookie — clear it
+          if (!appUser) {
+            try {
+              await clearSelectedCompany();
+            } catch {
+              // cookies() may not be writable in all contexts
+            }
+          }
+        }
+
+        // Fallback: no cookie, tampered cookie, or stale cookie
+        if (!appUser) {
+          appUser = await prisma.user.findFirst({
+            where: {
+              archivedAt: null,
+              OR: [
+                { authUserId: user.id },
+                { email: session.user.email },
+              ],
+            },
+            orderBy: { createdAt: "desc" },
+            select: { id: true, role: true, companyId: true },
+          });
+        }
 
         if (appUser) {
           session.user.role = appUser.role;
@@ -112,6 +149,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
       }
       return session;
+    },
+  },
+  events: {
+    async signOut() {
+      try {
+        await clearSelectedCompany();
+      } catch {
+        // cookies() may not be available in all signOut contexts
+      }
     },
   },
   session: {

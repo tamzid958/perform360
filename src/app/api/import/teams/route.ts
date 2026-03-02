@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
               data: {
                 email,
                 name,
-                role: "MEMBER",
+                role: "EMPLOYEE",
                 companyId,
                 authUserId: authUser.id,
               },

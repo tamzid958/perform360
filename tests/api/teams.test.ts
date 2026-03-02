@@ -79,7 +79,7 @@ describe("API /api/teams", () => {
     });
 
     it("returns 403 when MEMBER tries to create team", async () => {
-      mockAuth(fixtures.member);
+      mockAuth(fixtures.employee);
       const req = createMockRequest("http://localhost:3000/api/teams", {
         method: "POST",
         body: { name: "New Team" },

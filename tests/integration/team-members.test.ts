@@ -127,7 +127,7 @@ describe("Integration: Team + Members Workflow", () => {
   });
 
   it("MEMBER role cannot manage team members", async () => {
-    mockAuth(fixtures.member);
+    mockAuth(fixtures.employee);
 
     const req = createMockRequest(`http://localhost:3000/api/teams/${validCuid}/members`, {
       method: "POST",

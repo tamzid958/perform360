@@ -15,16 +15,16 @@ describe("GET /api/profile", () => {
   });
 
   it("returns profile with company name and teams", async () => {
-    mockAuth(fixtures.member);
+    mockAuth(fixtures.employee);
     // Auth calls findFirst once, then the route calls findFirst for profile
     vi.mocked(prisma.user.findFirst)
-      .mockResolvedValueOnce({ id: fixtures.member.userId, email: fixtures.member.email, role: "MEMBER", companyId: fixtures.member.companyId } as any)
+      .mockResolvedValueOnce({ id: fixtures.employee.userId, email: fixtures.employee.email, role: "EMPLOYEE", companyId: fixtures.employee.companyId } as any)
       .mockResolvedValueOnce({
-        id: fixtures.member.userId,
+        id: fixtures.employee.userId,
         name: "Test Member",
-        email: fixtures.member.email,
+        email: fixtures.employee.email,
         avatar: null,
-        role: "MEMBER",
+        role: "EMPLOYEE",
         company: { name: "Acme Corp" },
         teamMemberships: [
           { role: "MEMBER", team: { id: "t1", name: "Engineering" } },
@@ -42,9 +42,9 @@ describe("GET /api/profile", () => {
   });
 
   it("returns 404 when user record missing", async () => {
-    mockAuth(fixtures.member);
+    mockAuth(fixtures.employee);
     vi.mocked(prisma.user.findFirst)
-      .mockResolvedValueOnce({ id: fixtures.member.userId, email: fixtures.member.email, role: "MEMBER", companyId: fixtures.member.companyId } as any)
+      .mockResolvedValueOnce({ id: fixtures.employee.userId, email: fixtures.employee.email, role: "EMPLOYEE", companyId: fixtures.employee.companyId } as any)
       .mockResolvedValueOnce(null);
 
     const req = createMockRequest("http://localhost:3000/api/profile");
@@ -57,13 +57,13 @@ describe("PATCH /api/profile", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("updates profile name and syncs AuthUser", async () => {
-    mockAuth(fixtures.member);
+    mockAuth(fixtures.employee);
     vi.mocked(prisma.user.update).mockResolvedValue({
-      id: fixtures.member.userId,
+      id: fixtures.employee.userId,
       name: "New Name",
-      email: fixtures.member.email,
+      email: fixtures.employee.email,
       avatar: null,
-      role: "MEMBER",
+      role: "EMPLOYEE",
     } as any);
     vi.mocked(prisma.authUser.updateMany).mockResolvedValue({ count: 1 } as any);
 
@@ -80,7 +80,7 @@ describe("PATCH /api/profile", () => {
   });
 
   it("rejects invalid avatar URL", async () => {
-    mockAuth(fixtures.member);
+    mockAuth(fixtures.employee);
     const req = createMockRequest("http://localhost:3000/api/profile", {
       method: "PATCH",
       body: { avatar: "not-a-url" },

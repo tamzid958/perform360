@@ -451,7 +451,7 @@ export default function PersonDetailPage() {
                 <SelectContent>
                   <SelectItem value="ADMIN">Admin</SelectItem>
                   <SelectItem value="HR">HR</SelectItem>
-                  <SelectItem value="MEMBER">Employee</SelectItem>
+                  <SelectItem value="EMPLOYEE">Employee</SelectItem>
                 </SelectContent>
               </Select>
             </div>

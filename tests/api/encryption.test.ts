@@ -9,7 +9,7 @@ import { parseResponse } from "../helpers";
 const unlockRoute = await import("@/app/api/encryption/unlock/route");
 const statusRoute = await import("@/app/api/encryption/status/route");
 
-function setupAuth(role: "ADMIN" | "HR" | "MEMBER" = "ADMIN") {
+function setupAuth(role: "ADMIN" | "HR" | "EMPLOYEE" = "ADMIN") {
   vi.mocked(auth).mockResolvedValue({
     user: { email: `${role.toLowerCase()}@test.com`, companyId: "c1" },
   } as any);
@@ -42,7 +42,7 @@ describe("POST /api/encryption/unlock", () => {
   });
 
   it("returns 403 when MEMBER tries to unlock", async () => {
-    setupAuth("MEMBER");
+    setupAuth("EMPLOYEE");
     const req = makeReq("http://localhost:3000/api/encryption/unlock", {
       method: "POST",
       body: { passphrase: "test" },
@@ -136,7 +136,7 @@ describe("GET /api/encryption/status", () => {
   });
 
   it("returns isSetup: false when encryption not configured", async () => {
-    setupAuth("MEMBER");
+    setupAuth("EMPLOYEE");
     vi.mocked(prisma.company.findUnique).mockResolvedValue({
       encryptionSetupAt: null,
       keyVersion: 0,

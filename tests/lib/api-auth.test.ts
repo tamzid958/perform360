@@ -60,7 +60,7 @@ describe("api-auth", () => {
       vi.mocked(prisma.user.findFirst).mockResolvedValue({
         id: "u1",
         email: "user@test.com",
-        role: "MEMBER",
+        role: "EMPLOYEE",
         companyId: "c1",
       } as any);
 
@@ -68,11 +68,25 @@ describe("api-auth", () => {
       expect(result).toEqual({
         userId: "u1",
         email: "user@test.com",
-        role: "MEMBER",
+        role: "EMPLOYEE",
         companyId: "c1",
       });
       expect(prisma.user.findFirst).toHaveBeenCalledWith({
-        where: { email: "user@test.com", companyId: "c1" },
+        where: { email: "user@test.com", companyId: "c1", archivedAt: null },
+        select: { id: true, email: true, role: true, companyId: true },
+      });
+    });
+
+    it("includes archivedAt: null when no companyId in session", async () => {
+      vi.mocked(auth).mockResolvedValue({
+        user: { email: "user@test.com" },
+      } as any);
+      vi.mocked(getImpersonation).mockResolvedValue(null);
+      vi.mocked(prisma.user.findFirst).mockResolvedValue(null);
+
+      await requireAuth();
+      expect(prisma.user.findFirst).toHaveBeenCalledWith({
+        where: { email: "user@test.com", archivedAt: null },
         select: { id: true, email: true, role: true, companyId: true },
       });
     });
@@ -116,7 +130,7 @@ describe("api-auth", () => {
       vi.mocked(prisma.user.findFirst).mockResolvedValue({
         id: "u2",
         email: "member@test.com",
-        role: "MEMBER",
+        role: "EMPLOYEE",
         companyId: "c1",
       } as any);
 
@@ -153,13 +167,13 @@ describe("api-auth", () => {
       expect(result).not.toBeInstanceOf(NextResponse);
     });
 
-    it("rejects MEMBER", async () => {
+    it("rejects EMPLOYEE", async () => {
       vi.mocked(auth).mockResolvedValue({
         user: { email: "m@test.com", companyId: "c1" },
       } as any);
       vi.mocked(getImpersonation).mockResolvedValue(null);
       vi.mocked(prisma.user.findFirst).mockResolvedValue({
-        id: "u3", email: "m@test.com", role: "MEMBER", companyId: "c1",
+        id: "u3", email: "m@test.com", role: "EMPLOYEE", companyId: "c1",
       } as any);
 
       const result = await requireAdminOrHR();

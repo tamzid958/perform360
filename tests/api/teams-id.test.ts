@@ -57,7 +57,7 @@ describe("API /api/teams/[id]", () => {
 
   describe("PATCH", () => {
     it("returns 403 for MEMBER role", async () => {
-      mockAuth(fixtures.member);
+      mockAuth(fixtures.employee);
       const req = createMockRequest(`http://localhost:3000/api/teams/${validCuid}`, {
         method: "PATCH",
         body: { name: "Updated" },

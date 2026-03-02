@@ -55,7 +55,7 @@ export const factories = {
       data: {
         email: `user-${Date.now()}-${Math.random().toString(36).slice(2, 6)}@test.com`,
         name: "Test User",
-        role: "MEMBER",
+        role: "EMPLOYEE",
         companyId,
         ...overrides,
       },

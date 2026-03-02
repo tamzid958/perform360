@@ -19,7 +19,7 @@ describe("GET /api/cycles/[id]", () => {
   });
 
   it("returns cycle with stats", async () => {
-    mockAuth(fixtures.member);
+    mockAuth(fixtures.employee);
     vi.mocked(prisma.evaluationCycle.findFirst).mockResolvedValue({
       id: validCuid,
       name: "Q1 2026",
@@ -130,7 +130,7 @@ describe("PATCH /api/cycles/[id]", () => {
   });
 
   it("rejects MEMBER role", async () => {
-    mockAuth(fixtures.member);
+    mockAuth(fixtures.employee);
     const req = createMockRequest(`http://localhost:3000/api/cycles/${validCuid}`, {
       method: "PATCH",
       body: { name: "Updated" },

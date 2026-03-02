@@ -51,7 +51,7 @@ interface User {
 const roleBadgeMap: Record<string, { variant: "info" | "success" | "warning" | "default"; label: string }> = {
   ADMIN: { variant: "info", label: "Admin" },
   HR: { variant: "success", label: "HR" },
-  MEMBER: { variant: "default", label: "Employee" },
+  EMPLOYEE: { variant: "default", label: "Employee" },
 };
 
 export default function PeoplePage() {
@@ -67,7 +67,7 @@ export default function PeoplePage() {
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
   const [inviteName, setInviteName] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState("MEMBER");
+  const [inviteRole, setInviteRole] = useState("EMPLOYEE");
   const [inviteLoading, setInviteLoading] = useState(false);
   const { addToast } = useToast();
 
@@ -115,7 +115,7 @@ export default function PeoplePage() {
       setShowInviteDialog(false);
       setInviteName("");
       setInviteEmail("");
-      setInviteRole("MEMBER");
+      setInviteRole("EMPLOYEE");
       setPage(1);
       fetchUsers();
     } catch (err) {
@@ -342,7 +342,7 @@ export default function PeoplePage() {
                 <SelectContent>
                   <SelectItem value="ADMIN">Admin</SelectItem>
                   <SelectItem value="HR">HR</SelectItem>
-                  <SelectItem value="MEMBER">Employee</SelectItem>
+                  <SelectItem value="EMPLOYEE">Employee</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -381,7 +381,7 @@ export default function PeoplePage() {
                 <SelectContent>
                   <SelectItem value="ADMIN">Admin</SelectItem>
                   <SelectItem value="HR">HR</SelectItem>
-                  <SelectItem value="MEMBER">Employee</SelectItem>
+                  <SelectItem value="EMPLOYEE">Employee</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -15,8 +15,11 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const { page, limit, search } = parsePaginationParams(searchParams, 20);
 
+  const includeArchived = searchParams.get("archived") === "true";
+
   const where: Prisma.UserWhereInput = {
     companyId: authResult.companyId,
+    ...(includeArchived ? {} : { archivedAt: null }),
     ...(search
       ? {
           OR: [

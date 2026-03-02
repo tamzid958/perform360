@@ -15,7 +15,7 @@ function makeReq(url = "http://localhost:3000/test", method = "GET") {
   });
 }
 
-function setupAuth(role: "ADMIN" | "HR" | "MEMBER") {
+function setupAuth(role: "ADMIN" | "HR" | "EMPLOYEE") {
   vi.mocked(auth).mockResolvedValue({
     user: { email: `${role.toLowerCase()}@test.com`, companyId: "c1" },
   } as any);
@@ -45,7 +45,7 @@ describe("middleware/rbac", () => {
   });
 
   it("withRBAC returns 403 for disallowed role", async () => {
-    setupAuth("MEMBER");
+    setupAuth("EMPLOYEE");
     const wrapped = withRBAC(dummyHandler, { requiredRoles: ["ADMIN"] });
     const res = await wrapped(makeReq(), { params: {} });
     expect(res.status).toBe(403);
