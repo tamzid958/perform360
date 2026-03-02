@@ -58,11 +58,13 @@ import {
   XCircle,
   RotateCcw,
   MoreHorizontal,
+  Scale,
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/toast";
 import type { CycleReport } from "@/types/report";
+import { CalibrationPanel } from "@/components/cycles/calibration-panel";
 
 // ─── Types ───
 
@@ -170,8 +172,11 @@ export default function CycleDetailPage() {
   const [cycle, setCycle] = useState<CycleApiData | null>(null);
   const [cycleReport, setCycleReport] = useState<CycleReport | null>(null);
   const [activeTab, setActiveTab] = useState<
-    "overview" | "assignments" | "reports"
+    "overview" | "assignments" | "reports" | "calibration"
   >("overview");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [calibrationData, setCalibrationData] = useState<any>(null);
+  const [calibrationLoading, setCalibrationLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState<StatusFilterValue>("all");
   const [relationshipFilter, setRelationshipFilter] =
     useState<RelationshipFilterValue>("all");
@@ -228,9 +233,25 @@ export default function CycleDetailPage() {
     fetchCycle();
   }, [fetchCycle]);
 
+  const fetchCalibration = useCallback(async () => {
+    if (calibrationData || calibrationLoading) return;
+    setCalibrationLoading(true);
+    try {
+      const res = await fetch(`/api/cycles/${cycleId}/calibration`);
+      const json = await res.json();
+      if (handleApiResponse(json)) return;
+      if (json.success) setCalibrationData(json.data);
+    } catch {
+      // handled by null state
+    } finally {
+      setCalibrationLoading(false);
+    }
+  }, [cycleId, calibrationData, calibrationLoading, handleApiResponse]);
+
   useEffect(() => {
     if (activeTab === "reports") fetchReport();
-  }, [activeTab, fetchReport]);
+    if (activeTab === "calibration") fetchCalibration();
+  }, [activeTab, fetchReport, fetchCalibration]);
 
   // ─── Filtered assignments ───
 
@@ -602,7 +623,7 @@ export default function CycleDetailPage() {
       <Tabs
         value={activeTab}
         onValueChange={(v) =>
-          setActiveTab(v as "overview" | "assignments" | "reports")
+          setActiveTab(v as "overview" | "assignments" | "reports" | "calibration")
         }
       >
         <TabsList>
@@ -623,6 +644,12 @@ export default function CycleDetailPage() {
             <Users size={15} strokeWidth={1.5} className="mr-1.5" />
             Reports
           </TabsTrigger>
+          {(cycle.status === "CLOSED" || cycle.status === "ARCHIVED") && (
+            <TabsTrigger value="calibration">
+              <Scale size={15} strokeWidth={1.5} className="mr-1.5" />
+              Calibration
+            </TabsTrigger>
+          )}
         </TabsList>
 
         {/* ─── Overview Tab ─── */}
@@ -1211,6 +1238,56 @@ export default function CycleDetailPage() {
             </Card>
           )}
         </TabsContent>
+
+        {/* ─── Calibration Tab ─── */}
+        {(cycle.status === "CLOSED" || cycle.status === "ARCHIVED") && (
+          <TabsContent value="calibration">
+            {locked || reset ? (
+              <UnlockGate
+                locked={locked}
+                reset={reset}
+                onUnlocked={() => {
+                  handleUnlocked();
+                  setCalibrationData(null);
+                  fetchCalibration();
+                }}
+              >
+                <div />
+              </UnlockGate>
+            ) : calibrationLoading ? (
+              <div className="space-y-4">
+                <Skeleton className="h-24 w-full rounded-2xl" />
+                <Skeleton className="h-64 w-full rounded-2xl" />
+              </div>
+            ) : calibrationData ? (
+              <CalibrationPanel
+                cycleId={cycleId}
+                data={calibrationData}
+                readOnly={cycle.status === "ARCHIVED"}
+                onSaved={() => {
+                  setCalibrationData(null);
+                  fetchCalibration();
+                }}
+              />
+            ) : (
+              <Card className="text-center py-12">
+                <p className="text-body text-gray-500">
+                  Failed to load calibration data
+                </p>
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setCalibrationData(null);
+                    fetchCalibration();
+                  }}
+                  className="mt-4"
+                >
+                  Retry
+                </Button>
+              </Card>
+            )}
+          </TabsContent>
+        )}
       </Tabs>
 
       {/* ─── Activate Confirmation Dialog ─── */}
