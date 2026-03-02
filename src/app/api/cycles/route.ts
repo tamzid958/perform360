@@ -7,9 +7,21 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { parsePaginationParams, buildPaginationMeta } from "@/lib/utils";
 import type { CycleStatus } from "@prisma/client";
 
+const relationshipWeightsSchema = z.object({
+  manager: z.number().min(0).max(100),
+  peer: z.number().min(0).max(100),
+  directReport: z.number().min(0).max(100),
+  self: z.number().min(0).max(100),
+  external: z.number().min(0).max(100),
+}).refine(
+  (w) => Math.abs(w.manager + w.peer + w.directReport + w.self + w.external - 100) < 0.01,
+  { message: "Weights must sum to 100%" }
+);
+
 const teamTemplateSchema = z.object({
   teamId: z.string().min(1, "Team ID is required"),
   templateId: z.string().min(1, "Template ID is required"),
+  weights: relationshipWeightsSchema.optional(),
 });
 
 const createCycleSchema = z.object({
@@ -152,6 +164,11 @@ export async function POST(request: NextRequest) {
           cycleId: created.id,
           teamId: tt.teamId,
           templateId: tt.templateId,
+          weightManager: tt.weights ? tt.weights.manager / 100 : null,
+          weightPeer: tt.weights ? tt.weights.peer / 100 : null,
+          weightDirectReport: tt.weights ? tt.weights.directReport / 100 : null,
+          weightSelf: tt.weights ? tt.weights.self / 100 : null,
+          weightExternal: tt.weights ? tt.weights.external / 100 : null,
         })),
       });
 
