@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { execSync } from "child_process";
 import { config } from "dotenv";
 
@@ -39,7 +39,7 @@ export async function cleanDatabase(): Promise<void> {
 }
 
 export const factories = {
-  company: (overrides: Partial<Parameters<typeof prisma.company.create>[0]["data"]> = {}) =>
+  company: (overrides: Partial<Prisma.CompanyUncheckedCreateInput> = {}) =>
     prisma.company.create({
       data: {
         name: "Test Corp",
@@ -50,7 +50,7 @@ export const factories = {
       },
     }),
 
-  user: (companyId: string, overrides: Partial<Parameters<typeof prisma.user.create>[0]["data"]> = {}) =>
+  user: (companyId: string, overrides: Partial<Prisma.UserUncheckedCreateInput> = {}) =>
     prisma.user.create({
       data: {
         email: `user-${Date.now()}-${Math.random().toString(36).slice(2, 6)}@test.com`,
@@ -61,7 +61,7 @@ export const factories = {
       },
     }),
 
-  team: (companyId: string, overrides: Partial<Parameters<typeof prisma.team.create>[0]["data"]> = {}) =>
+  team: (companyId: string, overrides: Partial<Prisma.TeamUncheckedCreateInput> = {}) =>
     prisma.team.create({
       data: {
         name: `Team ${Date.now()}`,
@@ -70,7 +70,7 @@ export const factories = {
       },
     }),
 
-  cycle: (companyId: string, overrides: Partial<Parameters<typeof prisma.evaluationCycle.create>[0]["data"]> = {}) =>
+  cycle: (companyId: string, overrides: Partial<Prisma.EvaluationCycleUncheckedCreateInput> = {}) =>
     prisma.evaluationCycle.create({
       data: {
         name: `Cycle ${Date.now()}`,
@@ -82,7 +82,7 @@ export const factories = {
       },
     }),
 
-  template: (overrides: Partial<Parameters<typeof prisma.evaluationTemplate.create>[0]["data"]> = {}) =>
+  template: (overrides: Partial<Prisma.EvaluationTemplateUncheckedCreateInput> = {}) =>
     prisma.evaluationTemplate.create({
       data: {
         name: `Template ${Date.now()}`,
