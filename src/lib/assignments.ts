@@ -6,7 +6,7 @@ interface GeneratedAssignment {
   templateId: string;
   subjectId: string;
   reviewerId: string;
-  relationship: "manager" | "direct_report" | "peer" | "self";
+  relationship: "manager" | "direct_report" | "peer" | "self" | "external";
   token: string;
 }
 
@@ -21,7 +21,8 @@ interface GeneratedAssignment {
  *  - Manager evaluates each Member (relationship: "manager")
  *  - Each Member evaluates their Manager(s) (relationship: "direct_report")
  *  - Members evaluate each other as peers (relationship: "peer")
- *  - Self-evaluation for every unique member (one per template)
+ *  - External evaluates all Members and Managers (relationship: "external", one-way)
+ *  - Self-evaluation for every non-external member (one per template)
  *  - Deduplication across teams by (subjectId, reviewerId, templateId) key
  */
 export function generateAssignmentsFromTeams(
@@ -62,10 +63,13 @@ export function generateAssignmentsFromTeams(
 
     const managers = team.members.filter((m) => m.role === "MANAGER");
     const members = team.members.filter((m) => m.role === "MEMBER");
+    const externals = team.members.filter((m) => m.role === "EXTERNAL");
 
-    // Track all users for self-evaluations
+    // Track non-external users for self-evaluations (externals don't self-evaluate)
     for (const m of team.members) {
-      selfEvalPairs.add(`${m.userId}:${templateId}`);
+      if (m.role !== "EXTERNAL") {
+        selfEvalPairs.add(`${m.userId}:${templateId}`);
+      }
     }
 
     // Manager evaluates each Member (downward)
@@ -89,6 +93,16 @@ export function generateAssignmentsFromTeams(
         addAssignment(subject.userId, reviewer.userId, "peer", templateId);
       }
     }
+
+    // External evaluates each Member and Manager (one-way, no incoming evaluations)
+    for (const ext of externals) {
+      for (const member of members) {
+        addAssignment(member.userId, ext.userId, "external", templateId);
+      }
+      for (const mgr of managers) {
+        addAssignment(mgr.userId, ext.userId, "external", templateId);
+      }
+    }
   }
 
   // Self-evaluations for every unique (user, template) pair
@@ -102,7 +116,7 @@ export function generateAssignmentsFromTeams(
 
 interface TeamMemberData {
   userId: string;
-  role: "MANAGER" | "MEMBER";
+  role: "MANAGER" | "MEMBER" | "EXTERNAL";
 }
 
 interface TeamWithMembers {

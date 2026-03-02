@@ -180,6 +180,20 @@ describe("api-auth", () => {
       expect(result).toBeInstanceOf(NextResponse);
       expect((result as NextResponse).status).toBe(403);
     });
+
+    it("rejects EXTERNAL", async () => {
+      vi.mocked(auth).mockResolvedValue({
+        user: { email: "ext@test.com", companyId: "c1" },
+      } as any);
+      vi.mocked(getImpersonation).mockResolvedValue(null);
+      vi.mocked(prisma.user.findFirst).mockResolvedValue({
+        id: "u4", email: "ext@test.com", role: "EXTERNAL", companyId: "c1",
+      } as any);
+
+      const result = await requireAdminOrHR();
+      expect(result).toBeInstanceOf(NextResponse);
+      expect((result as NextResponse).status).toBe(403);
+    });
   });
 
   describe("requireSuperAdmin", () => {

@@ -110,7 +110,7 @@ describe("POST /api/auth/select-company", () => {
         where: expect.objectContaining({
           archivedAt: null,
           companyId: validCompanyId,
-          role: { not: "EMPLOYEE" },
+          role: { in: ["ADMIN", "HR"] },
         }),
       })
     );
@@ -121,7 +121,24 @@ describe("POST /api/auth/select-company", () => {
       user: { email: "member@test.com" },
       expires: new Date(Date.now() + 86400000).toISOString(),
     } as any);
-    // findFirst returns null because the query filters role: { not: "EMPLOYEE" }
+    // findFirst returns null because the query filters role: { in: ["ADMIN", "HR"] }
+    vi.mocked(prisma.user.findFirst).mockResolvedValue(null);
+
+    const req = createMockRequest("http://localhost:3000/api/auth/select-company", {
+      method: "POST",
+      body: { companyId: validCompanyId },
+    });
+    const res = await POST(req as any);
+    const { status } = await parseResponse(res);
+    expect(status).toBe(403);
+  });
+
+  it("rejects EXTERNAL role users from selecting company", async () => {
+    vi.mocked(auth).mockResolvedValue({
+      user: { email: "external@test.com" },
+      expires: new Date(Date.now() + 86400000).toISOString(),
+    } as any);
+    // findFirst returns null because the query filters role: { in: ["ADMIN", "HR"] }
     vi.mocked(prisma.user.findFirst).mockResolvedValue(null);
 
     const req = createMockRequest("http://localhost:3000/api/auth/select-company", {

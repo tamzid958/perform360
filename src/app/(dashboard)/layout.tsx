@@ -26,7 +26,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     const companyCount = await prisma.user.count({
       where: {
         email: session.user.email!,
-        role: { not: "EMPLOYEE" },
+        role: { in: ["ADMIN", "HR"] },
         archivedAt: null,
       },
     });
@@ -101,7 +101,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const companyCount = await prisma.user.count({
     where: {
       email: appUser.email,
-      role: { not: "EMPLOYEE" },
+      role: { in: ["ADMIN", "HR"] },
       archivedAt: null,
     },
   });

@@ -109,7 +109,8 @@ type RelationshipFilterValue =
   | "manager"
   | "direct_report"
   | "peer"
-  | "self";
+  | "self"
+  | "external";
 
 const statusIcon: Record<string, React.ReactNode> = {
   SUBMITTED: (
@@ -134,6 +135,7 @@ const relationshipLabel: Record<string, string> = {
   direct_report: "Direct Report",
   peer: "Peer",
   self: "Self",
+  external: "External",
 };
 
 const statusBadgeVariant: Record<
@@ -681,6 +683,7 @@ export default function CycleDetailPage() {
                 <SelectItem value="direct_report">Direct Report</SelectItem>
                 <SelectItem value="peer">Peer</SelectItem>
                 <SelectItem value="self">Self</SelectItem>
+                <SelectItem value="external">External</SelectItem>
               </SelectContent>
             </Select>
 

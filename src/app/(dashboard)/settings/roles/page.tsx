@@ -21,6 +21,12 @@ const roles = [
     permissions: ["Submit evaluations (via link)"],
     restricted: ["View reports", "Manage cycles", "Manage teams", "Manage templates", "Manage people", "Manage settings"],
   },
+  {
+    name: "External",
+    description: "External evaluators provide one-way feedback on team members",
+    permissions: ["Submit evaluations (via link)"],
+    restricted: ["View reports", "Manage cycles", "Manage teams", "Manage templates", "Manage people", "Manage settings", "Receive evaluations", "Self-assessment"],
+  },
 ];
 
 export default function RolesSettingsPage() {

@@ -12,6 +12,7 @@ export function usePermissions() {
   const isAdmin = role === "ADMIN";
   const isHR = role === "HR";
   const isEmployee = role === "EMPLOYEE";
+  const isExternal = role === "EXTERNAL";
   const isAdminOrHR = isAdmin || isHR;
 
   return {
@@ -19,6 +20,7 @@ export function usePermissions() {
     isAdmin,
     isHR,
     isEmployee,
+    isExternal,
     isAdminOrHR,
     canViewReports: isAdminOrHR,
     canManageCycles: isAdminOrHR,

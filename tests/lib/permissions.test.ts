@@ -33,6 +33,14 @@ describe("permissions", () => {
       expect(hasPermission("EMPLOYEE", "teams:create")).toBe(false);
       expect(hasPermission("EMPLOYEE", "reports:view")).toBe(false);
     });
+
+    it("EXTERNAL has no permissions", () => {
+      expect(hasPermission("EXTERNAL", "cycles:create")).toBe(false);
+      expect(hasPermission("EXTERNAL", "teams:create")).toBe(false);
+      expect(hasPermission("EXTERNAL", "reports:view")).toBe(false);
+      expect(hasPermission("EXTERNAL", "settings:manage")).toBe(false);
+      expect(hasPermission("EXTERNAL", "encryption:manage")).toBe(false);
+    });
   });
 
   describe("role-specific helpers", () => {
@@ -82,6 +90,7 @@ describe("permissions", () => {
       expect(isAdminOrHR("ADMIN")).toBe(true);
       expect(isAdminOrHR("HR")).toBe(true);
       expect(isAdminOrHR("EMPLOYEE")).toBe(false);
+      expect(isAdminOrHR("EXTERNAL")).toBe(false);
     });
   });
 });

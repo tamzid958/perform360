@@ -11,7 +11,7 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 const inviteSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Invalid email address"),
-  role: z.enum(["ADMIN", "HR", "EMPLOYEE"]),
+  role: z.enum(["ADMIN", "HR", "EMPLOYEE", "EXTERNAL"]),
 });
 
 export async function POST(request: NextRequest) {
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
     // Employees only receive evaluation links — no account welcome email.
     // ADMIN and HR users get a welcome email with login URL.
     let emailSent = false;
-    if (validated.role !== "EMPLOYEE") {
+    if (validated.role !== "EMPLOYEE" && validated.role !== "EXTERNAL") {
       const company = await prisma.company.findUnique({
         where: { id: authResult.companyId },
         select: { name: true },

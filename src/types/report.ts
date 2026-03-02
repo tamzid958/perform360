@@ -32,6 +32,7 @@ export interface RelationshipScores {
   peer: number | null;
   directReport: number | null;
   self: number | null;
+  external: number | null;
 }
 
 export interface QuestionDetail {

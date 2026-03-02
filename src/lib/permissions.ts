@@ -39,6 +39,7 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     "people:manage",
   ],
   EMPLOYEE: [],
+  EXTERNAL: [],
 };
 
 export function hasPermission(role: UserRole, permission: Permission): boolean {

@@ -81,15 +81,17 @@ interface PersonDetail {
   stats: PersonStats;
 }
 
-const roleBadgeMap: Record<string, { variant: "info" | "success" | "default"; label: string }> = {
+const roleBadgeMap: Record<string, { variant: "info" | "success" | "warning" | "default"; label: string }> = {
   ADMIN: { variant: "info", label: "Admin" },
   HR: { variant: "success", label: "HR" },
-  MEMBER: { variant: "default", label: "Employee" },
+  EMPLOYEE: { variant: "default", label: "Employee" },
+  EXTERNAL: { variant: "warning", label: "External" },
 };
 
-const teamRoleBadge: Record<string, { variant: "info" | "success"; label: string }> = {
+const teamRoleBadge: Record<string, { variant: "info" | "success" | "warning"; label: string }> = {
   MANAGER: { variant: "info", label: "Manager" },
   MEMBER: { variant: "success", label: "Member" },
+  EXTERNAL: { variant: "warning", label: "External" },
 };
 
 const relationshipLabels: Record<string, string> = {
@@ -97,6 +99,7 @@ const relationshipLabels: Record<string, string> = {
   direct_report: "Direct Report",
   peer: "Peer",
   self: "Self",
+  external: "External",
 };
 
 const statusBadge: Record<string, { variant: "outline" | "warning" | "success"; label: string }> = {
@@ -452,6 +455,7 @@ export default function PersonDetailPage() {
                   <SelectItem value="ADMIN">Admin</SelectItem>
                   <SelectItem value="HR">HR</SelectItem>
                   <SelectItem value="EMPLOYEE">Employee</SelectItem>
+                  <SelectItem value="EXTERNAL">External</SelectItem>
                 </SelectContent>
               </Select>
             </div>

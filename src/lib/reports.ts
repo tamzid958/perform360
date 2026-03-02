@@ -164,6 +164,7 @@ export function buildRelationshipScores(
     peer: [],
     direct_report: [],
     self: [],
+    external: [],
   };
 
   for (const resp of responses) {
@@ -188,6 +189,7 @@ export function buildRelationshipScores(
     peer: avg(groups.peer),
     directReport: avg(groups.direct_report),
     self: avg(groups.self),
+    external: avg(groups.external),
   };
 }
 
@@ -482,6 +484,7 @@ export async function buildCycleReport(
     peer: null,
     directReport: null,
     self: null,
+    external: null,
   };
   const submissionTrend: SubmissionTrendPoint[] = [];
 
@@ -546,6 +549,7 @@ export async function buildCycleReport(
         peer: [],
         direct_report: [],
         self: [],
+        external: [],
       };
       // Submission date tracking
       const dailySubmissions = new Map<string, number>();
@@ -620,6 +624,7 @@ export async function buildCycleReport(
         peer: avgArr(relationshipScoreGroups.peer),
         directReport: avgArr(relationshipScoreGroups.direct_report),
         self: avgArr(relationshipScoreGroups.self),
+        external: avgArr(relationshipScoreGroups.external),
       };
 
       // Avg score by team

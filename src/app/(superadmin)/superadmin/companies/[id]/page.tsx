@@ -22,6 +22,7 @@ const ROLE_COLORS: Record<string, string> = {
   ADMIN: "bg-red-50 text-red-700",
   HR: "bg-purple-50 text-purple-700",
   EMPLOYEE: "bg-gray-50 text-gray-700",
+  EXTERNAL: "bg-orange-50 text-orange-700",
 };
 
 const CYCLE_STATUS_VARIANT: Record<string, "default" | "success" | "info" | "outline"> = {

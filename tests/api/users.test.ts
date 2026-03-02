@@ -26,6 +26,14 @@ describe("API /api/users", () => {
       expect(status).toBe(403);
     });
 
+    it("returns 403 for EXTERNAL role", async () => {
+      mockAuth(fixtures.external);
+      const req = createMockRequest("http://localhost:3000/api/users");
+      const res = await GET(req as any);
+      const { status } = await parseResponse(res);
+      expect(status).toBe(403);
+    });
+
     it("returns paginated users for ADMIN", async () => {
       mockAuth(fixtures.admin);
       const mockUsers = [
@@ -122,6 +130,40 @@ describe("API /api/users", () => {
 
       const callArgs = vi.mocked(prisma.user.findMany).mock.calls[0][0] as any;
       expect(callArgs.where.archivedAt).toBeUndefined();
+    });
+
+    it("filters by role=EXTERNAL param", async () => {
+      mockAuth(fixtures.admin);
+      vi.mocked(prisma.user.findMany).mockResolvedValue([]);
+      vi.mocked(prisma.user.count).mockResolvedValue(0);
+
+      const req = createMockRequest("http://localhost:3000/api/users?role=EXTERNAL");
+      await GET(req as any);
+
+      expect(prisma.user.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            role: "EXTERNAL",
+          }),
+        })
+      );
+    });
+
+    it("filters by role=HR_ADMIN param", async () => {
+      mockAuth(fixtures.admin);
+      vi.mocked(prisma.user.findMany).mockResolvedValue([]);
+      vi.mocked(prisma.user.count).mockResolvedValue(0);
+
+      const req = createMockRequest("http://localhost:3000/api/users?role=HR_ADMIN");
+      await GET(req as any);
+
+      expect(prisma.user.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            role: { in: ["HR", "ADMIN"] },
+          }),
+        })
+      );
     });
   });
 });

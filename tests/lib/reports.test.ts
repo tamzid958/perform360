@@ -82,6 +82,20 @@ describe("buildRelationshipScores", () => {
     expect(scores.manager).toBe(3.5); // avg of (3+4)/2 = 3.5
     expect(scores.self).toBe(5); // avg of (5+5)/2 = 5
     expect(scores.directReport).toBeNull();
+    expect(scores.external).toBeNull();
+  });
+
+  it("includes external relationship scores", () => {
+    const withExternal = [
+      ...responses,
+      { reviewerId: "r4", subjectId: "s1", relationship: "external", templateId: "t1", answers: { q1: 4, q3: 3 }, submittedAt: new Date() },
+    ];
+    const scores = buildRelationshipScores(withExternal, sections);
+
+    expect(scores.external).toBe(3.5); // avg of (4+3)/2 = 3.5
+    expect(scores.peer).toBe(4.5);
+    expect(scores.manager).toBe(3.5);
+    expect(scores.self).toBe(5);
   });
 });
 

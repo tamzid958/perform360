@@ -29,6 +29,7 @@ const BAR_COLORS: Record<string, string> = {
   Peer: "#5ac8fa",
   "Direct Report": "#af52de",
   Self: "#86868b",
+  External: "#f5a623",
 };
 
 export function RelationshipComparisonChart({
@@ -43,6 +44,7 @@ export function RelationshipComparisonChart({
         Peer: c.scores.peer,
         "Direct Report": c.scores.directReport,
         Self: c.scores.self,
+        External: c.scores.external,
       }))
     : categories.map((c) => ({
         category: c.category,
@@ -50,6 +52,7 @@ export function RelationshipComparisonChart({
         Peer: overallRelationship.peer,
         "Direct Report": overallRelationship.directReport,
         Self: overallRelationship.self,
+        External: overallRelationship.external,
       }));
 
   if (data.length === 0) {
@@ -61,7 +64,7 @@ export function RelationshipComparisonChart({
   }
 
   const activeKeys = (
-    ["Manager", "Peer", "Direct Report", "Self"] as const
+    ["Manager", "Peer", "Direct Report", "Self", "External"] as const
   ).filter((k) => {
     const relKey = k === "Direct Report" ? "directReport" : k.toLowerCase();
     return overallRelationship[relKey as keyof RelationshipScores] !== null;

@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     where: {
       email: session.user.email,
       companyId: parsed.data.companyId,
-      role: { not: "EMPLOYEE" },
+      role: { in: ["ADMIN", "HR"] },
       archivedAt: null,
     },
     select: { id: true },

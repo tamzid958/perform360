@@ -14,6 +14,7 @@ export const ROLES = {
   ADMIN: "ADMIN",
   HR: "HR",
   EMPLOYEE: "EMPLOYEE",
+  EXTERNAL: "EXTERNAL",
 } as const;
 
 export const CYCLE_STATUSES = {
@@ -32,6 +33,7 @@ export const ASSIGNMENT_STATUSES = {
 export const TEAM_ROLES = {
   MANAGER: "MANAGER",
   MEMBER: "MEMBER",
+  EXTERNAL: "EXTERNAL",
 } as const;
 
 export const RELATIONSHIP_LABELS: Record<string, string> = {
@@ -39,6 +41,7 @@ export const RELATIONSHIP_LABELS: Record<string, string> = {
   direct_report: "Direct Report",
   peer: "Peer",
   self: "Self",
+  external: "External",
 };
 
 export const ENCRYPTION_CONFIG = {

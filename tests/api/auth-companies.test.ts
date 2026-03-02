@@ -81,7 +81,7 @@ describe("GET /api/auth/companies", () => {
     );
   });
 
-  it("filters out EMPLOYEE role users", async () => {
+  it("filters to only ADMIN and HR roles", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { email: "admin@test.com" },
       expires: new Date(Date.now() + 86400000).toISOString(),
@@ -93,7 +93,7 @@ describe("GET /api/auth/companies", () => {
     expect(prisma.user.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
-          role: { not: "EMPLOYEE" },
+          role: { in: ["ADMIN", "HR"] },
         }),
       })
     );

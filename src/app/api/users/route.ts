@@ -16,10 +16,16 @@ export async function GET(request: NextRequest) {
   const { page, limit, search } = parsePaginationParams(searchParams, 20);
 
   const includeArchived = searchParams.get("archived") === "true";
+  const roleFilter = searchParams.get("role");
 
   const where: Prisma.UserWhereInput = {
     companyId: authResult.companyId,
     ...(includeArchived ? {} : { archivedAt: null }),
+    ...(roleFilter === "HR_ADMIN"
+      ? { role: { in: ["HR", "ADMIN"] } }
+      : roleFilter === "EMPLOYEE" || roleFilter === "EXTERNAL"
+        ? { role: roleFilter }
+        : {}),
     ...(search
       ? {
           OR: [

@@ -7,7 +7,7 @@ import { validateCuidParam } from "@/lib/validation";
 
 const addMemberSchema = z.object({
   userId: z.string().min(1, "User ID is required"),
-  role: z.enum(["MANAGER", "MEMBER"]),
+  role: z.enum(["MANAGER", "MEMBER", "EXTERNAL"]),
 });
 
 export async function POST(

@@ -15,7 +15,7 @@ function makeReq(url = "http://localhost:3000/test", method = "GET") {
   });
 }
 
-function setupAuth(role: "ADMIN" | "HR" | "EMPLOYEE") {
+function setupAuth(role: "ADMIN" | "HR" | "EMPLOYEE" | "EXTERNAL") {
   vi.mocked(auth).mockResolvedValue({
     user: { email: `${role.toLowerCase()}@test.com`, companyId: "c1" },
   } as any);
@@ -71,6 +71,14 @@ describe("middleware/rbac", () => {
     const wrapped = withAdmin(dummyHandler);
     const res = await wrapped(makeReq(), { params: {} });
     expect(res.status).toBe(403);
+  });
+
+  it("withAdminOrHR rejects EXTERNAL", async () => {
+    setupAuth("EXTERNAL");
+    const wrapped = withAdminOrHR(dummyHandler);
+    const res = await wrapped(makeReq(), { params: {} });
+    expect(res.status).toBe(403);
+    expect(dummyHandler).not.toHaveBeenCalled();
   });
 });
 

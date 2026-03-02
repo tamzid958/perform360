@@ -125,6 +125,7 @@ enum UserRole {
   ADMIN
   HR
   EMPLOYEE
+  EXTERNAL
 }
 
 model User {
@@ -168,6 +169,7 @@ model Team {
 enum TeamMemberRole {
   MANAGER
   MEMBER
+  EXTERNAL
 }
 
 model TeamMember {

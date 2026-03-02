@@ -177,6 +177,7 @@ const techCompanyHierarchy: OrgNode[] = [
           { title: "Emily Tran", role: "Accounts Lead", badge: { label: "Member", variant: "info" } },
           { title: "Maria Santos", role: "HR Director", badge: { label: "Member", variant: "info" } },
           { title: "David Liu", role: "Office Manager", badge: { label: "Member", variant: "info" } },
+          { title: "Board Advisor", role: "External Consultant", badge: { label: "External", variant: "outline" } },
         ],
       },
       {
@@ -204,6 +205,7 @@ const techCompanyHierarchy: OrgNode[] = [
               { title: "Jordan Lee", role: "Senior Engineer", badge: { label: "Member", variant: "info" } },
               { title: "Maya Patel", role: "Engineer", badge: { label: "Member", variant: "info" } },
               { title: "Chris Wu", role: "Junior Engineer", badge: { label: "Member", variant: "info" } },
+              { title: "Lisa Park", role: "Client Stakeholder", badge: { label: "External", variant: "outline" } },
             ],
           },
           {
@@ -369,6 +371,19 @@ function How360WorksSection() {
             providing insight into self-awareness and personal growth areas.
           </p>
         </Card>
+
+        <Card padding="sm" className="sm:col-span-2">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-8 h-8 rounded-full bg-orange-50 flex items-center justify-center text-[16px]">
+              &#8594;
+            </div>
+            <h3 className="text-headline text-gray-900">External</h3>
+          </div>
+          <p className="text-callout text-gray-500">
+            <strong>External &rarr; Everyone.</strong> Outside evaluators (clients, board members, consultants) provide
+            one-way feedback on all managers and members. Nobody evaluates them back.
+          </p>
+        </Card>
       </div>
 
       {/* TechCorp Platform Team — full assignment matrix */}
@@ -390,17 +405,18 @@ function How360WorksSection() {
         {/* Team roster */}
         <div className="mt-4 mb-5">
           <p className="text-callout text-gray-500 mb-3 font-medium">Team members:</p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {[
               { name: "Alex Rivera", title: "Solution Architect", role: "Manager" as const },
               { name: "Jordan Lee", title: "Senior Engineer", role: "Member" as const },
               { name: "Maya Patel", title: "Engineer", role: "Member" as const },
               { name: "Chris Wu", title: "Junior Engineer", role: "Member" as const },
+              { name: "Lisa Park", title: "Client Stakeholder", role: "External" as const },
             ].map((m) => (
               <div key={m.name} className="py-2.5 px-3 bg-gray-50 rounded-xl text-center">
                 <p className="text-[13px] font-medium text-gray-900">{m.name}</p>
                 <p className="text-[11px] text-gray-400 mt-0.5">{m.title}</p>
-                <Badge variant={m.role === "Manager" ? "warning" : "info"} className="mt-1.5">
+                <Badge variant={m.role === "Manager" ? "warning" : m.role === "External" ? "outline" : "info"} className="mt-1.5">
                   {m.role}
                 </Badge>
               </div>
@@ -483,7 +499,7 @@ function How360WorksSection() {
             <div className="flex items-center gap-2 mb-3">
               <UserCircle size={14} strokeWidth={1.5} className="text-green-600" />
               <span className="font-medium text-green-900 text-[13px]">Self-Assessment</span>
-              <span className="text-[12px] text-green-600/60 ml-auto">Everyone evaluates themselves</span>
+              <span className="text-[12px] text-green-600/60 ml-auto">Everyone evaluates themselves (except External)</span>
             </div>
             <div className="space-y-1.5">
               {[
@@ -502,9 +518,35 @@ function How360WorksSection() {
             </div>
           </div>
 
+          {/* External evaluations */}
+          <div className="border border-orange-100 bg-orange-50/40 rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Shield size={14} strokeWidth={1.5} className="text-orange-600" />
+              <span className="font-medium text-orange-900 text-[13px]">External Feedback</span>
+              <span className="text-[12px] text-orange-600/60 ml-auto">External evaluates all Managers &amp; Members (one-way)</span>
+            </div>
+            <div className="space-y-1.5">
+              {[
+                { reviewer: "Lisa Park", subject: "Alex Rivera" },
+                { reviewer: "Lisa Park", subject: "Jordan Lee" },
+                { reviewer: "Lisa Park", subject: "Maya Patel" },
+                { reviewer: "Lisa Park", subject: "Chris Wu" },
+              ].map((a, i) => (
+                <div key={i} className="flex items-center gap-2 py-1.5 px-3 bg-white rounded-lg text-[13px]">
+                  <span className="text-gray-900 font-medium">{a.reviewer}</span>
+                  <ArrowRight size={12} strokeWidth={1.5} className="text-orange-400 shrink-0" />
+                  <span className="text-gray-900 font-medium">{a.subject}</span>
+                </div>
+              ))}
+            </div>
+            <p className="text-[12px] text-orange-600/70 mt-3">
+              External evaluators provide feedback but never receive evaluations, peer reviews, or self-assessments.
+            </p>
+          </div>
+
           <InfoBox>
-            That&apos;s <strong>16 evaluations</strong> automatically generated from just <strong>4 people</strong>:
-            3 downward, 3 upward, 6 peer, and 4 self-assessments.
+            That&apos;s <strong>20 evaluations</strong> automatically generated from <strong>5 people</strong>:
+            3 downward, 3 upward, 6 peer, 4 self-assessments, and 4 external.
             Every team member both gives and receives feedback from multiple directions &mdash; that&apos;s the power of 360°.
           </InfoBox>
         </div>
@@ -637,7 +679,7 @@ function RolesSection() {
             <p className="text-body text-gray-500 mt-2 leading-relaxed">
               In Performs360, <strong>teams</strong> are the building blocks of your evaluation cycles.
               Each team represents a functional group within your organization. Team members are assigned
-              one of two roles &mdash; <strong>Manager</strong> or <strong>Member</strong> &mdash;
+              one of three roles &mdash; <strong>Manager</strong>, <strong>Member</strong>, or <strong>External</strong> &mdash;
               which determines the evaluation relationships during review cycles. Peer feedback is
               automatically derived &mdash; all Members in the same team evaluate each other as peers.
             </p>
@@ -645,7 +687,7 @@ function RolesSection() {
         </div>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card padding="sm">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2 rounded-lg bg-amber-50">
@@ -671,11 +713,24 @@ function RolesSection() {
             give upward feedback, and automatically evaluate each other as peers.
           </p>
         </Card>
+
+        <Card padding="sm">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 rounded-lg bg-orange-50">
+              <Shield size={18} strokeWidth={1.5} className="text-orange-500" />
+            </div>
+            <h3 className="text-headline text-gray-900">External</h3>
+          </div>
+          <p className="text-callout text-gray-500">
+            Outside evaluators like clients, board members, or consultants. They provide one-way feedback
+            on all managers and members &mdash; nobody evaluates them back.
+          </p>
+        </Card>
       </div>
 
       <InfoBox>
-        Only two roles to pick from when adding someone to a team: <strong>Manager</strong> or <strong>Member</strong>.
-        The system automatically generates all four feedback directions (downward, upward, lateral, and self) from these two roles.
+        Three roles to pick from when adding someone to a team: <strong>Manager</strong>, <strong>Member</strong>, or <strong>External</strong>.
+        The system automatically generates all feedback directions (downward, upward, lateral, self, and external) from these roles.
       </InfoBox>
     </div>
   );
@@ -1236,6 +1291,24 @@ function OrgPatternsSection() {
           <p className="text-caption mt-3">
             All Members automatically evaluate each other as peers. The Product Manager evaluates
             everyone (downward), and everyone evaluates the Product Manager (upward).
+          </p>
+        </div>
+
+        <div className="p-4 border border-orange-100 rounded-xl">
+          <h4 className="text-headline text-gray-900 mb-1">External Evaluator</h4>
+          <p className="text-callout text-gray-500 mb-3">
+            Clients, board members, or consultants who provide one-way feedback on team members without being evaluated back.
+          </p>
+          <div className="font-mono text-[13px] text-gray-600 bg-gray-50 rounded-lg p-4 leading-relaxed whitespace-pre">{`Team: "Platform Team"
+├── Tech Lead          (Manager)
+├── Senior Engineer    (Member)
+├── Engineer           (Member)
+├── Junior Engineer    (Member)
+└── Client Stakeholder (External)`}</div>
+          <p className="text-caption mt-3">
+            The External evaluator provides feedback on all Managers and Members. Nobody evaluates
+            the External back &mdash; no peer reviews, no upward feedback, no self-assessment.
+            This is ideal for getting outside perspectives without adding evaluation burden.
           </p>
         </div>
       </div>

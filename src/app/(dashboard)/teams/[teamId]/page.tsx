@@ -30,7 +30,7 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
-import { UserPlus, MoreHorizontal, Mail, Trash2, AlertCircle, ArrowDown, ArrowUp, ArrowLeftRight, RotateCcw, Archive, ArchiveRestore } from "lucide-react";
+import { UserPlus, MoreHorizontal, Mail, Trash2, AlertCircle, ArrowDown, ArrowUp, ArrowLeftRight, RotateCcw, ArrowRight, Archive, ArchiveRestore } from "lucide-react";
 
 interface TeamMember {
   id: string;
@@ -48,14 +48,16 @@ interface Team {
   members: TeamMember[];
 }
 
-const roleBadgeVariant: Record<string, "info" | "success"> = {
+const roleBadgeVariant: Record<string, "info" | "success" | "warning"> = {
   MANAGER: "info",
   MEMBER: "success",
+  EXTERNAL: "warning",
 };
 
 const roleLabels: Record<string, string> = {
   MANAGER: "Manager",
   MEMBER: "Member",
+  EXTERNAL: "External",
 };
 
 export default function TeamDetailPage() {
@@ -229,6 +231,7 @@ export default function TeamDetailPage() {
 
   const managers = team.members.filter((m) => m.role === "MANAGER");
   const members = team.members.filter((m) => m.role === "MEMBER");
+  const externals = team.members.filter((m) => m.role === "EXTERNAL");
 
   // Downward: Manager → Member (each manager evaluates each member)
   const downwardCount = managers.length * members.length;
@@ -236,8 +239,10 @@ export default function TeamDetailPage() {
   const upwardCount = members.length * managers.length;
   // Lateral: Member → Member (each member evaluates every other member)
   const lateralCount = members.length * (members.length - 1);
-  // Self: Everyone evaluates themselves
+  // Self: Everyone evaluates themselves (except External)
   const selfCount = managers.length + members.length;
+  // External: Each external evaluates all managers + members
+  const externalCount = externals.length * (managers.length + members.length);
 
   return (
     <div>
@@ -269,7 +274,7 @@ export default function TeamDetailPage() {
       )}
 
       {/* Evaluation Direction Stats */}
-      <div className="grid grid-cols-4 gap-3 mb-6 max-w-2xl">
+      <div className={`grid gap-3 mb-6 max-w-2xl ${externalCount > 0 ? "grid-cols-5" : "grid-cols-4"}`}>
         <div className="flex items-center gap-3 rounded-2xl border border-emerald-100 bg-emerald-50/50 px-4 py-3">
           <div className="p-2 rounded-xl bg-emerald-100">
             <ArrowDown size={18} strokeWidth={1.5} className="text-emerald-600" />
@@ -306,6 +311,17 @@ export default function TeamDetailPage() {
             <p className="text-[12px] font-medium text-green-600/70">Self</p>
           </div>
         </div>
+        {externalCount > 0 && (
+          <div className="flex items-center gap-3 rounded-2xl border border-orange-100 bg-orange-50/50 px-4 py-3">
+            <div className="p-2 rounded-xl bg-orange-100">
+              <ArrowRight size={18} strokeWidth={1.5} className="text-orange-600" />
+            </div>
+            <div>
+              <p className="text-title-small text-orange-700">{externalCount}</p>
+              <p className="text-[12px] font-medium text-orange-600/70">External</p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Members List */}
@@ -396,6 +412,7 @@ export default function TeamDetailPage() {
                 <SelectContent>
                   <SelectItem value="MANAGER">Manager</SelectItem>
                   <SelectItem value="MEMBER">Member</SelectItem>
+                  <SelectItem value="EXTERNAL">External</SelectItem>
                 </SelectContent>
               </Select>
             </div>

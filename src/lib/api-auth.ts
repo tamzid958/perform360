@@ -3,7 +3,7 @@ import { auth } from "./auth";
 import { prisma } from "./prisma";
 import { getImpersonation } from "./impersonation";
 
-type UserRole = "ADMIN" | "HR" | "EMPLOYEE";
+type UserRole = "ADMIN" | "HR" | "EMPLOYEE" | "EXTERNAL";
 
 interface AuthResult {
   userId: string;

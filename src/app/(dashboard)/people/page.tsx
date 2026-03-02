@@ -52,7 +52,15 @@ const roleBadgeMap: Record<string, { variant: "info" | "success" | "warning" | "
   ADMIN: { variant: "info", label: "Admin" },
   HR: { variant: "success", label: "HR" },
   EMPLOYEE: { variant: "default", label: "Employee" },
+  EXTERNAL: { variant: "warning", label: "External" },
 };
+
+const ROLE_FILTERS = [
+  { value: "ALL", label: "All" },
+  { value: "HR_ADMIN", label: "HR & Admin" },
+  { value: "EMPLOYEE", label: "Employee" },
+  { value: "EXTERNAL", label: "External" },
+] as const;
 
 export default function PeoplePage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -63,6 +71,7 @@ export default function PeoplePage() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [newRole, setNewRole] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [roleFilter, setRoleFilter] = useState("ALL");
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
   const [inviteName, setInviteName] = useState("");
@@ -77,6 +86,7 @@ export default function PeoplePage() {
     try {
       const params = new URLSearchParams({ page: String(page), limit: "20" });
       if (searchQuery.trim()) params.set("search", searchQuery.trim());
+      if (roleFilter !== "ALL") params.set("role", roleFilter);
       const res = await fetch(`/api/users?${params}`);
       const json = await res.json();
       if (!json.success) throw new Error(json.error || "Failed to load users");
@@ -89,7 +99,7 @@ export default function PeoplePage() {
     } finally {
       setLoading(false);
     }
-  }, [addToast, page, searchQuery]);
+  }, [addToast, page, searchQuery, roleFilter]);
 
   useEffect(() => {
     const timer = setTimeout(fetchUsers, searchQuery ? 300 : 0);
@@ -186,8 +196,23 @@ export default function PeoplePage() {
         </Button>
       </PageHeader>
 
-      <div className="flex items-center justify-end mb-4">
-        <div className="relative w-full sm:max-w-xs">
+      <div className="flex items-center gap-3 mb-4 flex-wrap">
+        <div className="flex gap-1">
+          {ROLE_FILTERS.map((f) => (
+            <button
+              key={f.value}
+              onClick={() => { setRoleFilter(f.value); setPage(1); }}
+              className={`px-3 py-1.5 rounded-lg text-[13px] font-medium transition-all ${
+                roleFilter === f.value
+                  ? "bg-gray-900 text-white"
+                  : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+        <div className="relative w-full sm:max-w-xs ml-auto">
           <Search size={16} strokeWidth={1.5} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
@@ -343,6 +368,7 @@ export default function PeoplePage() {
                   <SelectItem value="ADMIN">Admin</SelectItem>
                   <SelectItem value="HR">HR</SelectItem>
                   <SelectItem value="EMPLOYEE">Employee</SelectItem>
+                  <SelectItem value="EXTERNAL">External</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -382,6 +408,7 @@ export default function PeoplePage() {
                   <SelectItem value="ADMIN">Admin</SelectItem>
                   <SelectItem value="HR">HR</SelectItem>
                   <SelectItem value="EMPLOYEE">Employee</SelectItem>
+                  <SelectItem value="EXTERNAL">External</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -14,12 +14,12 @@ export interface TeamMemberWithUser {
   id: string;
   userId: string;
   teamId: string;
-  role: "MANAGER" | "MEMBER";
+  role: "MANAGER" | "MEMBER" | "EXTERNAL";
   user: {
     id: string;
     email: string;
     name: string;
     avatar: string | null;
-    role: "ADMIN" | "HR" | "EMPLOYEE";
+    role: "ADMIN" | "HR" | "EMPLOYEE" | "EXTERNAL";
   };
 }

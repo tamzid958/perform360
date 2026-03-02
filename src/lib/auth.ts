@@ -5,7 +5,7 @@ import { prisma } from "./prisma";
 import { sendEmail, getMagicLinkEmail } from "./email";
 import { getSelectedCompanyId, clearSelectedCompany } from "./company-cookie";
 
-type AppUserRole = "ADMIN" | "HR" | "EMPLOYEE";
+type AppUserRole = "ADMIN" | "HR" | "EMPLOYEE" | "EXTERNAL";
 
 declare module "next-auth" {
   interface Session {

@@ -56,7 +56,7 @@ export default async function AuthLayout({
         const companyCount = await prisma.user.count({
           where: {
             email: session.user.email!,
-            role: { not: "EMPLOYEE" },
+            role: { in: ["ADMIN", "HR"] },
             archivedAt: null,
           },
         });

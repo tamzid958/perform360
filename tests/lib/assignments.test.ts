@@ -191,5 +191,119 @@ describe("assignments", () => {
       const assignments = generateAssignmentsFromTeams(cycleId, teams, templateMap);
       expect(assignments.every((a) => a.cycleId === cycleId)).toBe(true);
     });
+
+    // ── External role tests ──
+
+    it("generates external -> member assignments", () => {
+      const teams = [{
+        id: "team-1",
+        members: [
+          { userId: "mgr-1", role: "MANAGER" as const },
+          { userId: "mem-1", role: "MEMBER" as const },
+          { userId: "mem-2", role: "MEMBER" as const },
+          { userId: "ext-1", role: "EXTERNAL" as const },
+        ],
+      }];
+      const templateMap = new Map([["team-1", "tpl-1"]]);
+      const assignments = generateAssignmentsFromTeams(cycleId, teams, templateMap);
+
+      const extToMember = assignments.filter(
+        (a) => a.relationship === "external" && a.reviewerId === "ext-1" && ["mem-1", "mem-2"].includes(a.subjectId)
+      );
+      expect(extToMember).toHaveLength(2);
+    });
+
+    it("generates external -> manager assignments", () => {
+      const teams = [{
+        id: "team-1",
+        members: [
+          { userId: "mgr-1", role: "MANAGER" as const },
+          { userId: "mem-1", role: "MEMBER" as const },
+          { userId: "ext-1", role: "EXTERNAL" as const },
+        ],
+      }];
+      const templateMap = new Map([["team-1", "tpl-1"]]);
+      const assignments = generateAssignmentsFromTeams(cycleId, teams, templateMap);
+
+      const extToManager = assignments.filter(
+        (a) => a.relationship === "external" && a.reviewerId === "ext-1" && a.subjectId === "mgr-1"
+      );
+      expect(extToManager).toHaveLength(1);
+    });
+
+    it("does not generate member -> external assignments", () => {
+      const teams = [{
+        id: "team-1",
+        members: [
+          { userId: "mgr-1", role: "MANAGER" as const },
+          { userId: "mem-1", role: "MEMBER" as const },
+          { userId: "ext-1", role: "EXTERNAL" as const },
+        ],
+      }];
+      const templateMap = new Map([["team-1", "tpl-1"]]);
+      const assignments = generateAssignmentsFromTeams(cycleId, teams, templateMap);
+
+      const toExternal = assignments.filter((a) => a.subjectId === "ext-1");
+      expect(toExternal).toHaveLength(0);
+    });
+
+    it("does not generate peer assignments between externals", () => {
+      const teams = [{
+        id: "team-1",
+        members: [
+          { userId: "mgr-1", role: "MANAGER" as const },
+          { userId: "ext-1", role: "EXTERNAL" as const },
+          { userId: "ext-2", role: "EXTERNAL" as const },
+        ],
+      }];
+      const templateMap = new Map([["team-1", "tpl-1"]]);
+      const assignments = generateAssignmentsFromTeams(cycleId, teams, templateMap);
+
+      const extPeer = assignments.filter(
+        (a) => a.relationship === "peer" && (a.reviewerId === "ext-1" || a.reviewerId === "ext-2")
+      );
+      expect(extPeer).toHaveLength(0);
+    });
+
+    it("does not generate self-evaluation for external", () => {
+      const teams = [{
+        id: "team-1",
+        members: [
+          { userId: "mgr-1", role: "MANAGER" as const },
+          { userId: "mem-1", role: "MEMBER" as const },
+          { userId: "ext-1", role: "EXTERNAL" as const },
+        ],
+      }];
+      const templateMap = new Map([["team-1", "tpl-1"]]);
+      const assignments = generateAssignmentsFromTeams(cycleId, teams, templateMap);
+
+      const extSelf = assignments.filter(
+        (a) => a.relationship === "self" && a.reviewerId === "ext-1"
+      );
+      expect(extSelf).toHaveLength(0);
+    });
+
+    it("external evaluates both managers and members", () => {
+      const teams = [{
+        id: "team-1",
+        members: [
+          { userId: "mgr-1", role: "MANAGER" as const },
+          { userId: "mgr-2", role: "MANAGER" as const },
+          { userId: "mem-1", role: "MEMBER" as const },
+          { userId: "mem-2", role: "MEMBER" as const },
+          { userId: "ext-1", role: "EXTERNAL" as const },
+        ],
+      }];
+      const templateMap = new Map([["team-1", "tpl-1"]]);
+      const assignments = generateAssignmentsFromTeams(cycleId, teams, templateMap);
+
+      const extAssignments = assignments.filter(
+        (a) => a.relationship === "external" && a.reviewerId === "ext-1"
+      );
+      // 2 managers + 2 members = 4
+      expect(extAssignments).toHaveLength(4);
+      const subjects = extAssignments.map((a) => a.subjectId).sort();
+      expect(subjects).toEqual(["mem-1", "mem-2", "mgr-1", "mgr-2"]);
+    });
   });
 });

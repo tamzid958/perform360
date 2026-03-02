@@ -243,6 +243,7 @@ function ReportContent({
             peer={relScores.peer}
             directReport={relScores.directReport}
             self={relScores.self}
+            external={relScores.external}
           />
         </Card>
       </div>

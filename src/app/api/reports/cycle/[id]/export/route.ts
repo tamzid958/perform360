@@ -161,6 +161,7 @@ function renderScoreSection(
     ["peer", data.scoresByRelationship.peer],
     ["directReport", data.scoresByRelationship.directReport],
     ["self", data.scoresByRelationship.self],
+    ["external", data.scoresByRelationship.external],
   ];
   const relationshipRows = relEntries
     .filter(([, v]) => v !== null)

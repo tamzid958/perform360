@@ -16,6 +16,7 @@ interface RelationshipScoreChartProps {
   peer: number | null;
   directReport: number | null;
   self: number | null;
+  external: number | null;
 }
 
 const RELATIONSHIP_COLORS: Record<string, string> = {
@@ -23,6 +24,7 @@ const RELATIONSHIP_COLORS: Record<string, string> = {
   Peer: "#5ac8fa",
   "Direct Report": "#af52de",
   Self: "#86868b",
+  External: "#f5a623",
 };
 
 export function RelationshipScoreChart({
@@ -30,12 +32,14 @@ export function RelationshipScoreChart({
   peer,
   directReport,
   self,
+  external,
 }: RelationshipScoreChartProps) {
   const data = [
     { name: "Manager", score: manager },
     { name: "Peer", score: peer },
     { name: "Direct Report", score: directReport },
     { name: "Self", score: self },
+    { name: "External", score: external },
   ].filter((d): d is { name: string; score: number } => d.score !== null && d.score > 0);
 
   if (data.length === 0) {
