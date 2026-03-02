@@ -9,7 +9,7 @@ vi.mock("@/lib/assignments", () => ({
 const { POST } = await import("@/app/api/cycles/route");
 const { PATCH } = await import("@/app/api/cycles/[id]/route");
 
-const validCuid = "clxyz1234567890abcde";
+const validCuid = "clxyz1234567890abcdef";
 
 describe("POST /api/cycles — weight validation edge cases", () => {
   beforeEach(() => vi.clearAllMocks());

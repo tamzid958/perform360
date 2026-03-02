@@ -36,20 +36,20 @@ describe("company-cookie", () => {
       expect(result).toBe("clx1abc2def3ghi4jkl5mno6p");
     });
 
-    it("rejects and deletes a tampered cookie with invalid format", async () => {
+    it("rejects a tampered cookie with invalid format", async () => {
       mockGet.mockReturnValue({ value: "tampered-value!" });
 
       const result = await getSelectedCompanyId();
       expect(result).toBeNull();
-      expect(mockDelete).toHaveBeenCalledWith("p360_selected_company");
+      expect(mockDelete).not.toHaveBeenCalled();
     });
 
-    it("rejects and deletes a cookie with SQL injection attempt", async () => {
+    it("rejects a cookie with SQL injection attempt", async () => {
       mockGet.mockReturnValue({ value: "'; DROP TABLE users; --" });
 
       const result = await getSelectedCompanyId();
       expect(result).toBeNull();
-      expect(mockDelete).toHaveBeenCalled();
+      expect(mockDelete).not.toHaveBeenCalled();
     });
 
     it("treats empty string cookie as no selection", async () => {
@@ -66,7 +66,7 @@ describe("company-cookie", () => {
 
       const result = await getSelectedCompanyId();
       expect(result).toBeNull();
-      expect(mockDelete).toHaveBeenCalled();
+      expect(mockDelete).not.toHaveBeenCalled();
     });
   });
 

@@ -27,7 +27,7 @@ const { GET, PATCH, DELETE } = await import(
   "@/app/api/admin/companies/[id]/route"
 );
 
-const validCuid = "clxyz1234567890abcde";
+const validCuid = "clxyz1234567890abcdef";
 
 describe("GET /api/admin/companies/[id] — edge cases", () => {
   beforeEach(() => vi.clearAllMocks());
