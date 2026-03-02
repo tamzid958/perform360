@@ -46,22 +46,38 @@ describe("POST /api/auth/register", () => {
     expect(body.success).toBe(true);
   });
 
-  it("rejects duplicate email", async () => {
-    vi.mocked(prisma.user.findFirst).mockResolvedValue({ id: "existing" } as any);
+  it("allows same email to register a second company", async () => {
+    vi.mocked(prisma.company.findUnique).mockResolvedValue(null);
+    vi.mocked(prisma.$transaction).mockImplementation(async (cb: any) => {
+      if (typeof cb === "function") {
+        return cb({
+          company: {
+            create: vi.fn().mockResolvedValue({ id: "co-2", name: "Beta Corp", slug: "beta-corp" }),
+          },
+          authUser: {
+            upsert: vi.fn().mockResolvedValue({ id: "auth-1", email: "admin@acme.com" }),
+          },
+          user: {
+            create: vi.fn().mockResolvedValue({ id: "u2", role: "ADMIN" }),
+          },
+        });
+      }
+    });
 
     const req = createMockRequest("http://localhost:3000/api/auth/register", {
       method: "POST",
       body: {
-        companyName: "Acme",
-        name: "Dup",
-        email: "dup@acme.com",
+        companyName: "Beta Corp",
+        name: "John Admin",
+        email: "admin@acme.com",
         recaptchaToken: "tok",
       },
     });
     const res = await POST(req as any);
-    const { status } = await parseResponse(res);
+    const { status, body } = await parseResponse(res);
 
-    expect(status).toBe(409);
+    expect(status).toBe(200);
+    expect(body.success).toBe(true);
   });
 
   it("validates required fields", async () => {

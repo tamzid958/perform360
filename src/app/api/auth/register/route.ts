@@ -38,18 +38,6 @@ export async function POST(request: NextRequest) {
 
     const { companyName, name, email } = parsed.data;
 
-    // Check if email already exists in any company
-    const existingUser = await prisma.user.findFirst({
-      where: { email },
-    });
-
-    if (existingUser) {
-      return NextResponse.json(
-        { success: false, error: "An account with this email already exists" },
-        { status: 409 }
-      );
-    }
-
     // Generate unique slug
     let slug = slugify(companyName);
     const existingCompany = await prisma.company.findUnique({
