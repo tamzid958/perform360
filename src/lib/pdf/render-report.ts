@@ -68,7 +68,12 @@ function ensureSpace(doc: PDFKit.PDFDocument, needed: number): void {
   const remaining = doc.page.height - PAGE_MARGIN - doc.y;
   if (remaining < needed) {
     doc.addPage();
+    doc.x = PAGE_MARGIN;
   }
+}
+
+function resetCursor(doc: PDFKit.PDFDocument): void {
+  doc.x = PAGE_MARGIN;
 }
 
 function renderHeader(
@@ -152,6 +157,7 @@ function renderRelationshipScores(
     ]),
     [CONTENT_WIDTH * 0.65, CONTENT_WIDTH * 0.35]
   );
+  resetCursor(doc);
 
   doc.moveDown(1);
 }
@@ -163,6 +169,7 @@ function renderCategoryScores(
   if (categories.length === 0) return;
 
   ensureSpace(doc, 40 + categories.length * 24);
+  resetCursor(doc);
 
   doc
     .font("Helvetica-Bold")
@@ -177,6 +184,7 @@ function renderCategoryScores(
     categories.map((c) => [c.category, c.score.toFixed(1), String(c.maxScore)]),
     [CONTENT_WIDTH * 0.55, CONTENT_WIDTH * 0.225, CONTENT_WIDTH * 0.225]
   );
+  resetCursor(doc);
 
   doc.moveDown(1);
 }
@@ -188,34 +196,37 @@ function renderTextFeedback(
   if (feedback.length === 0) return;
 
   ensureSpace(doc, 60);
+  resetCursor(doc);
 
   doc
     .font("Helvetica-Bold")
     .fontSize(16)
     .fillColor(COLORS.heading)
-    .text("Open Feedback");
+    .text("Open Feedback", PAGE_MARGIN, undefined, { width: CONTENT_WIDTH });
   doc.moveDown(0.5);
 
   for (const group of feedback) {
     if (group.responses.length === 0) continue;
 
     ensureSpace(doc, 50);
+    resetCursor(doc);
 
     const relLabel = RELATIONSHIP_DISPLAY[group.relationship] ?? group.relationship;
     doc
       .font("Helvetica-Bold")
       .fontSize(12)
       .fillColor(COLORS.body)
-      .text(`${relLabel} — ${group.questionText}`);
+      .text(`${relLabel} — ${group.questionText}`, PAGE_MARGIN, undefined, { width: CONTENT_WIDTH });
     doc.moveDown(0.3);
 
     for (const response of group.responses) {
       ensureSpace(doc, 30);
+      resetCursor(doc);
       doc
         .font("Helvetica")
         .fontSize(11)
         .fillColor(COLORS.body)
-        .text(`  •  ${response}`, PAGE_MARGIN + 8, undefined, {
+        .text(`  \u2022  ${response}`, PAGE_MARGIN + 8, undefined, {
           width: CONTENT_WIDTH - 16,
           lineGap: 2,
         });
@@ -230,11 +241,12 @@ function renderTeamBreakdown(
   tb: TeamBreakdown,
   _cycleName: string
 ): void {
+  resetCursor(doc);
   doc
     .font("Helvetica-Bold")
     .fontSize(20)
     .fillColor(COLORS.heading)
-    .text(tb.teamName);
+    .text(tb.teamName, PAGE_MARGIN, undefined, { width: CONTENT_WIDTH });
   doc.moveDown(0.5);
 
   renderOverallScore(doc, tb);
@@ -319,5 +331,6 @@ function drawTable(
     }
     doc.y = y + rowHeight;
   }
+  doc.x = PAGE_MARGIN;
   doc.y += 4;
 }
