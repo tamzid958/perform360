@@ -145,6 +145,10 @@ model User {
   submittedReviews EvaluationResponse[]
   receivedReviews  EvaluationResponse[] @relation("ReviewSubject")
 
+  // Calibration relations
+  calibrationsReceived  CalibrationAdjustment[] @relation("CalibrationSubject")
+  calibrationsPerformed CalibrationAdjustment[] @relation("CalibrationAdjuster")
+
   @@unique([email, companyId])
   @@index([authUserId])
 }
@@ -162,8 +166,9 @@ model Team {
   createdAt   DateTime @default(now())
   archivedAt  DateTime?
 
-  members    TeamMember[]
-  cycleTeams CycleTeam[]
+  members      TeamMember[]
+  cycleTeams   CycleTeam[]
+  calibrations CalibrationAdjustment[]
 }
 
 enum TeamMemberRole {
@@ -210,9 +215,10 @@ model EvaluationCycle {
   // allows submission route to encrypt reviewer answers without the passphrase.
   cachedDataKeyEncrypted String?
 
-  assignments   EvaluationAssignment[]
-  cycleTeams    CycleTeam[]
-  reviewerLinks CycleReviewerLink[]
+  assignments    EvaluationAssignment[]
+  cycleTeams     CycleTeam[]
+  reviewerLinks  CycleReviewerLink[]
+  calibrations   CalibrationAdjustment[]
 }
 
 model CycleTeam {
@@ -232,6 +238,12 @@ model CycleTeam {
   weightDirectReport Float?
   weightSelf         Float?
   weightExternal     Float?
+
+  // Team-level calibration offset (e.g., -0.5 for lenient teams, +0.3 for strict)
+  // Applied to all members' scores; null = no team-level adjustment
+  calibrationOffset        Float?
+  calibrationJustification String? @db.Text
+  calibrationAdjustedBy    String?
 
   @@unique([cycleId, teamId])
 }
@@ -355,6 +367,30 @@ model AuditLog {
 
   @@index([companyId, createdAt])
   @@index([userId])
+}
+
+// ─────────────────────────────────────────────────────────
+// CALIBRATION (Post-evaluation score adjustments)
+// ─────────────────────────────────────────────────────────
+
+model CalibrationAdjustment {
+  id              String          @id @default(cuid())
+  cycleId         String
+  cycle           EvaluationCycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  teamId          String
+  team            Team            @relation(fields: [teamId], references: [id])
+  subjectId       String
+  subject         User            @relation("CalibrationSubject", fields: [subjectId], references: [id])
+  adjustedBy      String
+  adjuster        User            @relation("CalibrationAdjuster", fields: [adjustedBy], references: [id])
+  rawScore        Float
+  calibratedScore Float
+  justification   String          @db.Text
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@unique([cycleId, teamId, subjectId])
+  @@index([cycleId])
 }
 
 // ─────────────────────────────────────────────────────────
