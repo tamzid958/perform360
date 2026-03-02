@@ -9,7 +9,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Combobox } from "@/components/ui/combobox";
 import type { ComboboxOption } from "@/components/ui/combobox";
-import { Plus, X } from "lucide-react";
+import { Plus, X, ChevronDown, ChevronUp } from "lucide-react";
 
 interface TeamOption {
   id: string;
@@ -22,9 +22,18 @@ interface TemplateOption {
   isGlobal: boolean;
 }
 
+interface RelationshipWeightsInput {
+  manager: number;
+  peer: number;
+  directReport: number;
+  self: number;
+  external: number;
+}
+
 interface TeamTemplatePair {
   teamId: string;
   templateId: string;
+  weights: RelationshipWeightsInput | null;
 }
 
 function useDebouncedSearch<T extends { id: string }>(
@@ -83,7 +92,7 @@ export default function NewCyclePage() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [teamTemplates, setTeamTemplates] = useState<TeamTemplatePair[]>([
-    { teamId: "", templateId: "" },
+    { teamId: "", templateId: "", weights: null },
   ]);
 
   const [initialTeams, setInitialTeams] = useState<TeamOption[]>([]);
@@ -121,8 +130,12 @@ export default function NewCyclePage() {
     handleSearch: handleTemplateSearch,
   } = useDebouncedSearch<TemplateOption>("/api/templates", initialTemplates);
 
+  const DEFAULT_WEIGHTS: RelationshipWeightsInput = {
+    manager: 30, peer: 30, directReport: 20, self: 10, external: 10,
+  };
+
   function addRow() {
-    setTeamTemplates((prev) => [...prev, { teamId: "", templateId: "" }]);
+    setTeamTemplates((prev) => [...prev, { teamId: "", templateId: "", weights: null }]);
   }
 
   function removeRow(index: number) {
@@ -133,6 +146,28 @@ export default function NewCyclePage() {
     setTeamTemplates((prev) =>
       prev.map((row, i) => (i === index ? { ...row, [field]: value ?? "" } : row))
     );
+  }
+
+  function toggleWeights(index: number) {
+    setTeamTemplates((prev) =>
+      prev.map((row, i) => {
+        if (i !== index) return row;
+        return { ...row, weights: row.weights ? null : { ...DEFAULT_WEIGHTS } };
+      })
+    );
+  }
+
+  function updateWeight(index: number, field: keyof RelationshipWeightsInput, value: number) {
+    setTeamTemplates((prev) =>
+      prev.map((row, i) => {
+        if (i !== index || !row.weights) return row;
+        return { ...row, weights: { ...row.weights, [field]: value } };
+      })
+    );
+  }
+
+  function getWeightSum(weights: RelationshipWeightsInput): number {
+    return weights.manager + weights.peer + weights.directReport + weights.self + weights.external;
   }
 
   const selectedTeamIds = new Set(teamTemplates.map((tt) => tt.teamId).filter(Boolean));
@@ -164,7 +199,12 @@ export default function NewCyclePage() {
     startDate &&
     endDate &&
     teamTemplates.length > 0 &&
-    teamTemplates.every((tt) => tt.teamId && tt.templateId);
+    teamTemplates.every(
+      (tt) =>
+        tt.teamId &&
+        tt.templateId &&
+        (!tt.weights || Math.abs(getWeightSum(tt.weights) - 100) < 0.01)
+    );
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -174,7 +214,16 @@ export default function NewCyclePage() {
       const res = await fetch("/api/cycles", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, startDate, endDate, teamTemplates }),
+        body: JSON.stringify({
+          name,
+          startDate,
+          endDate,
+          teamTemplates: teamTemplates.map((tt) => ({
+            teamId: tt.teamId,
+            templateId: tt.templateId,
+            ...(tt.weights ? { weights: tt.weights } : {}),
+          })),
+        }),
       });
       if (res.ok) {
         const data = await res.json();
@@ -243,44 +292,112 @@ export default function NewCyclePage() {
 
             <div className="space-y-2">
               {teamTemplates.map((row, index) => (
-                <div key={index} className="flex items-center gap-3 rounded-xl bg-gray-50/60 p-2">
-                  <div className="flex-1 min-w-0">
-                    <Combobox
-                      placeholder="Select team"
-                      emptyMessage="No teams found"
-                      value={row.teamId || null}
-                      onChange={(v) => updateRow(index, "teamId", v)}
-                      onSearchChange={handleTeamSearch}
-                      loading={isSearchingTeams}
-                      options={teamOptions.map((o) => ({
-                        ...o,
-                        disabled: o.disabled && o.value !== row.teamId,
-                      }))}
-                    />
+                <div key={index} className="rounded-xl bg-gray-50/60 p-2">
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 min-w-0">
+                      <Combobox
+                        placeholder="Select team"
+                        emptyMessage="No teams found"
+                        value={row.teamId || null}
+                        onChange={(v) => updateRow(index, "teamId", v)}
+                        onSearchChange={handleTeamSearch}
+                        loading={isSearchingTeams}
+                        options={teamOptions.map((o) => ({
+                          ...o,
+                          disabled: o.disabled && o.value !== row.teamId,
+                        }))}
+                      />
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <Combobox
+                        placeholder="Select template"
+                        emptyMessage="No templates found"
+                        value={row.templateId || null}
+                        onChange={(v) => updateRow(index, "templateId", v)}
+                        onSearchChange={handleTemplateSearch}
+                        loading={isSearchingTemplates}
+                        options={templateOptions}
+                      />
+                    </div>
+
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeRow(index)}
+                      disabled={teamTemplates.length === 1}
+                      className="shrink-0 w-8 px-0"
+                    >
+                      <X size={16} strokeWidth={1.5} />
+                    </Button>
                   </div>
 
-                  <div className="flex-1 min-w-0">
-                    <Combobox
-                      placeholder="Select template"
-                      emptyMessage="No templates found"
-                      value={row.templateId || null}
-                      onChange={(v) => updateRow(index, "templateId", v)}
-                      onSearchChange={handleTemplateSearch}
-                      loading={isSearchingTemplates}
-                      options={templateOptions}
-                    />
-                  </div>
+                  {/* Weight configuration toggle */}
+                  <div className="mt-2 ml-1">
+                    <button
+                      type="button"
+                      onClick={() => toggleWeights(index)}
+                      className="flex items-center gap-1 text-[12px] text-gray-500 hover:text-gray-700 transition-colors"
+                    >
+                      {row.weights ? (
+                        <ChevronUp size={14} strokeWidth={1.5} />
+                      ) : (
+                        <ChevronDown size={14} strokeWidth={1.5} />
+                      )}
+                      {row.weights ? "Remove custom weights" : "Set custom weights"}
+                    </button>
 
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeRow(index)}
-                    disabled={teamTemplates.length === 1}
-                    className="shrink-0 w-8 px-0"
-                  >
-                    <X size={16} strokeWidth={1.5} />
-                  </Button>
+                    {row.weights && (
+                      <div className="mt-2 space-y-2">
+                        <div className="grid grid-cols-5 gap-2">
+                          {(
+                            [
+                              ["manager", "Manager"],
+                              ["peer", "Peer"],
+                              ["directReport", "Direct Report"],
+                              ["self", "Self"],
+                              ["external", "External"],
+                            ] as [keyof RelationshipWeightsInput, string][]
+                          ).map(([field, label]) => (
+                            <div key={field}>
+                              <label className="block text-[11px] font-medium text-gray-500 mb-1">
+                                {label}
+                              </label>
+                              <div className="relative">
+                                <input
+                                  type="number"
+                                  min={0}
+                                  max={100}
+                                  step={1}
+                                  value={row.weights![field]}
+                                  onChange={(e) =>
+                                    updateWeight(index, field, Math.max(0, Math.min(100, Number(e.target.value) || 0)))
+                                  }
+                                  className="w-full rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-[13px] text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 pr-6"
+                                />
+                                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] text-gray-400">%</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`text-[12px] font-medium ${
+                              Math.abs(getWeightSum(row.weights) - 100) < 0.01
+                                ? "text-green-600"
+                                : "text-red-500"
+                            }`}
+                          >
+                            Total: {getWeightSum(row.weights)}%
+                          </span>
+                          {Math.abs(getWeightSum(row.weights) - 100) >= 0.01 && (
+                            <span className="text-[11px] text-red-400">Must equal 100%</span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
