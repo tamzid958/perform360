@@ -143,13 +143,19 @@ function sanitizeFilename(name: string): string {
 function renderScoreSection(
   data: {
     overallScore: number;
+    weightedOverallScore?: number | null;
+    appliedWeights?: { manager: number; peer: number; directReport: number; self: number; external: number } | null;
     categoryScores: { category: string; score: number; maxScore: number }[];
+    weightedCategoryScores?: { category: string; score: number; maxScore: number }[] | null;
     scoresByRelationship: RelationshipScores;
     textFeedback: { relationship: string; questionText: string; responses: string[] }[];
   },
   relLabels: Record<string, string>
 ): string {
-  const categoryRows = data.categoryScores
+  const displayScore = data.weightedOverallScore ?? data.overallScore;
+  const displayCategories = data.weightedCategoryScores ?? data.categoryScores;
+
+  const categoryRows = displayCategories
     .map(
       (c) =>
         `<tr><td>${escapeHtml(c.category)}</td><td>${c.score.toFixed(1)}</td><td>${c.maxScore}</td></tr>`
@@ -181,10 +187,26 @@ function renderScoreSection(
     )
     .join("");
 
+  const weightsRow = data.appliedWeights
+    ? `<p class="weights-info" style="text-align:center;color:#888;font-size:11px;margin-top:4px;">
+        Weights: Mgr ${Math.round(data.appliedWeights.manager * 100)}%
+        · Peer ${Math.round(data.appliedWeights.peer * 100)}%
+        · DR ${Math.round(data.appliedWeights.directReport * 100)}%
+        · Self ${Math.round(data.appliedWeights.self * 100)}%
+        · Ext ${Math.round(data.appliedWeights.external * 100)}%
+      </p>`
+    : "";
+
+  const unweightedNote = data.weightedOverallScore != null
+    ? `<p style="text-align:center;color:#aaa;font-size:11px;">Unweighted: ${data.overallScore.toFixed(1)}</p>`
+    : "";
+
   return `
   <div class="score-hero">
-    <div class="score-value">${data.overallScore.toFixed(1)}</div>
-    <div class="score-label">Overall Score</div>
+    <div class="score-value">${displayScore.toFixed(1)}</div>
+    <div class="score-label">Overall Score${data.weightedOverallScore != null ? " (Weighted)" : ""}</div>
+    ${unweightedNote}
+    ${weightsRow}
   </div>
 
   <section>
@@ -194,7 +216,7 @@ function renderScoreSection(
   </section>
 
   <section>
-    <h2>Competency Scores</h2>
+    <h2>Competency Scores${data.weightedCategoryScores ? " (Weighted)" : ""}</h2>
     <table><thead><tr><th>Category</th><th>Score</th><th>Max</th></tr></thead>
     <tbody>${categoryRows}</tbody></table>
   </section>
