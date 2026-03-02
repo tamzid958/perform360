@@ -957,6 +957,7 @@ export default function CycleDetailPage() {
                         cycleReport.avgScoreByRelationship.directReport
                       }
                       self={cycleReport.avgScoreByRelationship.self}
+                      external={cycleReport.avgScoreByRelationship.external}
                     />
                   </Card>
                 )}
