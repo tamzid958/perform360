@@ -79,8 +79,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (!user?.email) return false;
       const [appUser, superAdmin] = await Promise.all([
         prisma.user.findFirst({
-          where: { email: user.email, archivedAt: null },
-          select: { id: true, role: true },
+          where: {
+            email: user.email,
+            archivedAt: null,
+            role: { in: ["ADMIN", "HR"] },
+          },
+          select: { id: true },
         }),
         prisma.superAdmin.findUnique({
           where: { email: user.email },
@@ -88,8 +92,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }),
       ]);
       if (!appUser && !superAdmin) return false;
-      // Only ADMIN and HR can log in — all other roles are rejected
-      if (appUser && appUser.role !== "ADMIN" && appUser.role !== "HR") return false;
       return true;
     },
     async session({ session, user }) {

@@ -51,15 +51,21 @@ export async function POST(request: NextRequest) {
       }, { status: 409 });
     }
 
-    // Create AuthUser and User records in a transaction.
-    // All roles get an AuthUser record, but only ADMIN/HR can log in
-    // (enforced in the signIn callback).
+    // ADMIN/HR get an AuthUser record (they can log in).
+    // EMPLOYEE/EXTERNAL only exist in the Users table (OTP-based access).
+    const needsAuth = validated.role === "ADMIN" || validated.role === "HR";
+
     const result = await prisma.$transaction(async (tx) => {
-      const authUser = await tx.authUser.upsert({
-        where: { email: validated.email },
-        create: { email: validated.email, name: validated.name },
-        update: {},
-      });
+      let authUserId: string | undefined;
+
+      if (needsAuth) {
+        const authUser = await tx.authUser.upsert({
+          where: { email: validated.email },
+          create: { email: validated.email, name: validated.name },
+          update: {},
+        });
+        authUserId = authUser.id;
+      }
 
       const user = await tx.user.create({
         data: {
@@ -67,7 +73,7 @@ export async function POST(request: NextRequest) {
           name: validated.name,
           role: validated.role,
           companyId: authResult.companyId,
-          authUserId: authUser.id,
+          ...(authUserId ? { authUserId } : {}),
         },
       });
 

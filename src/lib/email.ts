@@ -1,6 +1,14 @@
 import { Resend } from "resend";
+import nodemailer from "nodemailer";
 
-// ─── Resend client (uses .env config) ───
+// ─── Environment ───
+
+const IS_PRODUCTION = process.env.NODE_ENV === "production";
+
+const DEFAULT_FROM =
+  process.env.EMAIL_FROM || "Performs360 <noreply@performs360.com>";
+
+// ─── Resend client (production) ───
 
 let _resend: Resend | null = null;
 function getResend(): Resend {
@@ -10,8 +18,22 @@ function getResend(): Resend {
   return _resend;
 }
 
-const DEFAULT_FROM =
-  process.env.EMAIL_FROM || "Performs360 <noreply@performs360.com>";
+// ─── Nodemailer transport (development — Mailtrap) ───
+
+let _transport: nodemailer.Transporter | null = null;
+function getTransport(): nodemailer.Transporter {
+  if (!_transport) {
+    _transport = nodemailer.createTransport({
+      host: process.env.SMTP_HOST || "sandbox.smtp.mailtrap.io",
+      port: Number(process.env.SMTP_PORT) || 2525,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    });
+  }
+  return _transport;
+}
 
 // ─── Send Email ───
 
@@ -36,16 +58,26 @@ export async function sendEmail({
   html,
   text,
 }: SendEmailOptions) {
-  const { error } = await getResend().emails.send({
-    from: DEFAULT_FROM,
-    to,
-    subject,
-    html,
-    ...(text ? { text } : {}),
-  });
+  if (IS_PRODUCTION) {
+    const { error } = await getResend().emails.send({
+      from: DEFAULT_FROM,
+      to,
+      subject,
+      html,
+      ...(text ? { text } : {}),
+    });
 
-  if (error) {
-    throw new Error(`Failed to send email: ${error.message}`);
+    if (error) {
+      throw new Error(`Failed to send email: ${error.message}`);
+    }
+  } else {
+    await getTransport().sendMail({
+      from: DEFAULT_FROM,
+      to,
+      subject,
+      html,
+      ...(text ? { text } : {}),
+    });
   }
 }
 
@@ -56,21 +88,36 @@ export async function sendEmailWithAttachments({
   text,
   attachments,
 }: SendEmailWithAttachmentsOptions) {
-  const { error } = await getResend().emails.send({
-    from: DEFAULT_FROM,
-    to,
-    subject,
-    html,
-    ...(text ? { text } : {}),
-    attachments: attachments.map((a) => ({
-      filename: a.filename,
-      content: Buffer.from(a.content),
-      contentType: a.contentType,
-    })),
-  });
+  if (IS_PRODUCTION) {
+    const { error } = await getResend().emails.send({
+      from: DEFAULT_FROM,
+      to,
+      subject,
+      html,
+      ...(text ? { text } : {}),
+      attachments: attachments.map((a) => ({
+        filename: a.filename,
+        content: Buffer.from(a.content),
+        contentType: a.contentType,
+      })),
+    });
 
-  if (error) {
-    throw new Error(`Failed to send email: ${error.message}`);
+    if (error) {
+      throw new Error(`Failed to send email: ${error.message}`);
+    }
+  } else {
+    await getTransport().sendMail({
+      from: DEFAULT_FROM,
+      to,
+      subject,
+      html,
+      ...(text ? { text } : {}),
+      attachments: attachments.map((a) => ({
+        filename: a.filename,
+        content: Buffer.from(a.content, "base64"),
+        contentType: a.contentType,
+      })),
+    });
   }
 }
 

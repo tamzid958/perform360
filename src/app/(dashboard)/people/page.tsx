@@ -58,8 +58,7 @@ const roleBadgeMap: Record<string, { variant: "info" | "success" | "warning" | "
 const ROLE_FILTERS = [
   { value: "ALL", label: "All" },
   { value: "HR_ADMIN", label: "HR & Admin" },
-  { value: "EMPLOYEE", label: "Employee" },
-  { value: "EXTERNAL", label: "External" },
+  { value: "MEMBER_EXTERNAL", label: "Member & External" },
 ] as const;
 
 export default function PeoplePage() {
