@@ -5,12 +5,14 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
-    include: ["tests/**/*.test.ts"],
-    exclude: ["tests/e2e/**", "tests/contract/**"],
-    setupFiles: ["tests/setup.ts"],
-    coverage: {
-      provider: "v8",
-      include: ["src/lib/**", "src/app/api/**"],
+    include: ["tests/contract/**/*.test.ts"],
+    testTimeout: 30_000,
+    hookTimeout: 30_000,
+    pool: "forks",
+    poolOptions: {
+      forks: {
+        singleFork: true,
+      },
     },
   },
   resolve: {
