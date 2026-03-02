@@ -10,7 +10,6 @@ export async function getSelectedCompanyId(): Promise<string | null> {
 
   // Reject tampered values — must be a valid CUID format
   if (value && !isValidCuid(value)) {
-    cookieStore.delete(COOKIE_NAME);
     return null;
   }
 

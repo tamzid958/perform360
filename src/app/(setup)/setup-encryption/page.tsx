@@ -71,6 +71,12 @@ export default function SetupEncryptionPage() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
+    // Only redirect on initial page load (step 1).
+    // Once the user is progressing through setup, skip the check —
+    // encryption gets marked as set up in step 2, which would
+    // cause a premature redirect on steps 3/4.
+    if (step !== 1) return;
+
     async function checkStatus() {
       const res = await fetch("/api/encryption/status");
       if (res.ok) {
@@ -81,7 +87,8 @@ export default function SetupEncryptionPage() {
       }
     }
     checkStatus();
-  }, [router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const passphraseValid =
     passphrase.length >= 12 &&
