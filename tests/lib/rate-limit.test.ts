@@ -1,5 +1,7 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { describe, it, expect, beforeEach, vi } from "vitest";
+
+vi.unmock("@/lib/rate-limit");
+const { checkRateLimit, getClientIp } = await import("@/lib/rate-limit");
 
 describe("rate-limit", () => {
   describe("checkRateLimit", () => {
