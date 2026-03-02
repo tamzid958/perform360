@@ -7,7 +7,7 @@ function getClientIp(request: NextRequest): string {
   return request.headers.get("x-real-ip") ?? "unknown";
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   // Rate-limit magic link sends (POST to NextAuth signin)
   if (
     request.method === "POST" &&
