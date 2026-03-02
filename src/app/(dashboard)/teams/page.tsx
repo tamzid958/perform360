@@ -15,7 +15,9 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { Users, Plus, AlertCircle, Inbox, Search, MoreHorizontal, Eye, Trash2, Archive, ArchiveRestore, ArrowDown, ArrowUp, ArrowLeftRight, RotateCcw, ArrowRight, Upload } from "lucide-react";
+import { Users, Plus, Search, MoreHorizontal, Eye, Trash2, Archive, ArchiveRestore, ArrowDown, ArrowUp, ArrowLeftRight, RotateCcw, ArrowRight, Upload } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
+import { ErrorCard } from "@/components/ui/error-card";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { PaginationMeta } from "@/types/pagination";
@@ -128,13 +130,7 @@ export default function TeamsPage() {
           <Link href="/teams/import"><Button variant="secondary"><Upload size={16} strokeWidth={1.5} className="mr-1.5" />Import CSV</Button></Link>
           <Link href="/teams/new"><Button><Plus size={16} strokeWidth={2} className="mr-1.5" />New Team</Button></Link>
         </PageHeader>
-        <Card className="max-w-lg mx-auto mt-12 text-center">
-          <div className="flex flex-col items-center gap-3 py-4">
-            <AlertCircle size={32} strokeWidth={1.5} className="text-red-400" />
-            <p className="text-[14px] text-gray-600">{error}</p>
-            <Button variant="secondary" size="sm" onClick={fetchTeams}>Retry</Button>
-          </div>
-        </Card>
+        <ErrorCard message={error} hint="Check your connection and try again" onRetry={fetchTeams} />
       </div>
     );
   }
@@ -182,20 +178,20 @@ export default function TeamsPage() {
           {[1, 2, 3].map((i) => <TeamCardSkeleton key={i} />)}
         </div>
       ) : teams.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 py-16 text-center">
-          <Inbox size={32} strokeWidth={1.5} className="text-gray-300" />
-          <p className="text-[14px] text-gray-500">
-            {searchQuery ? "No teams match your search" : showArchived ? "No archived teams" : "No teams yet"}
-          </p>
+        <EmptyState
+          icon={Users}
+          title={searchQuery ? "No teams match your search" : showArchived ? "All teams are active" : "No teams yet"}
+          description={!searchQuery && !showArchived ? "Create a team to organize your people for evaluations" : undefined}
+        >
           {!searchQuery && !showArchived && (
             <Link href="/teams/new">
               <Button variant="secondary" size="sm">Create Team</Button>
             </Link>
           )}
-        </div>
+        </EmptyState>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 stagger-fade-in">
             {teams.map((team) => {
               const managerCount = team.members.filter((m) => m.role === "MANAGER").length;
               const memberCount = team.members.filter((m) => m.role === "MEMBER").length;
@@ -218,6 +214,7 @@ export default function TeamsPage() {
                           <button
                             className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
                             onClick={(e) => e.stopPropagation()}
+                            aria-label="Team actions"
                           >
                             <MoreHorizontal size={16} strokeWidth={1.5} className="text-gray-400" />
                           </button>

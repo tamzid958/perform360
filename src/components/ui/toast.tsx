@@ -8,11 +8,12 @@ interface Toast {
   id: string;
   message: string;
   type: "success" | "error" | "warning" | "info";
+  action?: { label: string; onClick: () => void };
 }
 
 interface ToastContextType {
   toasts: Toast[];
-  addToast: (message: string, type?: Toast["type"]) => void;
+  addToast: (message: string, type?: Toast["type"], action?: Toast["action"]) => void;
   removeToast: (id: string) => void;
 }
 
@@ -27,12 +28,12 @@ export function useToast() {
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  const addToast = useCallback((message: string, type: Toast["type"] = "info") => {
+  const addToast = useCallback((message: string, type: Toast["type"] = "info", action?: Toast["action"]) => {
     const id = Math.random().toString(36).slice(2);
-    setToasts((prev) => [...prev, { id, message, type }]);
+    setToasts((prev) => [...prev, { id, message, type, action }]);
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 4000);
+    }, action ? 6000 : 4000);
   }, []);
 
   const removeToast = useCallback((id: string) => {
@@ -42,7 +43,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={{ toasts, addToast, removeToast }}>
       {children}
-      <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2">
+      <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2" role="region" aria-label="Notifications">
         {toasts.map((toast) => (
           <ToastItem key={toast.id} toast={toast} onClose={() => removeToast(toast.id)} />
         ))}
@@ -61,13 +62,22 @@ function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
 
   return (
     <div
+      role="alert"
       className={cn(
-        "flex items-center gap-3 rounded-xl bg-white px-4 py-3 shadow-lg border border-gray-100 min-w-[300px] animate-in slide-in-from-right-full"
+        "flex items-center gap-3 rounded-xl bg-white dark:bg-gray-800 px-4 py-3 shadow-lg border border-gray-100 dark:border-gray-700 min-w-[300px] max-w-[420px] animate-in slide-in-from-right-full"
       )}
     >
       {icons[toast.type]}
-      <p className="text-[14px] text-gray-900 flex-1">{toast.message}</p>
-      <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full transition-colors">
+      <p className="text-[14px] text-gray-900 dark:text-gray-100 flex-1">{toast.message}</p>
+      {toast.action && (
+        <button
+          onClick={() => { toast.action!.onClick(); onClose(); }}
+          className="text-[13px] font-medium text-brand-500 hover:text-brand-600 whitespace-nowrap transition-colors"
+        >
+          {toast.action.label}
+        </button>
+      )}
+      <button onClick={onClose} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors" aria-label="Dismiss notification">
         <X size={14} strokeWidth={1.5} className="text-gray-400" />
       </button>
     </div>

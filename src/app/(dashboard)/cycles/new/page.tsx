@@ -284,7 +284,7 @@ export default function NewCyclePage() {
             )}
 
             {/* Column headers */}
-            <div className="flex items-center gap-3">
+            <div className="hidden sm:flex items-center gap-3">
               <span className="flex-1 text-[12px] font-medium text-gray-500 uppercase tracking-wide">Team</span>
               <span className="flex-1 text-[12px] font-medium text-gray-500 uppercase tracking-wide">Template</span>
               <span className="shrink-0 w-8" />
@@ -293,8 +293,9 @@ export default function NewCyclePage() {
             <div className="space-y-2">
               {teamTemplates.map((row, index) => (
                 <div key={index} className="rounded-xl bg-gray-50/60 p-2">
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
                     <div className="flex-1 min-w-0">
+                      <label className="block text-[11px] font-medium text-gray-500 mb-1 sm:hidden">Team</label>
                       <Combobox
                         placeholder="Select team"
                         emptyMessage="No teams found"
@@ -310,6 +311,7 @@ export default function NewCyclePage() {
                     </div>
 
                     <div className="flex-1 min-w-0">
+                      <label className="block text-[11px] font-medium text-gray-500 mb-1 sm:hidden">Template</label>
                       <Combobox
                         placeholder="Select template"
                         emptyMessage="No templates found"
@@ -327,7 +329,7 @@ export default function NewCyclePage() {
                       size="sm"
                       onClick={() => removeRow(index)}
                       disabled={teamTemplates.length === 1}
-                      className="shrink-0 w-8 px-0"
+                      className="shrink-0 w-8 px-0 self-end sm:self-auto"
                     >
                       <X size={16} strokeWidth={1.5} />
                     </Button>
@@ -350,7 +352,7 @@ export default function NewCyclePage() {
 
                     {row.weights && (
                       <div className="mt-2 space-y-2">
-                        <div className="grid grid-cols-5 gap-2">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
                           {(
                             [
                               ["manager", "Manager"],

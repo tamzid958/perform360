@@ -31,7 +31,9 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { UserPlus, Search, MoreHorizontal, Shield, AlertCircle, Inbox, Trash2 } from "lucide-react";
+import { UserPlus, Search, MoreHorizontal, Shield, Trash2, Users } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
+import { ErrorCard } from "@/components/ui/error-card";
 import type { PaginationMeta } from "@/types/pagination";
 
 interface TeamMembership {
@@ -175,13 +177,7 @@ export default function PeoplePage() {
             <UserPlus size={16} strokeWidth={2} className="mr-1.5" />Invite User
           </Button>
         </PageHeader>
-        <Card className="max-w-lg mx-auto mt-12 text-center">
-          <div className="flex flex-col items-center gap-3 py-4">
-            <AlertCircle size={32} strokeWidth={1.5} className="text-red-400" />
-            <p className="text-[14px] text-gray-600">{error}</p>
-            <Button variant="secondary" size="sm" onClick={fetchUsers}>Retry</Button>
-          </div>
-        </Card>
+        <ErrorCard message={error} hint="Check your connection and try again" onRetry={fetchUsers} />
       </div>
     );
   }
@@ -239,22 +235,21 @@ export default function PeoplePage() {
           </div>
         </Card>
       ) : users.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 py-16 text-center">
-          <Inbox size={32} strokeWidth={1.5} className="text-gray-300" />
-          <p className="text-[14px] text-gray-500">
-            {searchQuery ? "No users match your search" : "No users yet"}
-          </p>
-        </div>
+        <EmptyState
+          icon={Users}
+          title={searchQuery ? "No users match your search" : "No users yet"}
+          description={!searchQuery ? "Invite people to your organization to get started" : undefined}
+        />
       ) : (
         <Card padding="sm">
           <div className="overflow-x-auto -mx-4 sm:mx-0">
             <table className="w-full min-w-[480px] sm:min-w-0">
               <thead>
                 <tr className="border-b border-gray-100">
-                  <th className="text-left text-[12px] font-medium text-gray-400 uppercase tracking-wider px-4 py-3">User</th>
-                  <th className="text-left text-[12px] font-medium text-gray-400 uppercase tracking-wider px-4 py-3">Role</th>
-                  <th className="text-left text-[12px] font-medium text-gray-400 uppercase tracking-wider px-4 py-3 hidden sm:table-cell">Teams</th>
-                  <th className="text-right text-[12px] font-medium text-gray-400 uppercase tracking-wider px-4 py-3"></th>
+                  <th className="text-left text-[12px] font-medium text-gray-400 tracking-wide px-4 py-3">User</th>
+                  <th className="text-left text-[12px] font-medium text-gray-400 tracking-wide px-4 py-3">Role</th>
+                  <th className="text-left text-[12px] font-medium text-gray-400 tracking-wide px-4 py-3 hidden sm:table-cell">Teams</th>
+                  <th className="text-right text-[12px] font-medium text-gray-400 tracking-wide px-4 py-3"><span className="sr-only">Actions</span></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -282,7 +277,7 @@ export default function PeoplePage() {
                       <td className="px-4 py-3 text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <button className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+                            <button className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors" aria-label="User actions">
                               <MoreHorizontal size={16} strokeWidth={1.5} className="text-gray-400" />
                             </button>
                           </DropdownMenuTrigger>

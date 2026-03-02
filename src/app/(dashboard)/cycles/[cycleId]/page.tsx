@@ -65,6 +65,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/toast";
 import type { CycleReport } from "@/types/report";
 import { CalibrationPanel } from "@/components/cycles/calibration-panel";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 
 // ─── Types ───
 
@@ -174,8 +175,7 @@ export default function CycleDetailPage() {
   const [activeTab, setActiveTab] = useState<
     "overview" | "assignments" | "reports" | "calibration"
   >("overview");
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [calibrationData, setCalibrationData] = useState<any>(null);
+  const [calibrationData, setCalibrationData] = useState<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
   const [calibrationLoading, setCalibrationLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState<StatusFilterValue>("all");
   const [relationshipFilter, setRelationshipFilter] =
@@ -550,6 +550,7 @@ export default function CycleDetailPage() {
 
   return (
     <div>
+      <Breadcrumb items={[{ label: "Cycles", href: "/cycles" }, { label: cycle.name }]} />
       <PageHeader
         title={cycle.name}
         description={`${cycle.teamTemplates.length} team${cycle.teamTemplates.length !== 1 ? "s" : ""} \u00B7 ${new Date(cycle.startDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })} \u2013 ${new Date(cycle.endDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`}
@@ -576,7 +577,7 @@ export default function CycleDetailPage() {
         {(cycle.status === "DRAFT" || cycle.status === "ACTIVE" || cycle.status === "CLOSED" || activeTab === "reports") && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-9 w-9 p-0">
+              <Button variant="ghost" className="h-9 w-9 p-0" aria-label="More actions">
                 <MoreHorizontal size={18} strokeWidth={1.5} />
               </Button>
             </DropdownMenuTrigger>
@@ -688,14 +689,14 @@ export default function CycleDetailPage() {
               <div className="divide-y divide-gray-50">
                 {cycle.teamTemplates.map((tt) => (
                   <div key={tt.teamId} className="px-4 py-2.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[14px] font-medium text-gray-900">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[14px] font-medium text-gray-900 truncate">
                         {tt.teamName}
                       </span>
-                      <Badge variant="outline">{tt.templateName}</Badge>
+                      <Badge variant="outline" className="shrink-0">{tt.templateName}</Badge>
                     </div>
                     {tt.weights && (
-                      <div className="mt-1.5 flex items-center gap-3 text-[11px] text-gray-400">
+                      <div className="mt-1.5 flex items-center gap-3 text-[11px] text-gray-400 flex-wrap">
                         <span>Weights:</span>
                         <span>Mgr {tt.weights.manager}%</span>
                         <span>Peer {tt.weights.peer}%</span>
@@ -716,7 +717,7 @@ export default function CycleDetailPage() {
           {/* Filter Bar */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-4 flex-wrap">
             {/* Status segmented control */}
-            <div className="inline-flex items-center gap-0.5 rounded-xl bg-gray-100 p-1 overflow-x-auto">
+            <div className="inline-flex items-center gap-0.5 rounded-xl bg-gray-100 p-1 overflow-x-auto shrink-0">
               {(
                 [
                   { value: "all", label: "All" },
@@ -856,20 +857,20 @@ export default function CycleDetailPage() {
                       /{group.items.length} completed
                     </span>
                   </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
+                  <div className="overflow-x-auto -mx-1 sm:mx-0">
+                    <table className="w-full min-w-[580px]">
                       <thead>
                         <tr className="border-b border-gray-50">
-                          <th className="text-left text-[11px] font-medium text-gray-400 uppercase tracking-wider px-4 py-2">
+                          <th className="text-left text-[11px] font-medium text-gray-400 tracking-wide px-4 py-2">
                             Subject
                           </th>
-                          <th className="text-left text-[11px] font-medium text-gray-400 uppercase tracking-wider px-4 py-2">
+                          <th className="text-left text-[11px] font-medium text-gray-400 tracking-wide px-4 py-2">
                             Reviewer
                           </th>
-                          <th className="text-left text-[11px] font-medium text-gray-400 uppercase tracking-wider px-4 py-2">
+                          <th className="text-left text-[11px] font-medium text-gray-400 tracking-wide px-4 py-2">
                             Relationship
                           </th>
-                          <th className="text-left text-[11px] font-medium text-gray-400 uppercase tracking-wider px-4 py-2">
+                          <th className="text-left text-[11px] font-medium text-gray-400 tracking-wide px-4 py-2">
                             Status
                           </th>
                         </tr>
@@ -1108,9 +1109,9 @@ export default function CycleDetailPage() {
                           key={person.subjectId}
                           href={`/cycles/${cycleId}/reports/${person.subjectId}`}
                         >
-                          <div className="flex items-center justify-between px-4 py-2.5 hover:bg-gray-50/50 transition-colors group">
-                            <div className="flex items-center gap-3">
-                              <span className="text-[12px] font-semibold text-gray-400 w-5 text-center">
+                          <div className="flex items-center justify-between px-4 py-2.5 hover:bg-gray-50/50 transition-colors group gap-2">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <span className="text-[12px] font-semibold text-gray-400 w-5 text-center shrink-0">
                                 {idx === 0 ? (
                                   <Trophy
                                     size={14}
@@ -1122,7 +1123,7 @@ export default function CycleDetailPage() {
                                 )}
                               </span>
                               <Avatar name={person.subjectName} size="sm" />
-                              <span className="text-[14px] font-medium text-gray-900">
+                              <span className="text-[14px] font-medium text-gray-900 truncate">
                                 {person.subjectName}
                               </span>
                             </div>
@@ -1150,13 +1151,13 @@ export default function CycleDetailPage() {
                           key={person.subjectId}
                           href={`/cycles/${cycleId}/reports/${person.subjectId}`}
                         >
-                          <div className="flex items-center justify-between px-4 py-2.5 hover:bg-gray-50/50 transition-colors group">
-                            <div className="flex items-center gap-3">
-                              <span className="text-[12px] font-semibold text-gray-400 w-5 text-center">
+                          <div className="flex items-center justify-between px-4 py-2.5 hover:bg-gray-50/50 transition-colors group gap-2">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <span className="text-[12px] font-semibold text-gray-400 w-5 text-center shrink-0">
                                 {idx + 1}
                               </span>
                               <Avatar name={person.subjectName} size="sm" />
-                              <span className="text-[14px] font-medium text-gray-900">
+                              <span className="text-[14px] font-medium text-gray-900 truncate">
                                 {person.subjectName}
                               </span>
                             </div>
@@ -1190,11 +1191,11 @@ export default function CycleDetailPage() {
                         key={person.subjectId}
                         href={`/cycles/${cycleId}/reports/${person.subjectId}`}
                       >
-                        <div className="flex items-center justify-between px-4 py-3 hover:bg-gray-50/50 transition-colors cursor-pointer group">
-                          <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-between px-4 py-3 hover:bg-gray-50/50 transition-colors cursor-pointer group gap-2">
+                          <div className="flex items-center gap-3 min-w-0">
                             <Avatar name={person.subjectName} size="md" />
-                            <div>
-                              <p className="text-[14px] font-medium text-gray-900">
+                            <div className="min-w-0">
+                              <p className="text-[14px] font-medium text-gray-900 truncate">
                                 {person.subjectName}
                               </p>
                               <p className="text-[12px] text-gray-500">
@@ -1203,7 +1204,7 @@ export default function CycleDetailPage() {
                               </p>
                             </div>
                           </div>
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-3 shrink-0">
                             {person.completedCount > 0 && (
                               <ScoreBadge score={getDisplayScore(person)} />
                             )}

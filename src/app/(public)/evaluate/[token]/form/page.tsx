@@ -232,6 +232,9 @@ export default function EvaluationFormPage({ params: paramsPromise }: { params: 
               </p>
             </div>
             <div className="flex items-center gap-3 flex-shrink-0 ml-4">
+              {answeredQuestions > 0 && (
+                <span className="text-[11px] text-green-600 hidden sm:inline">Draft in progress</span>
+              )}
               <span className="text-caption-style hidden sm:inline">
                 {answeredQuestions}/{totalQuestions}
               </span>

@@ -8,7 +8,7 @@ export function Card({ className, padding = "md", children, ...props }: CardProp
   return (
     <div
       className={cn(
-        "bg-white rounded-2xl shadow-card border border-gray-100/50",
+        "bg-white dark:bg-gray-900 rounded-2xl shadow-card border border-gray-100/50 dark:border-gray-800",
         {
           "p-4": padding === "sm",
           "p-6": padding === "md",
@@ -33,7 +33,7 @@ export function CardHeader({ className, children, ...props }: React.HTMLAttribut
 
 export function CardTitle({ className, children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
-    <h3 className={cn("text-headline text-gray-900", className)} {...props}>
+    <h3 className={cn("text-headline text-gray-900 dark:text-gray-100", className)} {...props}>
       {children}
     </h3>
   );
@@ -41,7 +41,7 @@ export function CardTitle({ className, children, ...props }: React.HTMLAttribute
 
 export function CardDescription({ className, children, ...props }: React.HTMLAttributes<HTMLParagraphElement>) {
   return (
-    <p className={cn("text-callout text-gray-500 mt-1", className)} {...props}>
+    <p className={cn("text-callout text-gray-500 dark:text-gray-400 mt-1", className)} {...props}>
       {children}
     </p>
   );

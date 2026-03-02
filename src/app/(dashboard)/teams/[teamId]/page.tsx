@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { UserPlus, MoreHorizontal, Mail, Trash2, AlertCircle, ArrowDown, ArrowUp, ArrowLeftRight, RotateCcw, ArrowRight, Archive, ArchiveRestore } from "lucide-react";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 
 interface TeamMember {
   id: string;
@@ -210,7 +211,7 @@ export default function TeamDetailPage() {
         <PageHeader title="" description="">
           <Skeleton className="h-9 w-32" />
         </PageHeader>
-        <div className="grid grid-cols-3 gap-4 mb-6 max-w-lg">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6 max-w-lg">
           {[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 rounded-2xl" />)}
         </div>
         <Card>
@@ -246,6 +247,7 @@ export default function TeamDetailPage() {
 
   return (
     <div>
+      <Breadcrumb items={[{ label: "Teams", href: "/teams" }, { label: team.name }]} />
       <PageHeader title={team.name} description={team.description ?? ""}>
         {team.archivedAt ? (
           <Button variant="secondary" onClick={() => handleArchive(false)}>
@@ -274,7 +276,7 @@ export default function TeamDetailPage() {
       )}
 
       {/* Evaluation Direction Stats */}
-      <div className={`grid gap-3 mb-6 max-w-2xl ${externalCount > 0 ? "grid-cols-5" : "grid-cols-4"}`}>
+      <div className={`grid gap-3 mb-6 max-w-2xl grid-cols-2 ${externalCount > 0 ? "sm:grid-cols-3 lg:grid-cols-5" : "sm:grid-cols-4"}`}>
         <div className="flex items-center gap-3 rounded-2xl border border-emerald-100 bg-emerald-50/50 px-4 py-3">
           <div className="p-2 rounded-xl bg-emerald-100">
             <ArrowDown size={18} strokeWidth={1.5} className="text-emerald-600" />
@@ -334,18 +336,18 @@ export default function TeamDetailPage() {
         ) : (
           <div className="divide-y divide-gray-100">
             {team.members.map((member) => (
-              <div key={member.id} className="flex items-center justify-between py-3 px-1">
-                <div className="flex items-center gap-3">
+              <div key={member.id} className="flex items-center justify-between py-3 px-1 gap-2">
+                <div className="flex items-center gap-3 min-w-0">
                   <Avatar name={member.user.name} src={member.user.avatar} size="md" />
-                  <div>
-                    <p className="text-[14px] font-medium text-gray-900">{member.user.name}</p>
-                    <p className="text-[12px] text-gray-500 flex items-center gap-1">
-                      <Mail size={12} strokeWidth={1.5} />
-                      {member.user.email}
+                  <div className="min-w-0">
+                    <p className="text-[14px] font-medium text-gray-900 truncate">{member.user.name}</p>
+                    <p className="text-[12px] text-gray-500 flex items-center gap-1 truncate">
+                      <Mail size={12} strokeWidth={1.5} className="shrink-0" />
+                      <span className="truncate">{member.user.email}</span>
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                   {roleLabels[member.role] && (
                     <Badge variant={roleBadgeVariant[member.role]}>
                       {roleLabels[member.role]}
@@ -353,7 +355,7 @@ export default function TeamDetailPage() {
                   )}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <button className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+                      <button className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors" aria-label="Member actions">
                         <MoreHorizontal size={16} strokeWidth={1.5} className="text-gray-400" />
                       </button>
                     </DropdownMenuTrigger>

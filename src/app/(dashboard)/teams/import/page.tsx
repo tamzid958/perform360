@@ -417,8 +417,8 @@ export default function TeamsImportPage() {
                 Download sample
               </button>
             </div>
-            <div className="rounded-xl border border-gray-200 overflow-hidden">
-              <table className="w-full text-[12px]">
+            <div className="rounded-xl border border-gray-200 overflow-x-auto">
+              <table className="w-full min-w-[480px] text-[12px]">
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-200">
                     <th className="text-left py-2 px-3 text-gray-500 font-medium">Name</th>
@@ -457,17 +457,17 @@ export default function TeamsImportPage() {
       {/* Step 2: Preview */}
       {step === 2 && (
         <div>
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+            <div className="flex items-center gap-2 min-w-0">
               <FileText
                 size={16}
                 strokeWidth={1.5}
-                className="text-gray-400"
+                className="text-gray-400 shrink-0"
               />
-              <span className="text-callout text-gray-600">{fileName}</span>
-              <Badge variant="outline">{parsedRows.length} rows</Badge>
+              <span className="text-callout text-gray-600 truncate">{fileName}</span>
+              <Badge variant="outline" className="shrink-0">{parsedRows.length} rows</Badge>
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0">
               {(
                 [
                   ["all", `All (${parsedRows.length})`],
@@ -479,7 +479,7 @@ export default function TeamsImportPage() {
                 <button
                   key={key}
                   onClick={() => setFilter(key)}
-                  className={`px-3 py-1 rounded-full text-[12px] font-medium transition-all ${
+                  className={`px-3 py-1 rounded-full text-[12px] font-medium transition-all whitespace-nowrap ${
                     filter === key
                       ? "bg-gray-900 text-white"
                       : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -492,8 +492,8 @@ export default function TeamsImportPage() {
           </div>
 
           <Card padding="sm" className="overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-[13px]">
+            <div className="overflow-x-auto -mx-4 sm:mx-0">
+              <table className="w-full min-w-[640px] text-[13px]">
                 <thead>
                   <tr className="border-b border-gray-100">
                     <th className="text-left py-2.5 px-3 text-gray-500 font-medium">

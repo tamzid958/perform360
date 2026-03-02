@@ -16,7 +16,9 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Calendar, AlertCircle, Inbox, Search, MoreHorizontal, Eye, Trash2 } from "lucide-react";
+import { Plus, Calendar, Search, MoreHorizontal, Eye, Trash2 } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
+import { ErrorCard } from "@/components/ui/error-card";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { PaginationMeta } from "@/types/pagination";
@@ -126,13 +128,7 @@ export default function CyclesPage() {
             <Button><Plus size={16} strokeWidth={2} className="mr-1.5" />New Cycle</Button>
           </Link>
         </PageHeader>
-        <Card className="max-w-lg mx-auto mt-12 text-center">
-          <div className="flex flex-col items-center gap-3 py-4">
-            <AlertCircle size={32} strokeWidth={1.5} className="text-red-400" />
-            <p className="text-[14px] text-gray-600">{error}</p>
-            <Button variant="secondary" size="sm" onClick={fetchCycles}>Retry</Button>
-          </div>
-        </Card>
+        <ErrorCard message={error} hint="Check your connection and try again" onRetry={fetchCycles} />
       </div>
     );
   }
@@ -171,22 +167,20 @@ export default function CyclesPage() {
           {[1, 2, 3].map((i) => <CycleCardSkeleton key={i} />)}
         </div>
       ) : cycles.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 py-16 text-center">
-          <Inbox size={32} strokeWidth={1.5} className="text-gray-300" />
-          <p className="text-[14px] text-gray-500">
-            {searchQuery || activeTab !== "all"
-              ? "No cycles found"
-              : "No cycles yet"}
-          </p>
+        <EmptyState
+          icon={Calendar}
+          title={searchQuery || activeTab !== "all" ? "No cycles found" : "No cycles yet"}
+          description={!searchQuery && activeTab === "all" ? "Create your first evaluation cycle to get started" : undefined}
+        >
           {!searchQuery && activeTab === "all" && (
             <Link href="/cycles/new">
               <Button variant="secondary" size="sm">Create Cycle</Button>
             </Link>
           )}
-        </div>
+        </EmptyState>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 stagger-fade-in">
             {cycles.map((cycle) => {
               const badge = statusBadge[cycle.status] ?? { variant: "default" as const, label: cycle.status };
               return (
@@ -198,6 +192,7 @@ export default function CyclesPage() {
                         <button
                           className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
                           onClick={(e) => e.stopPropagation()}
+                          aria-label="Cycle actions"
                         >
                           <MoreHorizontal size={16} strokeWidth={1.5} className="text-gray-400" />
                         </button>

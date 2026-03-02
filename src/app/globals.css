@@ -187,6 +187,40 @@
   }
 }
 
+/* ── Skeleton shimmer ── */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg, rgba(0,0,0,0.04) 25%, rgba(0,0,0,0.08) 50%, rgba(0,0,0,0.04) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+
+[data-theme="dark"] .skeleton-shimmer {
+  background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
+  background-size: 200% 100%;
+}
+
+/* ── Staggered list animation ── */
+.stagger-fade-in > * {
+  opacity: 0;
+  animation: fade-in-up 0.4s ease-out forwards;
+}
+
+.stagger-fade-in > *:nth-child(1) { animation-delay: 0s; }
+.stagger-fade-in > *:nth-child(2) { animation-delay: 0.05s; }
+.stagger-fade-in > *:nth-child(3) { animation-delay: 0.1s; }
+.stagger-fade-in > *:nth-child(4) { animation-delay: 0.15s; }
+.stagger-fade-in > *:nth-child(5) { animation-delay: 0.2s; }
+.stagger-fade-in > *:nth-child(6) { animation-delay: 0.25s; }
+.stagger-fade-in > *:nth-child(7) { animation-delay: 0.3s; }
+.stagger-fade-in > *:nth-child(8) { animation-delay: 0.35s; }
+.stagger-fade-in > *:nth-child(9) { animation-delay: 0.4s; }
+.stagger-fade-in > *:nth-child(n+10) { animation-delay: 0.45s; }
+
 /* ── Landing page animations ── */
 @keyframes marquee {
   0% { transform: translateX(0); }

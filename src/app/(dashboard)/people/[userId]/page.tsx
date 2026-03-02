@@ -42,6 +42,7 @@ import {
   AlertCircle,
   Inbox,
 } from "lucide-react";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 
 interface TeamMembership {
   id: string;
@@ -210,7 +211,7 @@ export default function PersonDetailPage() {
         <PageHeader title="" description="">
           <Skeleton className="h-9 w-32" />
         </PageHeader>
-        <div className="grid grid-cols-3 gap-3 mb-6 max-w-xl">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6 max-w-xl">
           {[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 rounded-2xl" />)}
         </div>
         <Card className="mb-6">
@@ -241,6 +242,7 @@ export default function PersonDetailPage() {
 
   return (
     <div>
+      <Breadcrumb items={[{ label: "People", href: "/people" }, { label: person.name }]} />
       <PageHeader title={person.name} description={person.email}>
         <Badge variant={badge.variant}>{badge.label}</Badge>
         <DropdownMenu>
@@ -264,7 +266,7 @@ export default function PersonDetailPage() {
       </PageHeader>
 
       {/* Stats Row */}
-      <div className="grid grid-cols-3 gap-3 mb-6 max-w-xl">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6 max-w-xl">
         <div className="flex items-center gap-3 rounded-2xl border border-blue-100 bg-blue-50/50 px-4 py-3">
           <div className="p-2 rounded-xl bg-blue-100">
             <Users size={18} strokeWidth={1.5} className="text-blue-600" />
@@ -380,12 +382,12 @@ export default function PersonDetailPage() {
                         {group.items.map((ev) => {
                           const sb = statusBadge[ev.status] ?? { variant: "outline" as const, label: ev.status };
                           return (
-                            <div key={ev.id} className="flex items-center justify-between px-3 py-2.5">
-                              <div className="flex items-center gap-2">
-                                <span className="text-[14px] text-gray-900">{ev.reviewerName}</span>
+                            <div key={ev.id} className="flex items-center justify-between px-3 py-2.5 gap-2">
+                              <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                                <span className="text-[14px] text-gray-900 truncate">{ev.reviewerName}</span>
                                 <Badge variant="outline">{relationshipLabels[ev.relationship] ?? ev.relationship}</Badge>
                               </div>
-                              <Badge variant={sb.variant}>{sb.label}</Badge>
+                              <Badge variant={sb.variant} className="shrink-0">{sb.label}</Badge>
                             </div>
                           );
                         })}
@@ -415,12 +417,12 @@ export default function PersonDetailPage() {
                         {group.items.map((ev) => {
                           const sb = statusBadge[ev.status] ?? { variant: "outline" as const, label: ev.status };
                           return (
-                            <div key={ev.id} className="flex items-center justify-between px-3 py-2.5">
-                              <div className="flex items-center gap-2">
-                                <span className="text-[14px] text-gray-900">{ev.subjectName}</span>
+                            <div key={ev.id} className="flex items-center justify-between px-3 py-2.5 gap-2">
+                              <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                                <span className="text-[14px] text-gray-900 truncate">{ev.subjectName}</span>
                                 <Badge variant="outline">{relationshipLabels[ev.relationship] ?? ev.relationship}</Badge>
                               </div>
-                              <Badge variant={sb.variant}>{sb.label}</Badge>
+                              <Badge variant={sb.variant} className="shrink-0">{sb.label}</Badge>
                             </div>
                           );
                         })}

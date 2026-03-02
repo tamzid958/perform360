@@ -28,7 +28,7 @@ export function Pagination({
   return (
     <div
       className={cn(
-        "flex items-center justify-between pt-4",
+        "flex flex-col sm:flex-row items-center sm:justify-between gap-2 pt-4",
         className
       )}
     >
@@ -43,10 +43,11 @@ export function Pagination({
           onClick={() => onPageChange(page - 1)}
         >
           <ChevronLeft size={14} strokeWidth={1.5} className="mr-1" />
-          Previous
+          <span className="hidden sm:inline">Previous</span>
+          <span className="sm:hidden">Prev</span>
         </Button>
         <span className="text-[13px] text-gray-500 px-2">
-          Page {page} of {totalPages}
+          {page}/{totalPages}
         </span>
         <Button
           variant="ghost"

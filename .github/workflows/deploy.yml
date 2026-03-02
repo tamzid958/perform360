@@ -1,0 +1,81 @@
+name: Deploy to DigitalOcean
+
+on:
+  push:
+    branches: [master]
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+env:
+  APP_DIR: /root/perform360
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - run: npx prisma generate
+
+      - run: npm run lint
+
+      - run: npm run typecheck
+
+      - run: npm test
+
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DROPLET_HOST }}
+          username: ${{ secrets.DROPLET_USER }}
+          key: ${{ secrets.DROPLET_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+
+            cd ${{ env.APP_DIR }}
+
+            echo "--- Pulling latest changes ---"
+            git fetch origin master
+            git reset --hard origin/master
+
+            echo "--- Stopping existing services ---"
+            docker compose --env-file .env.production down
+
+            echo "--- Building Docker image ---"
+            docker compose --env-file .env.production build --no-cache app
+
+            echo "--- Starting app ---"
+            docker compose --env-file .env.production up -d app
+
+            echo "--- Running database migrations ---"
+            docker compose --env-file .env.production --profile migrate run --rm migrate
+
+            echo "--- Starting worker ---"
+            docker compose --env-file .env.production --profile worker up -d worker
+
+            echo "--- Cleaning up old images ---"
+            docker image prune -f
+
+            echo "--- Waiting for health check ---"
+            sleep 10
+            if docker compose --env-file .env.production ps app | grep -q "healthy"; then
+              echo "Deployment successful"
+            else
+              echo "Warning: app not yet healthy, check logs with: docker compose logs app"
+            fi
