@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -183,6 +184,8 @@ export default function CycleDetailPage() {
   const [remindingId, setRemindingId] = useState<string | null>(null);
   const [showActivateDialog, setShowActivateDialog] = useState(false);
   const [activating, setActivating] = useState(false);
+  const [activatePassphrase, setActivatePassphrase] = useState("");
+  const [activateError, setActivateError] = useState("");
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showCloseDialog, setShowCloseDialog] = useState(false);
@@ -387,7 +390,21 @@ export default function CycleDetailPage() {
 
   async function handleActivate() {
     setActivating(true);
+    setActivateError("");
     try {
+      // 1. Unlock encryption with the provided passphrase
+      const unlockRes = await fetch("/api/encryption/unlock", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ passphrase: activatePassphrase }),
+      });
+      const unlockJson = await unlockRes.json();
+      if (!unlockJson.success) {
+        setActivateError(unlockJson.error ?? "Incorrect passphrase");
+        return;
+      }
+
+      // 2. Activate the cycle
       const res = await fetch(`/api/cycles/${cycleId}/activate`, {
         method: "POST",
       });
@@ -395,15 +412,11 @@ export default function CycleDetailPage() {
       if (json.success) {
         setShowActivateDialog(false);
         addToast(
-          `Cycle activated — ${json.data.emailsSent} invitation${json.data.emailsSent !== 1 ? "s" : ""} sent to reviewers`,
+          `Cycle activated — invitation emails are being sent to reviewers`,
           "success"
         );
         fetchCycle();
       } else {
-        if (handleApiResponse(json)) {
-          setShowActivateDialog(false);
-          return;
-        }
         addToast(json.error ?? "Failed to activate cycle", "error");
       }
     } catch {
@@ -1181,7 +1194,16 @@ export default function CycleDetailPage() {
       </Tabs>
 
       {/* ─── Activate Confirmation Dialog ─── */}
-      <Dialog open={showActivateDialog} onOpenChange={setShowActivateDialog}>
+      <Dialog
+        open={showActivateDialog}
+        onOpenChange={(open) => {
+          setShowActivateDialog(open);
+          if (!open) {
+            setActivatePassphrase("");
+            setActivateError("");
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Activate this cycle?</DialogTitle>
@@ -1222,6 +1244,21 @@ export default function CycleDetailPage() {
               {cycle.teamTemplates.length} team
               {cycle.teamTemplates.length !== 1 ? "s" : ""} will be activated.
             </p>
+            <Input
+              id="activate-passphrase"
+              label="Encryption Passphrase"
+              type="password"
+              placeholder="Enter your passphrase to confirm"
+              value={activatePassphrase}
+              onChange={(e) => {
+                setActivatePassphrase(e.target.value);
+                setActivateError("");
+              }}
+              autoFocus={false}
+            />
+            {activateError && (
+              <p className="text-[13px] text-red-600">{activateError}</p>
+            )}
           </div>
           <div className="flex justify-end gap-2">
             <Button
@@ -1231,7 +1268,7 @@ export default function CycleDetailPage() {
             >
               Cancel
             </Button>
-            <Button onClick={handleActivate} disabled={activating}>
+            <Button onClick={handleActivate} disabled={activating || !activatePassphrase}>
               {activating ? (
                 "Activating\u2026"
               ) : (

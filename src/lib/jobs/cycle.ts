@@ -22,12 +22,22 @@ export async function handleCycleActivate(
 ): Promise<void> {
   const { cycleId, companyId, userId } = payload;
 
-  const cycle = await prisma.evaluationCycle.findUnique({
-    where: { id: cycleId },
-    select: { name: true },
-  });
+  const [cycle, company] = await Promise.all([
+    prisma.evaluationCycle.findUnique({
+      where: { id: cycleId },
+      select: { name: true },
+    }),
+    prisma.company.findUnique({
+      where: { id: companyId },
+      select: { settings: true },
+    }),
+  ]);
 
   if (!cycle) throw new Error(`Cycle not found: ${cycleId}`);
+
+  const notifications = (company?.settings as Record<string, unknown> | null)
+    ?.notifications as Record<string, unknown> | undefined;
+  const sendInvitations = notifications?.evaluationInvitations !== false;
 
   const assignments = await prisma.evaluationAssignment.findMany({
     where: { cycleId },
@@ -73,12 +83,15 @@ export async function handleCycleActivate(
     const reviewer = userMap.get(reviewerId);
     if (!reviewer) continue;
 
-    // Upsert CycleReviewerLink (idempotent for retries)
+    // Upsert CycleReviewerLink (idempotent for retries) — always created so
+    // reviewers can access evaluations regardless of invitation email setting
     const reviewerLink = await prisma.cycleReviewerLink.upsert({
       where: { cycleId_reviewerId: { cycleId, reviewerId } },
       create: { cycleId, reviewerId },
       update: {},
     });
+
+    if (!sendInvitations) continue;
 
     const summaryUrl = `${APP_URL}/review/${reviewerLink.token}`;
 
@@ -131,12 +144,22 @@ export async function handleCycleRemind(
 ): Promise<void> {
   const { cycleId, companyId, assignmentId } = payload;
 
-  const cycle = await prisma.evaluationCycle.findUnique({
-    where: { id: cycleId },
-    select: { name: true, endDate: true, status: true },
-  });
+  const [cycle, company] = await Promise.all([
+    prisma.evaluationCycle.findUnique({
+      where: { id: cycleId },
+      select: { name: true, endDate: true, status: true },
+    }),
+    prisma.company.findUnique({
+      where: { id: companyId },
+      select: { settings: true },
+    }),
+  ]);
 
   if (!cycle || cycle.status !== "ACTIVE") return;
+
+  const notifications = (company?.settings as Record<string, unknown> | null)
+    ?.notifications as Record<string, unknown> | undefined;
+  if (notifications?.cycleReminders === false) return;
 
   const pendingAssignments = await prisma.evaluationAssignment.findMany({
     where: {

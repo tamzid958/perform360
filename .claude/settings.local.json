@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc -l /c/perform360/src/app/\\\\\\(dashboard\\\\\\)/cycles/[cycleId]/page.tsx)",
+      "Bash(grep -n \"activate\\\\|Activate\" /c/perform360/src/app/\\\\\\(dashboard\\\\\\)/cycles/[cycleId]/page.tsx)"
+    ]
+  }
+}

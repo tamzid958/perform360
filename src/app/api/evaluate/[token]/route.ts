@@ -3,6 +3,10 @@ import prisma from "@/lib/prisma";
 import { encrypt } from "@/lib/encryption";
 import { decryptDataKeyFromCookie } from "@/lib/encryption-session";
 import { validateEvaluationSession } from "@/lib/session-validation";
+import { enqueueBatch } from "@/lib/queue";
+import { JOB_TYPES } from "@/types/job";
+import { getCycleCompletionEmail } from "@/lib/email";
+import type { EmailSendPayload } from "@/types/job";
 
 type ApiResponse<T> =
   | { success: true; data: T }
@@ -178,7 +182,7 @@ export async function POST(
     // Read the cached data key that was stored on the cycle when admin activated it
     const cycle = await prisma.evaluationCycle.findUnique({
       where: { id: assignment.cycleId },
-      select: { cachedDataKeyEncrypted: true },
+      select: { cachedDataKeyEncrypted: true, name: true },
     });
 
     if (!cycle?.cachedDataKeyEncrypted) {
@@ -198,7 +202,7 @@ export async function POST(
 
     const company = await prisma.company.findUnique({
       where: { id: assignment.cycle.companyId },
-      select: { keyVersion: true },
+      select: { keyVersion: true, settings: true },
     });
 
     const answersJson = JSON.stringify(answers);
@@ -223,6 +227,42 @@ export async function POST(
         data: { status: "SUBMITTED" },
       }),
     ]);
+
+    // Post-submission: notify admins if cycle just reached 100% completion
+    try {
+      const notifications = (company?.settings as Record<string, unknown> | null)
+        ?.notifications as Record<string, unknown> | undefined;
+      if (notifications?.cycleCompletion !== false) {
+        const remaining = await prisma.evaluationAssignment.count({
+          where: { cycleId: assignment.cycleId, status: { not: "SUBMITTED" } },
+        });
+        if (remaining === 0) {
+          const [totalAssignments, admins] = await Promise.all([
+            prisma.evaluationAssignment.count({ where: { cycleId: assignment.cycleId } }),
+            prisma.user.findMany({
+              where: { companyId: assignment.cycle.companyId, role: { in: ["ADMIN", "HR"] } },
+              select: { email: true },
+            }),
+          ]);
+          if (admins.length > 0 && cycle) {
+            const { html, text } = getCycleCompletionEmail(cycle.name, totalAssignments);
+            const emailJobs: Array<{ type: typeof JOB_TYPES.EMAIL_SEND; payload: EmailSendPayload }> =
+              admins.map((admin) => ({
+                type: JOB_TYPES.EMAIL_SEND,
+                payload: {
+                  to: admin.email,
+                  subject: `Cycle complete — ${cycle.name}`,
+                  html,
+                  text,
+                },
+              }));
+            await enqueueBatch(emailJobs);
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Failed to queue cycle completion email:", err);
+    }
 
     return NextResponse.json<ApiResponse<{ submitted: true }>>({
       success: true,

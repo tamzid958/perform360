@@ -371,6 +371,26 @@ export function getUserInviteEmail(
   return { html, text };
 }
 
+// ─── Cycle Completion ───
+
+export function getCycleCompletionEmail(
+  cycleName: string,
+  totalAssignments: number
+): { html: string; text: string } {
+  const html = emailWrapper(
+    "Cycle Complete",
+    `
+    <p style="margin: 0 0 16px; font-size: 15px; color: #1d1d1f; line-height: 1.5;">Hi,</p>
+    <p style="margin: 0 0 16px; font-size: 15px; color: #48484a; line-height: 1.5;">The <strong>${escapeHtml(cycleName)}</strong> evaluation cycle has reached <strong>100% completion</strong>. All ${totalAssignments} evaluation${totalAssignments !== 1 ? "s" : ""} have been submitted.</p>
+    <p style="margin: 0; font-size: 13px; color: #86868b; line-height: 1.4;">You can now view the full results in your Performs360 dashboard.</p>
+    `
+  );
+
+  const text = `Hi,\n\nThe ${cycleName} evaluation cycle has reached 100% completion. All ${totalAssignments} evaluation${totalAssignments !== 1 ? "s" : ""} have been submitted.\n\nYou can now view the full results in your Performs360 dashboard.`;
+
+  return { html, text };
+}
+
 // ─── Company Destroyed ───
 
 export function getCompanyDestroyedEmail(
