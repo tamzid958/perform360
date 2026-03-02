@@ -122,7 +122,7 @@ describe("middleware/company-scope", () => {
   beforeEach(() => vi.clearAllMocks());
 
   const dummyHandler = vi.fn().mockImplementation(
-    async (_req: NextRequest, ctx: { params: Record<string, string>; auth: unknown }) =>
+    async (_req: NextRequest, _ctx: { params: Record<string, string>; auth: unknown }) =>
       NextResponse.json({ ok: true })
   );
 

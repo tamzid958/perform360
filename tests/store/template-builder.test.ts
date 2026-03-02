@@ -60,7 +60,7 @@ describe("useTemplateBuilder store", () => {
       const store = useTemplateBuilder.getState();
       store.addSection();
       store.addSection();
-      const [s1, s2] = useTemplateBuilder.getState().sections;
+      const [s1, _s2] = useTemplateBuilder.getState().sections;
 
       store.updateSection(s1.id, { title: "Leadership" });
       const sections = useTemplateBuilder.getState().sections;
@@ -135,7 +135,7 @@ describe("useTemplateBuilder store", () => {
       const store = useTemplateBuilder.getState();
       store.addSection();
       store.addSection();
-      const [s1, s2] = useTemplateBuilder.getState().sections;
+      const [s1, _s2] = useTemplateBuilder.getState().sections;
 
       store.addQuestion(s1.id);
       const sections = useTemplateBuilder.getState().sections;

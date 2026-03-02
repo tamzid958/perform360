@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 import { hashOTP, verifyOTP, createOTP, isOTPExpired, isInCooldown, getCooldownEnd, getSessionExpiry, getSummarySessionExpiry } from "@/lib/otp";
 import { OTP_CONFIG } from "@/lib/constants";
 

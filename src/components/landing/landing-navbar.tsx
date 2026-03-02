@@ -39,24 +39,24 @@ export function LandingNavbar() {
 
         {/* Center Nav Links — hidden on mobile */}
         <div className="hidden md:flex items-center gap-8">
-          <a
+          <Link
             href="/#features"
             className="text-[14px] text-gray-600 hover:text-gray-900 transition-colors"
           >
             Features
-          </a>
-          <a
+          </Link>
+          <Link
             href="/#how-it-works"
             className="text-[14px] text-gray-600 hover:text-gray-900 transition-colors"
           >
             How It Works
-          </a>
-          <a
+          </Link>
+          <Link
             href="/#security"
             className="text-[14px] text-gray-600 hover:text-gray-900 transition-colors"
           >
             Security
-          </a>
+          </Link>
           <Link
             href="/guide"
             className="text-[14px] text-gray-600 hover:text-gray-900 transition-colors"

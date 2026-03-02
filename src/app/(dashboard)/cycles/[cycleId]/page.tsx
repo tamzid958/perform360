@@ -175,7 +175,7 @@ export default function CycleDetailPage() {
   const [activeTab, setActiveTab] = useState<
     "overview" | "assignments" | "reports" | "calibration"
   >("overview");
-  const [calibrationData, setCalibrationData] = useState<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
+  const [calibrationData, setCalibrationData] = useState<any>(null);
   const [calibrationLoading, setCalibrationLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState<StatusFilterValue>("all");
   const [relationshipFilter, setRelationshipFilter] =

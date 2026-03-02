@@ -13,7 +13,7 @@ describe("GET /api/auth/companies", () => {
   it("returns 401 when unauthenticated", async () => {
     vi.mocked(auth).mockResolvedValue(null as any);
 
-    const req = createMockRequest("http://localhost:3000/api/auth/companies");
+    createMockRequest("http://localhost:3000/api/auth/companies");
     const res = await GET();
     const { status, body } = await parseResponse(res);
 

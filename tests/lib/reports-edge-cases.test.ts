@@ -5,7 +5,6 @@ vi.mock("@/lib/encryption", () => ({
 }));
 
 import {
-  decryptResponse,
   buildCategoryScores,
   buildRelationshipScores,
   buildQuestionDetails,
@@ -17,7 +16,7 @@ import {
 } from "@/lib/reports";
 import type { WeightConfig } from "@/lib/reports";
 
-const dataKey = Buffer.alloc(32, "k");
+const _dataKey = Buffer.alloc(32, "k");
 
 // ─── Shared Test Data ───
 

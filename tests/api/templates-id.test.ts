@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prisma } from "@/lib/prisma";
-import { mockAuth, mockNoAuth, fixtures, createMockRequest, parseResponse } from "../helpers";
+import { mockAuth, fixtures, createMockRequest, parseResponse } from "../helpers";
 
 const { GET, PATCH, DELETE } = await import("@/app/api/templates/[id]/route");
 

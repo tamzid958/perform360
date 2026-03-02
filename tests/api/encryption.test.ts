@@ -3,7 +3,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { getImpersonation } from "@/lib/impersonation";
-import { encryptDataKeyForCookie, getDataKeyFromRequest } from "@/lib/encryption-session";
+import { getDataKeyFromRequest } from "@/lib/encryption-session";
 import { parseResponse } from "../helpers";
 
 const unlockRoute = await import("@/app/api/encryption/unlock/route");

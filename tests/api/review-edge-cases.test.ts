@@ -2,8 +2,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prisma } from "@/lib/prisma";
 import { parseResponse } from "../helpers";
 import { validateEvaluationSession } from "@/lib/session-validation";
-import { sendEmail } from "@/lib/email";
-import { requireRecaptcha } from "@/lib/recaptcha";
+import "@/lib/email";
+import "@/lib/recaptcha";
 import { NextRequest } from "next/server";
 
 const { GET: validateToken, POST: submitEvaluation } = await import(

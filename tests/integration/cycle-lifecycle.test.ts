@@ -5,7 +5,7 @@ import { enqueue } from "@/lib/queue";
 import { writeAuditLog } from "@/lib/audit";
 import { mockAuth, fixtures, createMockRequest, parseResponse } from "../helpers";
 
-const cyclesRoute = await import("@/app/api/cycles/route");
+const _cyclesRoute = await import("@/app/api/cycles/route");
 const cycleIdRoute = await import("@/app/api/cycles/[id]/route");
 const activateRoute = await import("@/app/api/cycles/[id]/activate/route");
 const remindRoute = await import("@/app/api/cycles/[id]/remind/route");

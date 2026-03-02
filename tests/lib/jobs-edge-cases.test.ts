@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prisma } from "@/lib/prisma";
 import { enqueueBatch } from "@/lib/queue";
-import { getSummaryInviteEmail, getSummaryReminderEmail } from "@/lib/email";
+import { getSummaryInviteEmail } from "@/lib/email";
 import { writeAuditLog } from "@/lib/audit";
 
 const { handleCycleActivate, handleCycleRemind, handleCycleAutoClose } =
