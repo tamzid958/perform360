@@ -225,6 +225,14 @@ model CycleTeam {
   template   EvaluationTemplate @relation(fields: [templateId], references: [id])
   createdAt  DateTime           @default(now())
 
+  // Relationship weights (decimals 0.0–1.0, must sum to 1.0 when set)
+  // null = equal weighting (backward-compatible default)
+  weightManager      Float?
+  weightPeer         Float?
+  weightDirectReport Float?
+  weightSelf         Float?
+  weightExternal     Float?
+
   @@unique([cycleId, teamId])
 }
 
