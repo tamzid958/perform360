@@ -254,6 +254,80 @@ export function getEvaluationReminderEmail(
   return { html, text };
 }
 
+// ─── Summary Evaluation Invitation ───
+
+export function getSummaryInviteEmail(
+  recipientName: string,
+  cycleName: string,
+  assignments: Array<{ subjectName: string; relationship: string }>,
+  summaryUrl: string
+): { html: string; text: string } {
+  const assignmentListHtml = assignments
+    .map(
+      (a) =>
+        `<li style="margin: 4px 0; font-size: 14px; color: #48484a;"><strong>${escapeHtml(a.subjectName)}</strong> <span style="color: #86868b;">&middot; ${escapeHtml(a.relationship)}</span></li>`
+    )
+    .join("");
+
+  const count = assignments.length;
+  const html = emailWrapper(
+    "Evaluation Invitation",
+    `
+    <p style="margin: 0 0 16px; font-size: 15px; color: #1d1d1f; line-height: 1.5;">Hi ${escapeHtml(recipientName)},</p>
+    <p style="margin: 0 0 16px; font-size: 15px; color: #48484a; line-height: 1.5;">You have <strong>${count}</strong> evaluation${count === 1 ? "" : "s"} to complete for the <strong>${escapeHtml(cycleName)}</strong> cycle:</p>
+    <ul style="margin: 0 0 24px; padding-left: 20px;">${assignmentListHtml}</ul>
+    ${ctaButton(summaryUrl, "View All Evaluations")}
+    <p style="margin: 24px 0 0; font-size: 13px; color: #86868b; line-height: 1.4;">You'll verify your identity once, then have 4 hours to complete all evaluations.</p>
+    `
+  );
+
+  const assignmentListText = assignments
+    .map((a) => `  - ${a.subjectName} (${a.relationship})`)
+    .join("\n");
+
+  const text = `Hi ${recipientName},\n\nYou have ${count} evaluation${count === 1 ? "" : "s"} to complete for the ${cycleName} cycle:\n\n${assignmentListText}\n\nView all evaluations: ${summaryUrl}\n\nYou'll verify your identity once, then have 4 hours to complete all evaluations.`;
+
+  return { html, text };
+}
+
+// ─── Summary Evaluation Reminder ───
+
+export function getSummaryReminderEmail(
+  recipientName: string,
+  cycleName: string,
+  deadline: string,
+  assignments: Array<{ subjectName: string; relationship: string }>,
+  summaryUrl: string
+): { html: string; text: string } {
+  const assignmentListHtml = assignments
+    .map(
+      (a) =>
+        `<li style="margin: 4px 0; font-size: 14px; color: #48484a;"><strong>${escapeHtml(a.subjectName)}</strong> <span style="color: #86868b;">&middot; ${escapeHtml(a.relationship)}</span></li>`
+    )
+    .join("");
+
+  const count = assignments.length;
+  const html = emailWrapper(
+    "Evaluation Reminder",
+    `
+    <p style="margin: 0 0 16px; font-size: 15px; color: #1d1d1f; line-height: 1.5;">Hi ${escapeHtml(recipientName)},</p>
+    <p style="margin: 0 0 16px; font-size: 15px; color: #48484a; line-height: 1.5;">You still have <strong>${count}</strong> pending evaluation${count === 1 ? "" : "s"} for the <strong>${escapeHtml(cycleName)}</strong> cycle:</p>
+    <ul style="margin: 0 0 16px; padding-left: 20px;">${assignmentListHtml}</ul>
+    <p style="margin: 0 0 24px; font-size: 15px; color: #48484a; line-height: 1.5;">The deadline is <strong>${escapeHtml(deadline)}</strong>. Please complete them before then.</p>
+    ${ctaButton(summaryUrl, "View All Evaluations")}
+    <p style="margin: 24px 0 0; font-size: 13px; color: #86868b; line-height: 1.4;">You'll verify your identity once, then have 4 hours to complete all evaluations.</p>
+    `
+  );
+
+  const assignmentListText = assignments
+    .map((a) => `  - ${a.subjectName} (${a.relationship})`)
+    .join("\n");
+
+  const text = `Hi ${recipientName},\n\nYou still have ${count} pending evaluation${count === 1 ? "" : "s"} for the ${cycleName} cycle:\n\n${assignmentListText}\n\nThe deadline is ${deadline}. Please complete them before then.\n\nView all evaluations: ${summaryUrl}\n\nYou'll verify your identity once, then have 4 hours to complete all evaluations.`;
+
+  return { html, text };
+}
+
 // ─── Data Export Ready ───
 
 export function getDataExportEmail(

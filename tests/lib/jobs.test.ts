@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prisma } from "@/lib/prisma";
 import { enqueueBatch } from "@/lib/queue";
-import { sendEmail } from "@/lib/email";
+import { sendEmail, getSummaryInviteEmail, getSummaryReminderEmail } from "@/lib/email";
 import { writeAuditLog } from "@/lib/audit";
 
 const { handleCycleActivate, handleCycleRemind, handleCycleAutoClose } =
@@ -32,19 +32,28 @@ describe("Job: handleEmailSend", () => {
 describe("Job: handleCycleActivate", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("fetches assignments and enqueues email jobs", async () => {
+  it("groups assignments by reviewer and enqueues one email per reviewer", async () => {
     vi.mocked(prisma.evaluationCycle.findUnique).mockResolvedValue({
       name: "Q1 2026",
     } as any);
 
     vi.mocked(prisma.evaluationAssignment.findMany).mockResolvedValue([
-      { id: "a1", token: "tok1", subjectId: "s1", reviewerId: "r1" },
+      { id: "a1", token: "tok1", subjectId: "s1", reviewerId: "r1", relationship: "peer" },
+      { id: "a2", token: "tok2", subjectId: "s2", reviewerId: "r1", relationship: "manager" },
     ] as any);
 
     vi.mocked(prisma.user.findMany).mockResolvedValue([
       { id: "r1", email: "reviewer@test.com", name: "Reviewer" },
-      { id: "s1", email: "subject@test.com", name: "Subject" },
+      { id: "s1", email: "subject1@test.com", name: "Subject 1" },
+      { id: "s2", email: "subject2@test.com", name: "Subject 2" },
     ] as any);
+
+    vi.mocked(prisma.cycleReviewerLink.upsert).mockResolvedValue({
+      id: "rl-1",
+      token: "summary-token-1",
+      cycleId: "cycle-1",
+      reviewerId: "r1",
+    } as any);
 
     await handleCycleActivate({
       cycleId: "cycle-1",
@@ -53,6 +62,28 @@ describe("Job: handleCycleActivate", () => {
       cachedDataKeyEncrypted: "key",
     });
 
+    // Should upsert one CycleReviewerLink
+    expect(prisma.cycleReviewerLink.upsert).toHaveBeenCalledTimes(1);
+    expect(prisma.cycleReviewerLink.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { cycleId_reviewerId: { cycleId: "cycle-1", reviewerId: "r1" } },
+        create: { cycleId: "cycle-1", reviewerId: "r1" },
+        update: {},
+      })
+    );
+
+    // Should call getSummaryInviteEmail
+    expect(getSummaryInviteEmail).toHaveBeenCalledWith(
+      "Reviewer",
+      "Q1 2026",
+      expect.arrayContaining([
+        expect.objectContaining({ subjectName: "Subject 1" }),
+        expect.objectContaining({ subjectName: "Subject 2" }),
+      ]),
+      expect.stringContaining("/review/summary-token-1")
+    );
+
+    // Should enqueue exactly one email (grouped)
     expect(enqueueBatch).toHaveBeenCalledWith(
       expect.arrayContaining([
         expect.objectContaining({
@@ -60,8 +91,53 @@ describe("Job: handleCycleActivate", () => {
         }),
       ])
     );
+
+    // Audit log should include uniqueReviewers count
     expect(writeAuditLog).toHaveBeenCalledWith(
-      expect.objectContaining({ action: "cycle_activate" })
+      expect.objectContaining({
+        action: "cycle_activate",
+        metadata: expect.objectContaining({
+          totalAssignments: 2,
+          uniqueReviewers: 1,
+          emailsQueued: 1,
+        }),
+      })
+    );
+  });
+
+  it("sends separate emails for different reviewers", async () => {
+    vi.mocked(prisma.evaluationCycle.findUnique).mockResolvedValue({
+      name: "Q1 2026",
+    } as any);
+
+    vi.mocked(prisma.evaluationAssignment.findMany).mockResolvedValue([
+      { id: "a1", token: "tok1", subjectId: "s1", reviewerId: "r1", relationship: "peer" },
+      { id: "a2", token: "tok2", subjectId: "s1", reviewerId: "r2", relationship: "manager" },
+    ] as any);
+
+    vi.mocked(prisma.user.findMany).mockResolvedValue([
+      { id: "r1", email: "reviewer1@test.com", name: "Reviewer 1" },
+      { id: "r2", email: "reviewer2@test.com", name: "Reviewer 2" },
+      { id: "s1", email: "subject@test.com", name: "Subject" },
+    ] as any);
+
+    vi.mocked(prisma.cycleReviewerLink.upsert)
+      .mockResolvedValueOnce({ id: "rl-1", token: "tok-r1", cycleId: "c1", reviewerId: "r1" } as any)
+      .mockResolvedValueOnce({ id: "rl-2", token: "tok-r2", cycleId: "c1", reviewerId: "r2" } as any);
+
+    await handleCycleActivate({
+      cycleId: "c1",
+      companyId: "co-1",
+      userId: "u1",
+      cachedDataKeyEncrypted: "key",
+    });
+
+    expect(prisma.cycleReviewerLink.upsert).toHaveBeenCalledTimes(2);
+    expect(enqueueBatch).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({ payload: expect.objectContaining({ to: "reviewer1@test.com" }) }),
+        expect.objectContaining({ payload: expect.objectContaining({ to: "reviewer2@test.com" }) }),
+      ])
     );
   });
 
@@ -98,7 +174,7 @@ describe("Job: handleCycleActivate", () => {
 describe("Job: handleCycleRemind", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("sends reminders for pending assignments", async () => {
+  it("sends grouped reminders for pending assignments", async () => {
     vi.mocked(prisma.evaluationCycle.findUnique).mockResolvedValue({
       name: "Q1 2026",
       endDate: new Date("2026-04-01"),
@@ -106,7 +182,57 @@ describe("Job: handleCycleRemind", () => {
     } as any);
 
     vi.mocked(prisma.evaluationAssignment.findMany).mockResolvedValue([
-      { token: "tok1", reviewerId: "r1", subjectId: "s1" },
+      { token: "tok1", reviewerId: "r1", subjectId: "s1", relationship: "peer" },
+      { token: "tok2", reviewerId: "r1", subjectId: "s2", relationship: "manager" },
+    ] as any);
+
+    vi.mocked(prisma.user.findMany).mockResolvedValue([
+      { id: "r1", email: "reviewer@test.com", name: "Reviewer" },
+      { id: "s1", email: "subject1@test.com", name: "Subject 1" },
+      { id: "s2", email: "subject2@test.com", name: "Subject 2" },
+    ] as any);
+
+    vi.mocked(prisma.cycleReviewerLink.findUnique).mockResolvedValue({
+      id: "rl-1",
+      token: "summary-tok",
+      cycleId: "c1",
+      reviewerId: "r1",
+    } as any);
+
+    await handleCycleRemind({ cycleId: "c1", companyId: "co-1" });
+
+    expect(prisma.cycleReviewerLink.findUnique).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { cycleId_reviewerId: { cycleId: "c1", reviewerId: "r1" } },
+      })
+    );
+
+    expect(getSummaryReminderEmail).toHaveBeenCalledWith(
+      "Reviewer",
+      "Q1 2026",
+      expect.any(String), // deadline string
+      expect.arrayContaining([
+        expect.objectContaining({ subjectName: "Subject 1" }),
+        expect.objectContaining({ subjectName: "Subject 2" }),
+      ]),
+      expect.stringContaining("/review/summary-tok")
+    );
+
+    expect(enqueueBatch).toHaveBeenCalled();
+    expect(writeAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({ action: "cycle_remind" })
+    );
+  });
+
+  it("skips reviewer without CycleReviewerLink", async () => {
+    vi.mocked(prisma.evaluationCycle.findUnique).mockResolvedValue({
+      name: "Q1 2026",
+      endDate: new Date("2026-04-01"),
+      status: "ACTIVE",
+    } as any);
+
+    vi.mocked(prisma.evaluationAssignment.findMany).mockResolvedValue([
+      { token: "tok1", reviewerId: "r1", subjectId: "s1", relationship: "peer" },
     ] as any);
 
     vi.mocked(prisma.user.findMany).mockResolvedValue([
@@ -114,12 +240,13 @@ describe("Job: handleCycleRemind", () => {
       { id: "s1", email: "subject@test.com", name: "Subject" },
     ] as any);
 
+    // No reviewer link found
+    vi.mocked(prisma.cycleReviewerLink.findUnique).mockResolvedValue(null);
+
     await handleCycleRemind({ cycleId: "c1", companyId: "co-1" });
 
-    expect(enqueueBatch).toHaveBeenCalled();
-    expect(writeAuditLog).toHaveBeenCalledWith(
-      expect.objectContaining({ action: "cycle_remind" })
-    );
+    // No emails should be queued (no reviewer link)
+    expect(enqueueBatch).not.toHaveBeenCalled();
   });
 
   it("skips non-ACTIVE cycle", async () => {

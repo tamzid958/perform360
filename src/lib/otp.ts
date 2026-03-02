@@ -32,3 +32,7 @@ export function getCooldownEnd(): Date {
 export function getSessionExpiry(): Date {
   return new Date(Date.now() + OTP_CONFIG.sessionDurationHours * 60 * 60 * 1000);
 }
+
+export function getSummarySessionExpiry(): Date {
+  return new Date(Date.now() + OTP_CONFIG.summarySessionDurationHours * 60 * 60 * 1000);
+}

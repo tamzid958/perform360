@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { hashOTP, verifyOTP, createOTP, isOTPExpired, isInCooldown, getCooldownEnd, getSessionExpiry } from "@/lib/otp";
+import { hashOTP, verifyOTP, createOTP, isOTPExpired, isInCooldown, getCooldownEnd, getSessionExpiry, getSummarySessionExpiry } from "@/lib/otp";
 import { OTP_CONFIG } from "@/lib/constants";
 
 describe("otp", () => {
@@ -79,6 +79,24 @@ describe("otp", () => {
       const expiry = getSessionExpiry();
       const expected = before + OTP_CONFIG.sessionDurationHours * 60 * 60 * 1000;
       expect(expiry.getTime()).toBeGreaterThanOrEqual(expected);
+    });
+  });
+
+  describe("getSummarySessionExpiry", () => {
+    it("returns a future date based on summarySessionDurationHours config", () => {
+      const before = Date.now();
+      const expiry = getSummarySessionExpiry();
+      const after = Date.now();
+      const expectedMin = before + OTP_CONFIG.summarySessionDurationHours * 60 * 60 * 1000;
+      const expectedMax = after + OTP_CONFIG.summarySessionDurationHours * 60 * 60 * 1000;
+      expect(expiry.getTime()).toBeGreaterThanOrEqual(expectedMin);
+      expect(expiry.getTime()).toBeLessThanOrEqual(expectedMax);
+    });
+
+    it("returns a longer expiry than getSessionExpiry", () => {
+      const summaryExpiry = getSummarySessionExpiry();
+      const directExpiry = getSessionExpiry();
+      expect(summaryExpiry.getTime()).toBeGreaterThan(directExpiry.getTime());
     });
   });
 });

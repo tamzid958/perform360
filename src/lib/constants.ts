@@ -7,6 +7,7 @@ export const OTP_CONFIG = {
   maxAttempts: 3,
   cooldownMinutes: 15,
   sessionDurationHours: 2,
+  summarySessionDurationHours: 4,
   rateLimitPerEmail: 5,
 } as const;
 

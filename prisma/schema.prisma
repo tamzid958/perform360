@@ -210,8 +210,9 @@ model EvaluationCycle {
   // allows submission route to encrypt reviewer answers without the passphrase.
   cachedDataKeyEncrypted String?
 
-  assignments EvaluationAssignment[]
-  cycleTeams  CycleTeam[]
+  assignments   EvaluationAssignment[]
+  cycleTeams    CycleTeam[]
+  reviewerLinks CycleReviewerLink[]
 }
 
 model CycleTeam {
@@ -252,22 +253,41 @@ model EvaluationAssignment {
 }
 
 // ─────────────────────────────────────────────────────────
+// CYCLE REVIEWER LINKS (Summary access per reviewer per cycle)
+// ─────────────────────────────────────────────────────────
+
+model CycleReviewerLink {
+  id         String          @id @default(cuid())
+  cycleId    String
+  cycle      EvaluationCycle @relation(fields: [cycleId], references: [id])
+  reviewerId String
+  token      String          @unique @default(cuid())
+  createdAt  DateTime        @default(now())
+
+  otpSessions OtpSession[]
+
+  @@unique([cycleId, reviewerId])
+}
+
+// ─────────────────────────────────────────────────────────
 // OTP AUTHENTICATION
 // ─────────────────────────────────────────────────────────
 
 model OtpSession {
-  id            String               @id @default(cuid())
-  assignmentId  String
-  assignment    EvaluationAssignment @relation(fields: [assignmentId], references: [id])
-  email         String
-  otpHash       String
-  attempts      Int                  @default(0)
-  expiresAt     DateTime
-  cooldownUntil DateTime?
-  verifiedAt    DateTime?
-  sessionToken  String?              @unique
-  sessionExpiry DateTime?
-  createdAt     DateTime             @default(now())
+  id              String                @id @default(cuid())
+  assignmentId    String?
+  assignment      EvaluationAssignment? @relation(fields: [assignmentId], references: [id])
+  reviewerLinkId  String?
+  reviewerLink    CycleReviewerLink?    @relation(fields: [reviewerLinkId], references: [id])
+  email           String
+  otpHash         String
+  attempts        Int                   @default(0)
+  expiresAt       DateTime
+  cooldownUntil   DateTime?
+  verifiedAt      DateTime?
+  sessionToken    String?               @unique
+  sessionExpiry   DateTime?
+  createdAt       DateTime              @default(now())
 }
 
 // ─────────────────────────────────────────────────────────

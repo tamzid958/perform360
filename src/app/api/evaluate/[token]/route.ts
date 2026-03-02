@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { encrypt } from "@/lib/encryption";
 import { decryptDataKeyFromCookie } from "@/lib/encryption-session";
+import { validateEvaluationSession } from "@/lib/session-validation";
 
 type ApiResponse<T> =
   | { success: true; data: T }
@@ -95,7 +96,7 @@ export async function POST(
   try {
     const { token } = params;
 
-    // Validate OTP session from cookie
+    // Validate OTP session from cookie (supports both direct and summary sessions)
     const sessionToken = request.cookies.get("evaluation_session")?.value;
     if (!sessionToken) {
       return NextResponse.json<ApiResponse<never>>(
@@ -104,37 +105,15 @@ export async function POST(
       );
     }
 
-    const otpSession = await prisma.otpSession.findUnique({
-      where: { sessionToken },
-      include: {
-        assignment: {
-          include: {
-            cycle: {
-              select: {
-                status: true,
-                companyId: true,
-              },
-            },
-          },
-        },
-      },
-    });
-
-    if (!otpSession || !otpSession.sessionExpiry || otpSession.sessionExpiry < new Date()) {
+    const result = await validateEvaluationSession(sessionToken, token);
+    if (!result.ok) {
       return NextResponse.json<ApiResponse<never>>(
-        { success: false, error: "Session expired. Please verify again.", code: "SESSION_EXPIRED" },
-        { status: 401 }
+        { success: false, error: result.error, code: result.code },
+        { status: result.status }
       );
     }
 
-    if (otpSession.assignment.token !== token) {
-      return NextResponse.json<ApiResponse<never>>(
-        { success: false, error: "Session does not match this evaluation", code: "SESSION_MISMATCH" },
-        { status: 403 }
-      );
-    }
-
-    const { assignment } = otpSession;
+    const { assignment } = result.session;
 
     if (assignment.status === "SUBMITTED") {
       return NextResponse.json<ApiResponse<never>>(

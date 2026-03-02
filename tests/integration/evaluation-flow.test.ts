@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { sendEmail } from "@/lib/email";
 import { requireRecaptcha } from "@/lib/recaptcha";
 import { decryptDataKeyFromCookie } from "@/lib/encryption-session";
-import { encrypt } from "@/lib/encryption";
+import { validateEvaluationSession } from "@/lib/session-validation";
 import { parseResponse } from "../helpers";
 
 // Dynamic-import route handlers
@@ -243,21 +243,23 @@ describe("Integration: Evaluation Flow", () => {
       expect(body.code).toBe("NO_SESSION");
     });
 
-    it("loads form with valid session", async () => {
+    it("loads form with valid direct session", async () => {
       const sessionToken = "valid-session-token";
       const req = makeRequest(
         `http://localhost:3000/api/evaluate/${TOKEN}/form`,
         { cookies: { evaluation_session: sessionToken } }
       );
 
-      vi.mocked(prisma.otpSession.findUnique).mockResolvedValue({
-        sessionToken,
-        sessionExpiry: new Date(Date.now() + 3600000),
-        assignment: {
-          ...baseAssignment,
-          cycle: { name: "Q1 2026", status: "ACTIVE" },
+      vi.mocked(validateEvaluationSession).mockResolvedValue({
+        ok: true,
+        session: {
+          type: "direct",
+          assignment: {
+            ...baseAssignment,
+            cycle: { status: "ACTIVE", companyId: COMPANY_ID },
+          } as any,
         },
-      } as any);
+      });
 
       vi.mocked(prisma.evaluationTemplate.findFirst).mockResolvedValue({
         sections: [
@@ -274,6 +276,10 @@ describe("Integration: Evaluation Flow", () => {
         name: "Subject User",
       } as any);
 
+      vi.mocked(prisma.evaluationCycle.findUnique).mockResolvedValue({
+        name: "Q1 2026",
+      } as any);
+
       const res = await loadForm(req, { params: { token: TOKEN } });
       const { status, body } = await parseResponse(res);
 
@@ -281,6 +287,73 @@ describe("Integration: Evaluation Flow", () => {
       expect(body.data.subjectName).toBe("Subject User");
       expect(body.data.sections).toHaveLength(1);
       expect(body.data.sections[0].questions).toHaveLength(1);
+    });
+
+    it("loads form with valid summary session", async () => {
+      const sessionToken = "summary-session-token";
+      const req = makeRequest(
+        `http://localhost:3000/api/evaluate/${TOKEN}/form`,
+        { cookies: { evaluation_session: sessionToken } }
+      );
+
+      vi.mocked(validateEvaluationSession).mockResolvedValue({
+        ok: true,
+        session: {
+          type: "summary",
+          assignment: {
+            ...baseAssignment,
+            cycle: { status: "ACTIVE", companyId: COMPANY_ID },
+          } as any,
+          reviewerLink: { id: "rl-1", cycleId: CYCLE_ID, reviewerId: "reviewer-1", token: "summary-tok" } as any,
+        },
+      });
+
+      vi.mocked(prisma.evaluationTemplate.findFirst).mockResolvedValue({
+        sections: [
+          {
+            title: "Performance",
+            questions: [
+              { id: "q1", text: "Rating", type: "rating_scale", required: true },
+            ],
+          },
+        ],
+      } as any);
+
+      vi.mocked(prisma.user.findFirst).mockResolvedValue({
+        name: "Subject User",
+      } as any);
+
+      vi.mocked(prisma.evaluationCycle.findUnique).mockResolvedValue({
+        name: "Q1 2026",
+      } as any);
+
+      const res = await loadForm(req, { params: { token: TOKEN } });
+      const { status, body } = await parseResponse(res);
+
+      expect(status).toBe(200);
+      expect(body.data.subjectName).toBe("Subject User");
+      expect(body.data.sections).toHaveLength(1);
+    });
+
+    it("returns error when session validation fails", async () => {
+      const sessionToken = "bad-session";
+      const req = makeRequest(
+        `http://localhost:3000/api/evaluate/${TOKEN}/form`,
+        { cookies: { evaluation_session: sessionToken } }
+      );
+
+      vi.mocked(validateEvaluationSession).mockResolvedValue({
+        ok: false,
+        status: 401,
+        error: "Session expired. Please verify again.",
+        code: "SESSION_EXPIRED",
+      });
+
+      const res = await loadForm(req, { params: { token: TOKEN } });
+      const { status, body } = await parseResponse(res);
+
+      expect(status).toBe(401);
+      expect(body.code).toBe("SESSION_EXPIRED");
     });
   });
 
@@ -306,14 +379,16 @@ describe("Integration: Evaluation Flow", () => {
         cookies: { evaluation_session: sessionToken },
       });
 
-      vi.mocked(prisma.otpSession.findUnique).mockResolvedValue({
-        sessionToken,
-        sessionExpiry: new Date(Date.now() + 3600000),
-        assignment: {
-          ...baseAssignment,
-          cycle: { status: "ACTIVE", companyId: COMPANY_ID },
+      vi.mocked(validateEvaluationSession).mockResolvedValue({
+        ok: true,
+        session: {
+          type: "direct",
+          assignment: {
+            ...baseAssignment,
+            cycle: { status: "ACTIVE", companyId: COMPANY_ID },
+          } as any,
         },
-      } as any);
+      });
 
       vi.mocked(prisma.evaluationTemplate.findFirst).mockResolvedValue({
         sections: [
@@ -333,7 +408,7 @@ describe("Integration: Evaluation Flow", () => {
       expect(body.code).toBe("MISSING_REQUIRED");
     });
 
-    it("submits successfully with encryption", async () => {
+    it("submits successfully with direct session", async () => {
       const sessionToken = "submit-ok-session";
       const fakeDataKey = Buffer.alloc(32, "k");
       const req = makeRequest(`http://localhost:3000/api/evaluate/${TOKEN}`, {
@@ -342,14 +417,16 @@ describe("Integration: Evaluation Flow", () => {
         cookies: { evaluation_session: sessionToken },
       });
 
-      vi.mocked(prisma.otpSession.findUnique).mockResolvedValue({
-        sessionToken,
-        sessionExpiry: new Date(Date.now() + 3600000),
-        assignment: {
-          ...baseAssignment,
-          cycle: { status: "ACTIVE", companyId: COMPANY_ID },
+      vi.mocked(validateEvaluationSession).mockResolvedValue({
+        ok: true,
+        session: {
+          type: "direct",
+          assignment: {
+            ...baseAssignment,
+            cycle: { status: "ACTIVE", companyId: COMPANY_ID },
+          } as any,
         },
-      } as any);
+      });
 
       vi.mocked(prisma.evaluationTemplate.findFirst).mockResolvedValue({
         sections: [
@@ -377,6 +454,74 @@ describe("Integration: Evaluation Flow", () => {
 
       expect(status).toBe(200);
       expect(body.data.submitted).toBe(true);
+    });
+
+    it("submits successfully with summary session", async () => {
+      const sessionToken = "submit-summary-session";
+      const fakeDataKey = Buffer.alloc(32, "k");
+      const req = makeRequest(`http://localhost:3000/api/evaluate/${TOKEN}`, {
+        method: "POST",
+        body: { answers: { q1: 5, q2: "Good" } },
+        cookies: { evaluation_session: sessionToken },
+      });
+
+      vi.mocked(validateEvaluationSession).mockResolvedValue({
+        ok: true,
+        session: {
+          type: "summary",
+          assignment: {
+            ...baseAssignment,
+            cycle: { status: "ACTIVE", companyId: COMPANY_ID },
+          } as any,
+          reviewerLink: { id: "rl-1", cycleId: CYCLE_ID, reviewerId: "reviewer-1", token: "summary-tok" } as any,
+        },
+      });
+
+      vi.mocked(prisma.evaluationTemplate.findFirst).mockResolvedValue({
+        sections: [
+          { questions: [{ id: "q1", required: true }, { id: "q2", required: false }] },
+        ],
+      } as any);
+
+      vi.mocked(prisma.evaluationCycle.findUnique).mockResolvedValue({
+        cachedDataKeyEncrypted: "cached-encrypted-key",
+      } as any);
+
+      vi.mocked(decryptDataKeyFromCookie).mockReturnValue(fakeDataKey);
+
+      vi.mocked(prisma.company.findUnique).mockResolvedValue({
+        keyVersion: 1,
+      } as any);
+
+      vi.mocked(prisma.$transaction).mockResolvedValue([{}, {}]);
+
+      const res = await submitEvaluation(req, { params: { token: TOKEN } });
+      const { status, body } = await parseResponse(res);
+
+      expect(status).toBe(200);
+      expect(body.data.submitted).toBe(true);
+    });
+
+    it("returns error when session validation fails on submit", async () => {
+      const sessionToken = "expired-session";
+      const req = makeRequest(`http://localhost:3000/api/evaluate/${TOKEN}`, {
+        method: "POST",
+        body: { answers: { q1: 5 } },
+        cookies: { evaluation_session: sessionToken },
+      });
+
+      vi.mocked(validateEvaluationSession).mockResolvedValue({
+        ok: false,
+        status: 403,
+        error: "Session does not match this evaluation",
+        code: "SESSION_MISMATCH",
+      });
+
+      const res = await submitEvaluation(req, { params: { token: TOKEN } });
+      const { status, body } = await parseResponse(res);
+
+      expect(status).toBe(403);
+      expect(body.code).toBe("SESSION_MISMATCH");
     });
   });
 });

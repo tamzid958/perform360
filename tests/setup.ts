@@ -15,6 +15,7 @@ vi.mock("@/lib/prisma", () => {
     auditLog: { create: vi.fn(), findMany: vi.fn(), count: vi.fn() },
     jobQueue: { create: vi.fn(), findFirst: vi.fn(), findUnique: vi.fn(), update: vi.fn(), updateMany: vi.fn(), deleteMany: vi.fn() },
     otpSession: { findFirst: vi.fn(), findUnique: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn(), deleteMany: vi.fn(), count: vi.fn() },
+    cycleReviewerLink: { findUnique: vi.fn(), findFirst: vi.fn(), findMany: vi.fn(), create: vi.fn(), upsert: vi.fn(), delete: vi.fn(), deleteMany: vi.fn() },
     company: { findUnique: vi.fn(), findMany: vi.fn(), count: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() },
     session: { deleteMany: vi.fn() },
     recoveryCode: { findMany: vi.fn(), count: vi.fn(), create: vi.fn(), createMany: vi.fn(), deleteMany: vi.fn(), update: vi.fn() },
@@ -46,6 +47,8 @@ vi.mock("@/lib/email", () => ({
   getUserInviteEmail: vi.fn().mockReturnValue({ html: "<p>Invite</p>", text: "Invite" }),
   getEvaluationInviteEmail: vi.fn().mockReturnValue({ html: "<p>Invite</p>", text: "Invite" }),
   getEvaluationReminderEmail: vi.fn().mockReturnValue({ html: "<p>Reminder</p>", text: "Reminder" }),
+  getSummaryInviteEmail: vi.fn().mockReturnValue({ html: "<p>Summary Invite</p>", text: "Summary Invite" }),
+  getSummaryReminderEmail: vi.fn().mockReturnValue({ html: "<p>Summary Reminder</p>", text: "Summary Reminder" }),
   getCompanyDestroyedEmail: vi.fn().mockReturnValue({ html: "<p>Destroyed</p>", text: "Destroyed" }),
   getDataExportEmail: vi.fn().mockReturnValue({ html: "<p>Export</p>", text: "Export" }),
 }));
@@ -91,6 +94,11 @@ vi.mock("@/lib/rate-limit", () => ({
 // Mock audit
 vi.mock("@/lib/audit", () => ({
   writeAuditLog: vi.fn().mockResolvedValue(undefined),
+}));
+
+// Mock session validation (default: not mocked, tests that need it override)
+vi.mock("@/lib/session-validation", () => ({
+  validateEvaluationSession: vi.fn(),
 }));
 
 // Mock company cookie

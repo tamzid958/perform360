@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { enqueueBatch } from "@/lib/queue";
-import { getEvaluationInviteEmail, getEvaluationReminderEmail } from "@/lib/email";
+import { getSummaryInviteEmail, getSummaryReminderEmail } from "@/lib/email";
 import { writeAuditLog } from "@/lib/audit";
+import { RELATIONSHIP_LABELS } from "@/lib/constants";
 import { JOB_TYPES } from "@/types/job";
 import type {
   CycleActivatePayload,
@@ -13,7 +14,8 @@ import type {
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
 /**
- * Fetches assignments + users for a cycle and enqueues individual email.send jobs.
+ * Fetches assignments + users for a cycle, groups by reviewer,
+ * creates CycleReviewerLink records, and enqueues one summary email per reviewer.
  */
 export async function handleCycleActivate(
   payload: CycleActivatePayload
@@ -34,6 +36,7 @@ export async function handleCycleActivate(
       token: true,
       subjectId: true,
       reviewerId: true,
+      relationship: true,
     },
   });
 
@@ -52,30 +55,51 @@ export async function handleCycleActivate(
   });
   const userMap = new Map(users.map((u) => [u.id, u]));
 
-  // Build email jobs
+  // Group assignments by reviewer
+  const byReviewer = new Map<string, typeof assignments>();
+  for (const a of assignments) {
+    const list = byReviewer.get(a.reviewerId) ?? [];
+    list.push(a);
+    byReviewer.set(a.reviewerId, list);
+  }
+
+  // Build one email per reviewer
   const emailJobs: Array<{
     type: typeof JOB_TYPES.EMAIL_SEND;
     payload: EmailSendPayload;
   }> = [];
 
-  for (const a of assignments) {
-    const reviewer = userMap.get(a.reviewerId);
-    const subject = userMap.get(a.subjectId);
-    if (!reviewer || !subject) continue;
+  for (const [reviewerId, reviewerAssignments] of byReviewer) {
+    const reviewer = userMap.get(reviewerId);
+    if (!reviewer) continue;
 
-    const evaluationUrl = `${APP_URL}/evaluate/${a.token}`;
-    const { html, text } = getEvaluationInviteEmail(
+    // Upsert CycleReviewerLink (idempotent for retries)
+    const reviewerLink = await prisma.cycleReviewerLink.upsert({
+      where: { cycleId_reviewerId: { cycleId, reviewerId } },
+      create: { cycleId, reviewerId },
+      update: {},
+    });
+
+    const summaryUrl = `${APP_URL}/review/${reviewerLink.token}`;
+
+    const subjectList = reviewerAssignments.map((a) => ({
+      subjectName: userMap.get(a.subjectId)?.name ?? "Unknown",
+      relationship: RELATIONSHIP_LABELS[a.relationship] ?? a.relationship,
+    }));
+
+    const { html, text } = getSummaryInviteEmail(
       reviewer.name,
-      subject.name,
       cycle.name,
-      evaluationUrl
+      subjectList,
+      summaryUrl
     );
 
+    const count = subjectList.length;
     emailJobs.push({
       type: JOB_TYPES.EMAIL_SEND,
       payload: {
         to: reviewer.email,
-        subject: `Evaluation Invitation: ${subject.name} — ${cycle.name}`,
+        subject: `${cycle.name} — ${count} Evaluation${count === 1 ? "" : "s"} to Complete`,
         html,
         text,
       },
@@ -91,12 +115,16 @@ export async function handleCycleActivate(
     userId,
     action: "cycle_activate",
     target: `cycle:${cycleId}`,
-    metadata: { totalAssignments: assignments.length, emailsQueued: emailJobs.length },
+    metadata: {
+      totalAssignments: assignments.length,
+      uniqueReviewers: byReviewer.size,
+      emailsQueued: emailJobs.length,
+    },
   });
 }
 
 /**
- * Sends reminder emails for pending/in-progress assignments.
+ * Sends summary reminder emails for pending/in-progress assignments, grouped by reviewer.
  */
 export async function handleCycleRemind(
   payload: CycleRemindPayload
@@ -120,6 +148,7 @@ export async function handleCycleRemind(
       token: true,
       reviewerId: true,
       subjectId: true,
+      relationship: true,
     },
   });
 
@@ -141,30 +170,50 @@ export async function handleCycleRemind(
     day: "numeric",
   });
 
+  // Group by reviewer
+  const byReviewer = new Map<string, typeof pendingAssignments>();
+  for (const a of pendingAssignments) {
+    const list = byReviewer.get(a.reviewerId) ?? [];
+    list.push(a);
+    byReviewer.set(a.reviewerId, list);
+  }
+
   const emailJobs: Array<{
     type: typeof JOB_TYPES.EMAIL_SEND;
     payload: EmailSendPayload;
   }> = [];
 
-  for (const a of pendingAssignments) {
-    const reviewer = userMap.get(a.reviewerId);
-    const subject = userMap.get(a.subjectId);
-    if (!reviewer || !subject) continue;
+  for (const [reviewerId, reviewerAssignments] of byReviewer) {
+    const reviewer = userMap.get(reviewerId);
+    if (!reviewer) continue;
 
-    const evaluationUrl = `${APP_URL}/evaluate/${a.token}`;
-    const { html, text } = getEvaluationReminderEmail(
+    // Look up existing CycleReviewerLink (created during activation)
+    const reviewerLink = await prisma.cycleReviewerLink.findUnique({
+      where: { cycleId_reviewerId: { cycleId, reviewerId } },
+    });
+    if (!reviewerLink) continue;
+
+    const summaryUrl = `${APP_URL}/review/${reviewerLink.token}`;
+
+    const subjectList = reviewerAssignments.map((a) => ({
+      subjectName: userMap.get(a.subjectId)?.name ?? "Unknown",
+      relationship: RELATIONSHIP_LABELS[a.relationship] ?? a.relationship,
+    }));
+
+    const count = subjectList.length;
+    const { html, text } = getSummaryReminderEmail(
       reviewer.name,
-      subject.name,
       cycle.name,
       deadline,
-      evaluationUrl
+      subjectList,
+      summaryUrl
     );
 
     emailJobs.push({
       type: JOB_TYPES.EMAIL_SEND,
       payload: {
         to: reviewer.email,
-        subject: `Reminder: Evaluation for ${subject.name} — ${cycle.name}`,
+        subject: `Reminder: ${count} Pending Evaluation${count === 1 ? "" : "s"} — ${cycle.name}`,
         html,
         text,
       },
