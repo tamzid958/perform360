@@ -185,7 +185,7 @@ describe("PATCH /api/cycles/[id] — weight/status edge cases", () => {
         teamTemplates: [{ teamId: "t1", templateId: "tpl1" }],
       },
     });
-    const res = await PATCH(req as any, { params: { id: validCuid } });
+    const res = await PATCH(req as any, { params: Promise.resolve({ id: validCuid }) });
     const { status, body } = await parseResponse(res);
 
     expect(status).toBe(400);
@@ -229,7 +229,7 @@ describe("PATCH /api/cycles/[id] — weight/status edge cases", () => {
         }],
       },
     });
-    const res = await PATCH(req as any, { params: { id: validCuid } });
+    const res = await PATCH(req as any, { params: Promise.resolve({ id: validCuid }) });
     const { status } = await parseResponse(res);
 
     expect(status).toBe(200);
@@ -248,7 +248,7 @@ describe("PATCH /api/cycles/[id] — weight/status edge cases", () => {
       method: "PATCH",
       body: { status: "CLOSED" },
     });
-    const res = await PATCH(req as any, { params: { id: validCuid } });
+    const res = await PATCH(req as any, { params: Promise.resolve({ id: validCuid }) });
     const { status, body } = await parseResponse(res);
 
     expect(status).toBe(400);
@@ -268,7 +268,7 @@ describe("PATCH /api/cycles/[id] — weight/status edge cases", () => {
       method: "PATCH",
       body: { status: "ACTIVE" },
     });
-    const res = await PATCH(req as any, { params: { id: validCuid } });
+    const res = await PATCH(req as any, { params: Promise.resolve({ id: validCuid }) });
     const { status, body } = await parseResponse(res);
 
     expect(status).toBe(400);

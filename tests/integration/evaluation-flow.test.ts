@@ -85,7 +85,7 @@ describe("Integration: Evaluation Flow", () => {
         .mockResolvedValueOnce({ name: "Reviewer", email: "reviewer@test.com" } as any); // reviewer
 
       const req = makeRequest(`http://localhost:3000/api/evaluate/${TOKEN}`);
-      const res = await validateToken(req, { params: { token: TOKEN } });
+      const res = await validateToken(req, { params: Promise.resolve({ token: TOKEN }) });
       const { status, body } = await parseResponse(res);
 
       expect(status).toBe(200);
@@ -98,7 +98,7 @@ describe("Integration: Evaluation Flow", () => {
       vi.mocked(prisma.evaluationAssignment.findUnique).mockResolvedValue(null);
 
       const req = makeRequest("http://localhost:3000/api/evaluate/bad-token");
-      const res = await validateToken(req, { params: { token: "bad-token" } });
+      const res = await validateToken(req, { params: Promise.resolve({ token: "bad-token" }) });
       const { status, body } = await parseResponse(res);
 
       expect(status).toBe(404);
@@ -113,7 +113,7 @@ describe("Integration: Evaluation Flow", () => {
       } as any);
 
       const req = makeRequest(`http://localhost:3000/api/evaluate/${TOKEN}`);
-      const res = await validateToken(req, { params: { token: TOKEN } });
+      const res = await validateToken(req, { params: Promise.resolve({ token: TOKEN }) });
       const { status, body } = await parseResponse(res);
 
       expect(status).toBe(410);
@@ -127,7 +127,7 @@ describe("Integration: Evaluation Flow", () => {
       } as any);
 
       const req = makeRequest(`http://localhost:3000/api/evaluate/${TOKEN}`);
-      const res = await validateToken(req, { params: { token: TOKEN } });
+      const res = await validateToken(req, { params: Promise.resolve({ token: TOKEN }) });
       const { status, body } = await parseResponse(res);
 
       expect(status).toBe(410);
@@ -153,7 +153,7 @@ describe("Integration: Evaluation Flow", () => {
         `http://localhost:3000/api/evaluate/${TOKEN}/otp/send`,
         { method: "POST", body: { recaptchaToken: "tok" } }
       );
-      const res = await sendOTP(req, { params: { token: TOKEN } });
+      const res = await sendOTP(req, { params: Promise.resolve({ token: TOKEN }) });
       const { status, body } = await parseResponse(res);
 
       expect(status).toBe(200);
@@ -177,7 +177,7 @@ describe("Integration: Evaluation Flow", () => {
         `http://localhost:3000/api/evaluate/${TOKEN}/otp/send`,
         { method: "POST", body: {} }
       );
-      const res = await sendOTP(req, { params: { token: TOKEN } });
+      const res = await sendOTP(req, { params: Promise.resolve({ token: TOKEN }) });
       const { status, body } = await parseResponse(res);
 
       expect(status).toBe(429);
@@ -192,7 +192,7 @@ describe("Integration: Evaluation Flow", () => {
         `http://localhost:3000/api/evaluate/${TOKEN}/otp/verify`,
         { method: "POST", body: { otp: "abc" } }
       );
-      const res = await verifyOTP(req, { params: { token: TOKEN } });
+      const res = await verifyOTP(req, { params: Promise.resolve({ token: TOKEN }) });
       const { status } = await parseResponse(res);
 
       expect(status).toBe(400);
@@ -205,7 +205,7 @@ describe("Integration: Evaluation Flow", () => {
         `http://localhost:3000/api/evaluate/unknown/otp/verify`,
         { method: "POST", body: { otp: "123456" } }
       );
-      const res = await verifyOTP(req, { params: { token: "unknown" } });
+      const res = await verifyOTP(req, { params: Promise.resolve({ token: "unknown" }) });
       const { status, body } = await parseResponse(res);
 
       expect(status).toBe(404);
@@ -222,7 +222,7 @@ describe("Integration: Evaluation Flow", () => {
         `http://localhost:3000/api/evaluate/${TOKEN}/otp/verify`,
         { method: "POST", body: { otp: "123456" } }
       );
-      const res = await verifyOTP(req, { params: { token: TOKEN } });
+      const res = await verifyOTP(req, { params: Promise.resolve({ token: TOKEN }) });
       const { status, body } = await parseResponse(res);
 
       expect(status).toBe(400);
@@ -236,7 +236,7 @@ describe("Integration: Evaluation Flow", () => {
       const req = makeRequest(
         `http://localhost:3000/api/evaluate/${TOKEN}/form`
       );
-      const res = await loadForm(req, { params: { token: TOKEN } });
+      const res = await loadForm(req, { params: Promise.resolve({ token: TOKEN }) });
       const { status, body } = await parseResponse(res);
 
       expect(status).toBe(401);
@@ -280,7 +280,7 @@ describe("Integration: Evaluation Flow", () => {
         name: "Q1 2026",
       } as any);
 
-      const res = await loadForm(req, { params: { token: TOKEN } });
+      const res = await loadForm(req, { params: Promise.resolve({ token: TOKEN }) });
       const { status, body } = await parseResponse(res);
 
       expect(status).toBe(200);
@@ -327,7 +327,7 @@ describe("Integration: Evaluation Flow", () => {
         name: "Q1 2026",
       } as any);
 
-      const res = await loadForm(req, { params: { token: TOKEN } });
+      const res = await loadForm(req, { params: Promise.resolve({ token: TOKEN }) });
       const { status, body } = await parseResponse(res);
 
       expect(status).toBe(200);
@@ -349,7 +349,7 @@ describe("Integration: Evaluation Flow", () => {
         code: "SESSION_EXPIRED",
       });
 
-      const res = await loadForm(req, { params: { token: TOKEN } });
+      const res = await loadForm(req, { params: Promise.resolve({ token: TOKEN }) });
       const { status, body } = await parseResponse(res);
 
       expect(status).toBe(401);
@@ -364,7 +364,7 @@ describe("Integration: Evaluation Flow", () => {
         method: "POST",
         body: { answers: { q1: 5 } },
       });
-      const res = await submitEvaluation(req, { params: { token: TOKEN } });
+      const res = await submitEvaluation(req, { params: Promise.resolve({ token: TOKEN }) });
       const { status, body } = await parseResponse(res);
 
       expect(status).toBe(401);
@@ -401,7 +401,7 @@ describe("Integration: Evaluation Flow", () => {
         ],
       } as any);
 
-      const res = await submitEvaluation(req, { params: { token: TOKEN } });
+      const res = await submitEvaluation(req, { params: Promise.resolve({ token: TOKEN }) });
       const { status, body } = await parseResponse(res);
 
       expect(status).toBe(400);
@@ -449,7 +449,7 @@ describe("Integration: Evaluation Flow", () => {
       vi.mocked(prisma.evaluationResponse.create).mockResolvedValue({} as any);
       vi.mocked(prisma.evaluationAssignment.update).mockResolvedValue({} as any);
 
-      const res = await submitEvaluation(req, { params: { token: TOKEN } });
+      const res = await submitEvaluation(req, { params: Promise.resolve({ token: TOKEN }) });
       const { status, body } = await parseResponse(res);
 
       expect(status).toBe(200);
@@ -495,7 +495,7 @@ describe("Integration: Evaluation Flow", () => {
 
       vi.mocked(prisma.$transaction).mockResolvedValue([{}, {}]);
 
-      const res = await submitEvaluation(req, { params: { token: TOKEN } });
+      const res = await submitEvaluation(req, { params: Promise.resolve({ token: TOKEN }) });
       const { status, body } = await parseResponse(res);
 
       expect(status).toBe(200);
@@ -517,7 +517,7 @@ describe("Integration: Evaluation Flow", () => {
         code: "SESSION_MISMATCH",
       });
 
-      const res = await submitEvaluation(req, { params: { token: TOKEN } });
+      const res = await submitEvaluation(req, { params: Promise.resolve({ token: TOKEN }) });
       const { status, body } = await parseResponse(res);
 
       expect(status).toBe(403);

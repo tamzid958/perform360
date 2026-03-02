@@ -42,7 +42,7 @@ describe("Review: Summary token validation (GET /api/review/[token])", () => {
       .mockResolvedValueOnce(2); // pendingAssignments
 
     const req = makeRequest(`http://localhost:3000/api/review/${SUMMARY_TOKEN}`);
-    const res = await validateSummaryToken(req, { params: { token: SUMMARY_TOKEN } });
+    const res = await validateSummaryToken(req, { params: Promise.resolve({ token: SUMMARY_TOKEN }) });
     const { status, body } = await parseResponse(res);
 
     expect(status).toBe(200);
@@ -58,7 +58,7 @@ describe("Review: Summary token validation (GET /api/review/[token])", () => {
     vi.mocked(prisma.cycleReviewerLink.findUnique).mockResolvedValue(null);
 
     const req = makeRequest("http://localhost:3000/api/review/bad-token");
-    const res = await validateSummaryToken(req, { params: { token: "bad-token" } });
+    const res = await validateSummaryToken(req, { params: Promise.resolve({ token: "bad-token" }) });
     const { status, body } = await parseResponse(res);
 
     expect(status).toBe(404);
@@ -79,7 +79,7 @@ describe("Review: Summary token validation (GET /api/review/[token])", () => {
     } as any);
 
     const req = makeRequest(`http://localhost:3000/api/review/${SUMMARY_TOKEN}`);
-    const res = await validateSummaryToken(req, { params: { token: SUMMARY_TOKEN } });
+    const res = await validateSummaryToken(req, { params: Promise.resolve({ token: SUMMARY_TOKEN }) });
     const { status, body } = await parseResponse(res);
 
     expect(status).toBe(410);
@@ -100,7 +100,7 @@ describe("Review: Summary token validation (GET /api/review/[token])", () => {
     } as any);
 
     const req = makeRequest(`http://localhost:3000/api/review/${SUMMARY_TOKEN}`);
-    const res = await validateSummaryToken(req, { params: { token: SUMMARY_TOKEN } });
+    const res = await validateSummaryToken(req, { params: Promise.resolve({ token: SUMMARY_TOKEN }) });
     const { status, body } = await parseResponse(res);
 
     expect(status).toBe(410);

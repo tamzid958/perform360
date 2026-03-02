@@ -37,7 +37,7 @@ describe("GET /api/admin/companies/[id] — edge cases", () => {
     vi.mocked(prisma.company.findUnique).mockResolvedValue(null);
 
     const req = createMockRequest(`http://localhost:3000/api/admin/companies/${validCuid}`);
-    const res = await GET(req as any, { params: { id: validCuid } });
+    const res = await GET(req as any, { params: Promise.resolve({ id: validCuid }) });
     const { status, body } = await parseResponse(res);
 
     expect(status).toBe(404);
@@ -48,7 +48,7 @@ describe("GET /api/admin/companies/[id] — edge cases", () => {
     mockNotSuperAdmin();
 
     const req = createMockRequest(`http://localhost:3000/api/admin/companies/${validCuid}`);
-    const res = await GET(req as any, { params: { id: validCuid } });
+    const res = await GET(req as any, { params: Promise.resolve({ id: validCuid }) });
     expect(res.status).toBe(403);
   });
 
@@ -68,7 +68,7 @@ describe("GET /api/admin/companies/[id] — edge cases", () => {
     } as any);
 
     const req = createMockRequest(`http://localhost:3000/api/admin/companies/${validCuid}`);
-    const res = await GET(req as any, { params: { id: validCuid } });
+    const res = await GET(req as any, { params: Promise.resolve({ id: validCuid }) });
     const { status, body } = await parseResponse(res);
 
     expect(status).toBe(200);
@@ -92,7 +92,7 @@ describe("PATCH /api/admin/companies/[id] — edge cases", () => {
       method: "PATCH",
       body: { slug: "taken-slug" },
     });
-    const res = await PATCH(req as any, { params: { id: validCuid } });
+    const res = await PATCH(req as any, { params: Promise.resolve({ id: validCuid }) });
     const { status, body } = await parseResponse(res);
 
     expect(status).toBe(409);
@@ -107,7 +107,7 @@ describe("PATCH /api/admin/companies/[id] — edge cases", () => {
       method: "PATCH",
       body: { name: "New Name" },
     });
-    const res = await PATCH(req as any, { params: { id: validCuid } });
+    const res = await PATCH(req as any, { params: Promise.resolve({ id: validCuid }) });
     const { status, body } = await parseResponse(res);
 
     expect(status).toBe(404);
@@ -136,7 +136,7 @@ describe("PATCH /api/admin/companies/[id] — edge cases", () => {
       method: "PATCH",
       body: { name: "Acme Corp" },
     });
-    const res = await PATCH(req as any, { params: { id: validCuid } });
+    const res = await PATCH(req as any, { params: Promise.resolve({ id: validCuid }) });
     const { status, body } = await parseResponse(res);
 
     expect(status).toBe(200);
@@ -158,7 +158,7 @@ describe("DELETE /api/admin/companies/[id] — edge cases", () => {
     const req = createMockRequest(`http://localhost:3000/api/admin/companies/${validCuid}`, {
       method: "DELETE",
     });
-    const res = await DELETE(req as any, { params: { id: validCuid } });
+    const res = await DELETE(req as any, { params: Promise.resolve({ id: validCuid }) });
     const { status, body } = await parseResponse(res);
 
     expect(status).toBe(409);
@@ -172,7 +172,7 @@ describe("DELETE /api/admin/companies/[id] — edge cases", () => {
     const req = createMockRequest(`http://localhost:3000/api/admin/companies/${validCuid}`, {
       method: "DELETE",
     });
-    const res = await DELETE(req as any, { params: { id: validCuid } });
+    const res = await DELETE(req as any, { params: Promise.resolve({ id: validCuid }) });
     const { status, body } = await parseResponse(res);
 
     expect(status).toBe(404);
@@ -191,7 +191,7 @@ describe("DELETE /api/admin/companies/[id] — edge cases", () => {
     const req = createMockRequest(`http://localhost:3000/api/admin/companies/${validCuid}`, {
       method: "DELETE",
     });
-    const res = await DELETE(req as any, { params: { id: validCuid } });
+    const res = await DELETE(req as any, { params: Promise.resolve({ id: validCuid }) });
     const { status, body } = await parseResponse(res);
 
     expect(status).toBe(200);

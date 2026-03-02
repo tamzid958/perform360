@@ -35,7 +35,7 @@ describe("GET /api/admin/stats", () => {
     mockNotSuperAdmin();
 
     const req = createMockRequest("http://localhost:3000/api/admin/stats");
-    const res = await getStats(req as any, { params: {} });
+    const res = await getStats(req as any, { params: Promise.resolve({}) });
     expect(res.status).toBe(403);
   });
 
@@ -51,7 +51,7 @@ describe("GET /api/admin/stats", () => {
     vi.mocked(prisma.evaluationResponse.count).mockResolvedValue(100);
 
     const req = createMockRequest("http://localhost:3000/api/admin/stats");
-    const res = await getStats(req as any, { params: {} });
+    const res = await getStats(req as any, { params: Promise.resolve({}) });
     const { status, body } = await parseResponse(res);
 
     expect(status).toBe(200);
@@ -66,7 +66,7 @@ describe("GET /api/admin/companies", () => {
   it("returns 403 for non-super-admin", async () => {
     mockNotSuperAdmin();
     const req = createMockRequest("http://localhost:3000/api/admin/companies");
-    const res = await getCompanies(req as any, { params: {} });
+    const res = await getCompanies(req as any, { params: Promise.resolve({}) });
     expect(res.status).toBe(403);
   });
 
@@ -91,7 +91,7 @@ describe("GET /api/admin/companies", () => {
     const req = createMockRequest(
       "http://localhost:3000/api/admin/companies?page=1&limit=20"
     );
-    const res = await getCompanies(req as any, { params: {} });
+    const res = await getCompanies(req as any, { params: Promise.resolve({}) });
     const { status, body } = await parseResponse(res);
 
     expect(status).toBe(200);
@@ -110,7 +110,7 @@ describe("POST /api/admin/companies", () => {
       method: "POST",
       body: { name: "New Co" },
     });
-    const res = await createCompany(req as any, { params: {} });
+    const res = await createCompany(req as any, { params: Promise.resolve({}) });
     expect(res.status).toBe(403);
   });
 
@@ -130,7 +130,7 @@ describe("POST /api/admin/companies", () => {
       method: "POST",
       body: { name: "New Co" },
     });
-    const res = await createCompany(req as any, { params: {} });
+    const res = await createCompany(req as any, { params: Promise.resolve({}) });
     const { status, body } = await parseResponse(res);
 
     expect(status).toBe(201);
@@ -148,7 +148,7 @@ describe("POST /api/admin/companies", () => {
       method: "POST",
       body: { name: "Existing Co", slug: "existing" },
     });
-    const res = await createCompany(req as any, { params: {} });
+    const res = await createCompany(req as any, { params: Promise.resolve({}) });
     expect(res.status).toBe(409);
   });
 });

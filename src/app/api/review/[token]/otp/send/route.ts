@@ -11,7 +11,7 @@ type ApiResponse<T> =
 
 export async function POST(
   _request: NextRequest,
-  { params }: { params: { token: string } }
+  { params }: { params: Promise<{ token: string }> }
 ) {
   try {
     let recaptchaToken: string | null = null;
@@ -24,7 +24,7 @@ export async function POST(
     const recaptchaError = await requireRecaptcha(recaptchaToken);
     if (recaptchaError) return recaptchaError;
 
-    const { token } = params;
+    const { token } = await params;
 
     // Validate summary token
     const reviewerLink = await prisma.cycleReviewerLink.findUnique({

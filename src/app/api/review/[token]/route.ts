@@ -8,10 +8,10 @@ type ApiResponse<T> =
 // ─── GET: Validate summary token ───
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { token: string } }
+  { params }: { params: Promise<{ token: string }> }
 ) {
   try {
-    const { token } = params;
+    const { token } = await params;
 
     const reviewerLink = await prisma.cycleReviewerLink.findUnique({
       where: { token },

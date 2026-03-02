@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -32,7 +32,8 @@ interface FormData {
   sections: TemplateSection[];
 }
 
-export default function EvaluationFormPage({ params }: { params: { token: string } }) {
+export default function EvaluationFormPage({ params: paramsPromise }: { params: Promise<{ token: string }> }) {
+  const params = use(paramsPromise);
   const router = useRouter();
   const [formData, setFormData] = useState<FormData | null>(null);
   const [isLoadingForm, setIsLoadingForm] = useState(true);

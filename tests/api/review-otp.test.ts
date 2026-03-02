@@ -63,7 +63,7 @@ describe("Review OTP send (POST /api/review/[token]/otp/send)", () => {
       `http://localhost:3000/api/review/${SUMMARY_TOKEN}/otp/send`,
       { body: { recaptchaToken: "tok" } }
     );
-    const res = await sendOTP(req, { params: { token: SUMMARY_TOKEN } });
+    const res = await sendOTP(req, { params: Promise.resolve({ token: SUMMARY_TOKEN }) });
     const { status, body } = await parseResponse(res);
 
     expect(status).toBe(200);
@@ -83,7 +83,7 @@ describe("Review OTP send (POST /api/review/[token]/otp/send)", () => {
       "http://localhost:3000/api/review/bad-token/otp/send",
       { body: { recaptchaToken: "tok" } }
     );
-    const res = await sendOTP(req, { params: { token: "bad-token" } });
+    const res = await sendOTP(req, { params: Promise.resolve({ token: "bad-token" }) });
     const { status, body } = await parseResponse(res);
 
     expect(status).toBe(404);
@@ -102,7 +102,7 @@ describe("Review OTP send (POST /api/review/[token]/otp/send)", () => {
       `http://localhost:3000/api/review/${SUMMARY_TOKEN}/otp/send`,
       { body: { recaptchaToken: "tok" } }
     );
-    const res = await sendOTP(req, { params: { token: SUMMARY_TOKEN } });
+    const res = await sendOTP(req, { params: Promise.resolve({ token: SUMMARY_TOKEN }) });
     const { status, body } = await parseResponse(res);
 
     expect(status).toBe(410);
@@ -128,7 +128,7 @@ describe("Review OTP send (POST /api/review/[token]/otp/send)", () => {
       `http://localhost:3000/api/review/${SUMMARY_TOKEN}/otp/send`,
       { body: { recaptchaToken: "tok" } }
     );
-    const res = await sendOTP(req, { params: { token: SUMMARY_TOKEN } });
+    const res = await sendOTP(req, { params: Promise.resolve({ token: SUMMARY_TOKEN }) });
     const { status, body } = await parseResponse(res);
 
     expect(status).toBe(429);
@@ -146,7 +146,7 @@ describe("Review OTP verify (POST /api/review/[token]/otp/verify)", () => {
       `http://localhost:3000/api/review/${SUMMARY_TOKEN}/otp/verify`,
       { body: { otp: "abc" } }
     );
-    const res = await verifyOTP(req, { params: { token: SUMMARY_TOKEN } });
+    const res = await verifyOTP(req, { params: Promise.resolve({ token: SUMMARY_TOKEN }) });
     const { status } = await parseResponse(res);
 
     expect(status).toBe(400);
@@ -159,7 +159,7 @@ describe("Review OTP verify (POST /api/review/[token]/otp/verify)", () => {
       "http://localhost:3000/api/review/unknown/otp/verify",
       { body: { otp: "123456" } }
     );
-    const res = await verifyOTP(req, { params: { token: "unknown" } });
+    const res = await verifyOTP(req, { params: Promise.resolve({ token: "unknown" }) });
     const { status, body } = await parseResponse(res);
 
     expect(status).toBe(404);
@@ -176,7 +176,7 @@ describe("Review OTP verify (POST /api/review/[token]/otp/verify)", () => {
       `http://localhost:3000/api/review/${SUMMARY_TOKEN}/otp/verify`,
       { body: { otp: "123456" } }
     );
-    const res = await verifyOTP(req, { params: { token: SUMMARY_TOKEN } });
+    const res = await verifyOTP(req, { params: Promise.resolve({ token: SUMMARY_TOKEN }) });
     const { status, body } = await parseResponse(res);
 
     expect(status).toBe(400);
@@ -199,7 +199,7 @@ describe("Review OTP verify (POST /api/review/[token]/otp/verify)", () => {
       `http://localhost:3000/api/review/${SUMMARY_TOKEN}/otp/verify`,
       { body: { otp: "123456" } }
     );
-    const res = await verifyOTP(req, { params: { token: SUMMARY_TOKEN } });
+    const res = await verifyOTP(req, { params: Promise.resolve({ token: SUMMARY_TOKEN }) });
     const { status, body } = await parseResponse(res);
 
     expect(status).toBe(410);
@@ -222,7 +222,7 @@ describe("Review OTP verify (POST /api/review/[token]/otp/verify)", () => {
       `http://localhost:3000/api/review/${SUMMARY_TOKEN}/otp/verify`,
       { body: { otp: "123456" } }
     );
-    const res = await verifyOTP(req, { params: { token: SUMMARY_TOKEN } });
+    const res = await verifyOTP(req, { params: Promise.resolve({ token: SUMMARY_TOKEN }) });
     const { status, body } = await parseResponse(res);
 
     expect(status).toBe(429);

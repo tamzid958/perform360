@@ -29,15 +29,17 @@ export function withCompanyScope<TParams extends Record<string, string>>(
     /** Param key for the resource ID (defaults to "id") */
     resourceParamKey?: string;
   }
-): (request: NextRequest, context: { params: TParams }) => Promise<NextResponse> {
-  return async (request: NextRequest, context: { params: TParams }) => {
+): (request: NextRequest, context: { params: Promise<TParams> }) => Promise<NextResponse> {
+  return async (request: NextRequest, context: { params: Promise<TParams> }) => {
     const authResult = await requireAuth();
     if (isAuthError(authResult)) return authResult;
+
+    const params = await context.params;
 
     // If a resource model is specified, verify it belongs to the user's company
     if (options?.resourceModel) {
       const paramKey = options.resourceParamKey ?? "id";
-      const resourceId = context.params[paramKey];
+      const resourceId = params[paramKey];
 
       if (resourceId) {
         const exists = await verifyResourceOwnership(
@@ -56,7 +58,7 @@ export function withCompanyScope<TParams extends Record<string, string>>(
     }
 
     return handler(request, {
-      params: context.params,
+      params,
       auth: authResult,
     });
   };

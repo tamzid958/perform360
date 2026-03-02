@@ -23,17 +23,16 @@ type ApiResponse<T> =
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const rl = applyRateLimit(request);
   if (rl) return rl;
-  const invalid = validateCuidParam(params.id);
+  const { id: cycleId } = await params;
+  const invalid = validateCuidParam(cycleId);
   if (invalid) return invalid;
 
   const authResult = await requireAdminOrHR();
   if (isAuthError(authResult)) return authResult;
-
-  const { id: cycleId } = params;
   const { companyId } = authResult;
 
   // Verify cycle belongs to user's company

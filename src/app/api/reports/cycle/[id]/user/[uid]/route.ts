@@ -14,19 +14,18 @@ type ApiResponse<T> =
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string; uid: string } }
+  { params }: { params: Promise<{ id: string; uid: string }> }
 ) {
   const rl = applyRateLimit(request);
   if (rl) return rl;
-  const invalidId = validateCuidParam(params.id, "cycleId");
+  const { id: cycleId, uid: subjectId } = await params;
+  const invalidId = validateCuidParam(cycleId, "cycleId");
   if (invalidId) return invalidId;
-  const invalidUid = validateCuidParam(params.uid, "userId");
+  const invalidUid = validateCuidParam(subjectId, "userId");
   if (invalidUid) return invalidUid;
 
   const authResult = await requireAdminOrHR();
   if (isAuthError(authResult)) return authResult;
-
-  const { id: cycleId, uid: subjectId } = params;
   const { companyId } = authResult;
 
   // Verify cycle belongs to user's company

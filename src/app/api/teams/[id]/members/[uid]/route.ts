@@ -6,13 +6,14 @@ import { validateCuidParam } from "@/lib/validation";
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string; uid: string } }
+  { params }: { params: Promise<{ id: string; uid: string }> }
 ) {
   const rl = applyRateLimit(request);
   if (rl) return rl;
-  const invalidId = validateCuidParam(params.id, "teamId");
+  const { id, uid } = await params;
+  const invalidId = validateCuidParam(id, "teamId");
   if (invalidId) return invalidId;
-  const invalidUid = validateCuidParam(params.uid, "userId");
+  const invalidUid = validateCuidParam(uid, "userId");
   if (invalidUid) return invalidUid;
 
   const authResult = await requireAdminOrHR();
@@ -21,7 +22,7 @@ export async function DELETE(
   // Verify team belongs to company
   const team = await prisma.team.findFirst({
     where: {
-      id: params.id,
+      id: id,
       companyId: authResult.companyId,
     },
   });
@@ -37,8 +38,8 @@ export async function DELETE(
   const membership = await prisma.teamMember.findUnique({
     where: {
       userId_teamId: {
-        userId: params.uid,
-        teamId: params.id,
+        userId: uid,
+        teamId: id,
       },
     },
   });

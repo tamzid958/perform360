@@ -8,11 +8,12 @@ import { JOB_TYPES } from "@/types/job";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const rl = applyRateLimit(request);
   if (rl) return rl;
-  const invalid = validateCuidParam(params.id);
+  const { id } = await params;
+  const invalid = validateCuidParam(id);
   if (invalid) return invalid;
 
   const authResult = await requireAdminOrHR();
@@ -35,7 +36,7 @@ export async function POST(
   // 1. Fetch cycle and validate status
   const cycle = await prisma.evaluationCycle.findFirst({
     where: {
-      id: params.id,
+      id: id,
       companyId: authResult.companyId,
     },
   });
@@ -61,7 +62,7 @@ export async function POST(
   // 2. Check pending assignments exist (for count in response)
   const pendingCount = await prisma.evaluationAssignment.count({
     where: {
-      cycleId: params.id,
+      cycleId: id,
       status: { in: ["PENDING", "IN_PROGRESS"] },
       ...(assignmentId ? { id: assignmentId } : {}),
     },
@@ -83,7 +84,7 @@ export async function POST(
   const jobId = await enqueue(
     JOB_TYPES.CYCLE_REMIND,
     {
-      cycleId: params.id,
+      cycleId: id,
       companyId: authResult.companyId,
       assignmentId,
     },

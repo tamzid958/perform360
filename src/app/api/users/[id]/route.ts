@@ -8,11 +8,12 @@ import { writeAuditLog } from "@/lib/audit";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const rl = applyRateLimit(request);
   if (rl) return rl;
-  const invalid = validateCuidParam(params.id);
+  const { id } = await params;
+  const invalid = validateCuidParam(id);
   if (invalid) return invalid;
 
   const authResult = await requireAdminOrHR();
@@ -20,7 +21,7 @@ export async function GET(
 
   try {
     const user = await prisma.user.findFirst({
-      where: { id: params.id, companyId: authResult.companyId },
+      where: { id: id, companyId: authResult.companyId },
       include: {
         teamMemberships: {
           include: {
@@ -40,7 +41,7 @@ export async function GET(
     // Fetch evaluation assignments in both directions
     const [asSubject, asReviewer] = await Promise.all([
       prisma.evaluationAssignment.findMany({
-        where: { subjectId: params.id, cycle: { companyId: authResult.companyId } },
+        where: { subjectId: id, cycle: { companyId: authResult.companyId } },
         select: {
           id: true, cycleId: true, reviewerId: true,
           relationship: true, status: true,
@@ -48,7 +49,7 @@ export async function GET(
         },
       }),
       prisma.evaluationAssignment.findMany({
-        where: { reviewerId: params.id, cycle: { companyId: authResult.companyId } },
+        where: { reviewerId: id, cycle: { companyId: authResult.companyId } },
         select: {
           id: true, cycleId: true, subjectId: true,
           relationship: true, status: true,
@@ -132,11 +133,12 @@ const updateUserSchema = z.object({
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const rl = applyRateLimit(request);
   if (rl) return rl;
-  const invalid = validateCuidParam(params.id);
+  const { id } = await params;
+  const invalid = validateCuidParam(id);
   if (invalid) return invalid;
 
   const authResult = await requireAdminOrHR();
@@ -157,7 +159,7 @@ export async function PATCH(
 
     const existing = await prisma.user.findFirst({
       where: {
-        id: params.id,
+        id: id,
         companyId: authResult.companyId,
       },
     });
@@ -189,7 +191,7 @@ export async function PATCH(
     }
 
     const user = await prisma.user.update({
-      where: { id: params.id },
+      where: { id: id },
       data: validated,
     });
 
@@ -198,7 +200,7 @@ export async function PATCH(
         companyId: authResult.companyId,
         userId: authResult.userId,
         action: "role_change",
-        target: `user:${params.id}`,
+        target: `user:${id}`,
         metadata: { oldRole: existing.role, newRole: validated.role },
       });
     }
@@ -224,11 +226,12 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const rl = applyRateLimit(request);
   if (rl) return rl;
-  const invalid = validateCuidParam(params.id);
+  const { id } = await params;
+  const invalid = validateCuidParam(id);
   if (invalid) return invalid;
 
   const authResult = await requireAdminOrHR();
@@ -239,7 +242,7 @@ export async function DELETE(
 
   const user = await prisma.user.findFirst({
     where: {
-      id: params.id,
+      id: id,
       companyId: authResult.companyId,
     },
   });
@@ -276,27 +279,27 @@ export async function DELETE(
       prisma.otpSession.deleteMany({
         where: {
           assignment: {
-            OR: [{ subjectId: params.id }, { reviewerId: params.id }],
+            OR: [{ subjectId: id }, { reviewerId: id }],
           },
         },
       }),
       prisma.evaluationResponse.deleteMany({
         where: {
           assignment: {
-            OR: [{ subjectId: params.id }, { reviewerId: params.id }],
+            OR: [{ subjectId: id }, { reviewerId: id }],
           },
         },
       }),
       prisma.evaluationAssignment.deleteMany({
         where: {
-          OR: [{ subjectId: params.id }, { reviewerId: params.id }],
+          OR: [{ subjectId: id }, { reviewerId: id }],
         },
       }),
       prisma.teamMember.deleteMany({
-        where: { userId: params.id },
+        where: { userId: id },
       }),
       prisma.user.delete({
-        where: { id: params.id },
+        where: { id: id },
       }),
     ]);
 
@@ -318,7 +321,7 @@ export async function DELETE(
       companyId: authResult.companyId,
       userId: authResult.userId,
       action: "user_deactivate",
-      target: `user:${params.id}`,
+      target: `user:${id}`,
       metadata: { email: user.email, role: user.role, type: "hard_delete" },
     });
 
@@ -330,7 +333,7 @@ export async function DELETE(
 
   // Soft delete — archive the user
   await prisma.user.update({
-    where: { id: params.id },
+    where: { id: id },
     data: { archivedAt: new Date() },
   });
 
@@ -338,7 +341,7 @@ export async function DELETE(
     companyId: authResult.companyId,
     userId: authResult.userId,
     action: "user_deactivate",
-    target: `user:${params.id}`,
+    target: `user:${id}`,
     metadata: { email: user.email, role: user.role, type: "archive" },
   });
 

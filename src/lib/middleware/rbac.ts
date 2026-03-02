@@ -22,8 +22,8 @@ type RouteHandler<TParams = Record<string, string>> = (
 export function withRBAC<TParams extends Record<string, string>>(
   handler: RouteHandler<TParams>,
   options: { requiredRoles: UserRole[] }
-): (request: NextRequest, context: { params: TParams }) => Promise<NextResponse> {
-  return async (request: NextRequest, context: { params: TParams }) => {
+): (request: NextRequest, context: { params: Promise<TParams> }) => Promise<NextResponse> {
+  return async (request: NextRequest, context: { params: Promise<TParams> }) => {
     const authResult = await requireAuth();
     if (isAuthError(authResult)) return authResult;
 
@@ -34,8 +34,9 @@ export function withRBAC<TParams extends Record<string, string>>(
       );
     }
 
+    const params = await context.params;
     return handler(request, {
-      params: context.params,
+      params,
       auth: authResult,
     });
   };
@@ -46,7 +47,7 @@ export function withRBAC<TParams extends Record<string, string>>(
  */
 export function withAdminOrHR<TParams extends Record<string, string>>(
   handler: RouteHandler<TParams>
-): (request: NextRequest, context: { params: TParams }) => Promise<NextResponse> {
+): (request: NextRequest, context: { params: Promise<TParams> }) => Promise<NextResponse> {
   return withRBAC(handler, { requiredRoles: ["ADMIN", "HR"] });
 }
 
@@ -55,6 +56,6 @@ export function withAdminOrHR<TParams extends Record<string, string>>(
  */
 export function withAdmin<TParams extends Record<string, string>>(
   handler: RouteHandler<TParams>
-): (request: NextRequest, context: { params: TParams }) => Promise<NextResponse> {
+): (request: NextRequest, context: { params: Promise<TParams> }) => Promise<NextResponse> {
   return withRBAC(handler, { requiredRoles: ["ADMIN"] });
 }

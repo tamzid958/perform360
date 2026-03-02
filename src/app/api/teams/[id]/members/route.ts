@@ -12,11 +12,12 @@ const addMemberSchema = z.object({
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const rl = applyRateLimit(request);
   if (rl) return rl;
-  const invalid = validateCuidParam(params.id);
+  const { id } = await params;
+  const invalid = validateCuidParam(id);
   if (invalid) return invalid;
 
   const authResult = await requireAdminOrHR();
@@ -29,7 +30,7 @@ export async function POST(
     // Verify team belongs to company
     const team = await prisma.team.findFirst({
       where: {
-        id: params.id,
+        id: id,
         companyId: authResult.companyId,
       },
     });
@@ -63,7 +64,7 @@ export async function POST(
       where: {
         userId_teamId: {
           userId: validated.userId,
-          teamId: params.id,
+          teamId: id,
         },
       },
     });
@@ -79,7 +80,7 @@ export async function POST(
     const member = await prisma.teamMember.create({
       data: {
         userId: validated.userId,
-        teamId: params.id,
+        teamId: id,
         role: validated.role,
       },
       include: {

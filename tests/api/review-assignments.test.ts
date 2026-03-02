@@ -35,7 +35,7 @@ describe("Review: Assignments list (GET /api/review/[token]/assignments)", () =>
     const req = makeRequest(
       `http://localhost:3000/api/review/${SUMMARY_TOKEN}/assignments`
     );
-    const res = await listAssignments(req, { params: { token: SUMMARY_TOKEN } });
+    const res = await listAssignments(req, { params: Promise.resolve({ token: SUMMARY_TOKEN }) });
     const { status, body } = await parseResponse(res);
 
     expect(status).toBe(401);
@@ -54,7 +54,7 @@ describe("Review: Assignments list (GET /api/review/[token]/assignments)", () =>
       `http://localhost:3000/api/review/${SUMMARY_TOKEN}/assignments`,
       { evaluation_session: sessionToken }
     );
-    const res = await listAssignments(req, { params: { token: SUMMARY_TOKEN } });
+    const res = await listAssignments(req, { params: Promise.resolve({ token: SUMMARY_TOKEN }) });
     const { status, body } = await parseResponse(res);
 
     expect(status).toBe(401);
@@ -78,7 +78,7 @@ describe("Review: Assignments list (GET /api/review/[token]/assignments)", () =>
       `http://localhost:3000/api/review/${SUMMARY_TOKEN}/assignments`,
       { evaluation_session: sessionToken }
     );
-    const res = await listAssignments(req, { params: { token: SUMMARY_TOKEN } });
+    const res = await listAssignments(req, { params: Promise.resolve({ token: SUMMARY_TOKEN }) });
     const { status, body } = await parseResponse(res);
 
     expect(status).toBe(403);
@@ -117,7 +117,7 @@ describe("Review: Assignments list (GET /api/review/[token]/assignments)", () =>
       `http://localhost:3000/api/review/${SUMMARY_TOKEN}/assignments`,
       { evaluation_session: sessionToken }
     );
-    const res = await listAssignments(req, { params: { token: SUMMARY_TOKEN } });
+    const res = await listAssignments(req, { params: Promise.resolve({ token: SUMMARY_TOKEN }) });
     const { status, body } = await parseResponse(res);
 
     expect(status).toBe(200);
@@ -162,7 +162,7 @@ describe("Review: Assignments list (GET /api/review/[token]/assignments)", () =>
       `http://localhost:3000/api/review/${SUMMARY_TOKEN}/assignments`,
       { evaluation_session: sessionToken }
     );
-    const res = await listAssignments(req, { params: { token: SUMMARY_TOKEN } });
+    const res = await listAssignments(req, { params: Promise.resolve({ token: SUMMARY_TOKEN }) });
     const { status, body } = await parseResponse(res);
 
     expect(status).toBe(410);

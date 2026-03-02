@@ -39,7 +39,7 @@ describe("middleware/rbac", () => {
   it("withRBAC passes for allowed role", async () => {
     setupAuth("HR");
     const wrapped = withRBAC(dummyHandler, { requiredRoles: ["ADMIN", "HR"] });
-    const res = await wrapped(makeReq(), { params: {} });
+    const res = await wrapped(makeReq(), { params: Promise.resolve({}) });
     expect(res.status).toBe(200);
     expect(dummyHandler).toHaveBeenCalled();
   });
@@ -47,7 +47,7 @@ describe("middleware/rbac", () => {
   it("withRBAC returns 403 for disallowed role", async () => {
     setupAuth("EMPLOYEE");
     const wrapped = withRBAC(dummyHandler, { requiredRoles: ["ADMIN"] });
-    const res = await wrapped(makeReq(), { params: {} });
+    const res = await wrapped(makeReq(), { params: Promise.resolve({}) });
     expect(res.status).toBe(403);
     expect(dummyHandler).not.toHaveBeenCalled();
   });
@@ -55,28 +55,28 @@ describe("middleware/rbac", () => {
   it("withRBAC returns 401 when not authenticated", async () => {
     vi.mocked(auth).mockResolvedValue(null as any);
     const wrapped = withRBAC(dummyHandler, { requiredRoles: ["ADMIN"] });
-    const res = await wrapped(makeReq(), { params: {} });
+    const res = await wrapped(makeReq(), { params: Promise.resolve({}) });
     expect(res.status).toBe(401);
   });
 
   it("withAdminOrHR allows HR", async () => {
     setupAuth("HR");
     const wrapped = withAdminOrHR(dummyHandler);
-    const res = await wrapped(makeReq(), { params: {} });
+    const res = await wrapped(makeReq(), { params: Promise.resolve({}) });
     expect(res.status).toBe(200);
   });
 
   it("withAdmin rejects HR", async () => {
     setupAuth("HR");
     const wrapped = withAdmin(dummyHandler);
-    const res = await wrapped(makeReq(), { params: {} });
+    const res = await wrapped(makeReq(), { params: Promise.resolve({}) });
     expect(res.status).toBe(403);
   });
 
   it("withAdminOrHR rejects EXTERNAL", async () => {
     setupAuth("EXTERNAL");
     const wrapped = withAdminOrHR(dummyHandler);
-    const res = await wrapped(makeReq(), { params: {} });
+    const res = await wrapped(makeReq(), { params: Promise.resolve({}) });
     expect(res.status).toBe(403);
     expect(dummyHandler).not.toHaveBeenCalled();
   });
@@ -100,7 +100,7 @@ describe("middleware/super-admin", () => {
     } as any);
 
     const wrapped = withSuperAdmin(dummyHandler);
-    const res = await wrapped(makeReq(), { params: {} });
+    const res = await wrapped(makeReq(), { params: Promise.resolve({}) });
     expect(res.status).toBe(200);
     expect(dummyHandler).toHaveBeenCalled();
   });
@@ -112,7 +112,7 @@ describe("middleware/super-admin", () => {
     vi.mocked(prisma.superAdmin.findUnique).mockResolvedValue(null);
 
     const wrapped = withSuperAdmin(dummyHandler);
-    const res = await wrapped(makeReq(), { params: {} });
+    const res = await wrapped(makeReq(), { params: Promise.resolve({}) });
     expect(res.status).toBe(403);
     expect(dummyHandler).not.toHaveBeenCalled();
   });
@@ -129,7 +129,7 @@ describe("middleware/company-scope", () => {
   it("passes without resource model check", async () => {
     setupAuth("ADMIN");
     const wrapped = withCompanyScope(dummyHandler);
-    const res = await wrapped(makeReq(), { params: {} });
+    const res = await wrapped(makeReq(), { params: Promise.resolve({}) });
     expect(res.status).toBe(200);
     expect(dummyHandler).toHaveBeenCalled();
   });
@@ -141,7 +141,7 @@ describe("middleware/company-scope", () => {
     const wrapped = withCompanyScope(dummyHandler, {
       resourceModel: "team",
     });
-    const res = await wrapped(makeReq(), { params: { id: "t1" } });
+    const res = await wrapped(makeReq(), { params: Promise.resolve({ id: "t1" }) });
     expect(res.status).toBe(200);
   });
 
@@ -152,7 +152,7 @@ describe("middleware/company-scope", () => {
     const wrapped = withCompanyScope(dummyHandler, {
       resourceModel: "team",
     });
-    const res = await wrapped(makeReq(), { params: { id: "t-other" } });
+    const res = await wrapped(makeReq(), { params: Promise.resolve({ id: "t-other" }) });
     expect(res.status).toBe(404);
     expect(dummyHandler).not.toHaveBeenCalled();
   });
@@ -164,7 +164,7 @@ describe("middleware/company-scope", () => {
     const wrapped = withCompanyScope(dummyHandler, {
       resourceModel: "evaluationCycle",
     });
-    const res = await wrapped(makeReq(), { params: { id: "cy1" } });
+    const res = await wrapped(makeReq(), { params: Promise.resolve({ id: "cy1" }) });
     expect(res.status).toBe(200);
   });
 
@@ -176,7 +176,7 @@ describe("middleware/company-scope", () => {
       resourceModel: "evaluationTemplate",
       resourceParamKey: "id",
     });
-    const res = await wrapped(makeReq(), { params: { id: "tmpl1" } });
+    const res = await wrapped(makeReq(), { params: Promise.resolve({ id: "tmpl1" }) });
     expect(res.status).toBe(200);
   });
 });

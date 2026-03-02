@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { use, useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Script from "next/script";
 import { Card } from "@/components/ui/card";
@@ -16,7 +16,8 @@ interface TokenData {
   pendingAssignments: number;
 }
 
-export default function ReviewOTPPage({ params }: { params: { token: string } }) {
+export default function ReviewOTPPage({ params: paramsPromise }: { params: Promise<{ token: string }> }) {
+  const params = use(paramsPromise);
   const router = useRouter();
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [isLoading, setIsLoading] = useState(false);

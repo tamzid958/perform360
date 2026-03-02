@@ -27,10 +27,10 @@ interface TemplateSection {
 // ─── GET: Load evaluation form ───
 export async function GET(
   request: NextRequest,
-  { params }: { params: { token: string } }
+  { params }: { params: Promise<{ token: string }> }
 ) {
   try {
-    const { token } = params;
+    const { token } = await params;
 
     // Validate OTP session from cookie (supports both direct and summary sessions)
     const sessionToken = request.cookies.get("evaluation_session")?.value;

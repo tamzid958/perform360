@@ -19,16 +19,17 @@ type RouteHandler<TParams = Record<string, string>> = (
  */
 export function withSuperAdmin<TParams extends Record<string, string> = Record<string, string>>(
   handler: RouteHandler<TParams>
-): (request: NextRequest, context: { params: TParams }) => Promise<NextResponse> {
-  return async (request: NextRequest, context: { params: TParams }) => {
+): (request: NextRequest, context: { params: Promise<TParams> }) => Promise<NextResponse> {
+  return async (request: NextRequest, context: { params: Promise<TParams> }) => {
     const rateLimited = applyRateLimit(request);
     if (rateLimited) return rateLimited;
 
     const authResult = await requireSuperAdmin();
     if (isAuthError(authResult)) return authResult;
 
+    const params = await context.params;
     return handler(request, {
-      params: context.params,
+      params,
       auth: authResult,
     });
   };

@@ -6,18 +6,19 @@ import { applyRateLimit } from "@/lib/rate-limit";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const rl = applyRateLimit(request);
   if (rl) return rl;
 
-  const invalid = validateCuidParam(params.id);
+  const { id } = await params;
+  const invalid = validateCuidParam(id);
   if (invalid) return invalid;
 
   const authResult = await requireAuth();
   if (isAuthError(authResult)) return authResult;
 
-  const job = await getJobStatus(params.id);
+  const job = await getJobStatus(id);
 
   if (!job) {
     return NextResponse.json(

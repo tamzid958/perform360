@@ -45,11 +45,12 @@ function isValidTransition(from: string, to: string): boolean {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const rl = applyRateLimit(request);
   if (rl) return rl;
-  const invalid = validateCuidParam(params.id);
+  const { id } = await params;
+  const invalid = validateCuidParam(id);
   if (invalid) return invalid;
 
   const authResult = await requireAuth();
@@ -57,7 +58,7 @@ export async function GET(
 
   const cycle = await prisma.evaluationCycle.findFirst({
     where: {
-      id: params.id,
+      id,
       companyId: authResult.companyId,
     },
     include: {
@@ -198,11 +199,12 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const rl = applyRateLimit(request);
   if (rl) return rl;
-  const invalid = validateCuidParam(params.id);
+  const { id } = await params;
+  const invalid = validateCuidParam(id);
   if (invalid) return invalid;
 
   const authResult = await requireAdminOrHR();
@@ -214,7 +216,7 @@ export async function PATCH(
 
     const existing = await prisma.evaluationCycle.findFirst({
       where: {
-        id: params.id,
+        id,
         companyId: authResult.companyId,
       },
     });
@@ -298,17 +300,17 @@ export async function PATCH(
 
     const _cycle = await prisma.$transaction(async (tx) => {
       const updated = await tx.evaluationCycle.update({
-        where: { id: params.id },
+        where: { id },
         data: updateData,
       });
 
       // Replace CycleTeam entries and regenerate assignments if teamTemplates changed
       if (validated.teamTemplates) {
-        await tx.evaluationAssignment.deleteMany({ where: { cycleId: params.id } });
-        await tx.cycleTeam.deleteMany({ where: { cycleId: params.id } });
+        await tx.evaluationAssignment.deleteMany({ where: { cycleId: id } });
+        await tx.cycleTeam.deleteMany({ where: { cycleId: id } });
         await tx.cycleTeam.createMany({
           data: validated.teamTemplates.map((tt) => ({
-            cycleId: params.id,
+            cycleId: id,
             teamId: tt.teamId,
             templateId: tt.templateId,
             weightManager: tt.weights ? tt.weights.manager / 100 : null,
@@ -326,14 +328,14 @@ export async function PATCH(
     // Regenerate assignments outside the transaction if teamTemplates changed
     if (validated.teamTemplates) {
       await createAssignmentsForCycle(
-        params.id,
+        id,
         authResult.companyId,
         validated.teamTemplates
       );
     }
 
     const cycleWithRelations = await prisma.evaluationCycle.findUniqueOrThrow({
-      where: { id: params.id },
+      where: { id },
       include: {
         _count: { select: { assignments: true } },
         cycleTeams: {
@@ -366,11 +368,12 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const rl = applyRateLimit(request);
   if (rl) return rl;
-  const invalid = validateCuidParam(params.id);
+  const { id } = await params;
+  const invalid = validateCuidParam(id);
   if (invalid) return invalid;
 
   const authResult = await requireAdminOrHR();
@@ -378,7 +381,7 @@ export async function DELETE(
 
   const cycle = await prisma.evaluationCycle.findFirst({
     where: {
-      id: params.id,
+      id,
       companyId: authResult.companyId,
     },
   });
@@ -401,19 +404,19 @@ export async function DELETE(
 
   await prisma.$transaction([
     prisma.otpSession.deleteMany({
-      where: { assignment: { cycleId: params.id } },
+      where: { assignment: { cycleId: id } },
     }),
     prisma.evaluationResponse.deleteMany({
-      where: { assignment: { cycleId: params.id } },
+      where: { assignment: { cycleId: id } },
     }),
     prisma.evaluationAssignment.deleteMany({
-      where: { cycleId: params.id },
+      where: { cycleId: id },
     }),
     prisma.cycleTeam.deleteMany({
-      where: { cycleId: params.id },
+      where: { cycleId: id },
     }),
     prisma.evaluationCycle.delete({
-      where: { id: params.id },
+      where: { id },
     }),
   ]);
 

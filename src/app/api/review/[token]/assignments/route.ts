@@ -9,10 +9,10 @@ type ApiResponse<T> =
 // ─── GET: List all assignments for this reviewer in this cycle ───
 export async function GET(
   request: NextRequest,
-  { params }: { params: { token: string } }
+  { params }: { params: Promise<{ token: string }> }
 ) {
   try {
-    const { token } = params;
+    const { token } = await params;
 
     // Validate session cookie
     const sessionToken = request.cookies.get("evaluation_session")?.value;

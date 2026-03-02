@@ -31,11 +31,12 @@ const updateTemplateSchema = z.object({
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const rl = applyRateLimit(request);
   if (rl) return rl;
-  const invalid = validateCuidParam(params.id);
+  const { id } = await params;
+  const invalid = validateCuidParam(id);
   if (invalid) return invalid;
 
   const authResult = await requireAuth();
@@ -43,7 +44,7 @@ export async function GET(
 
   const template = await prisma.evaluationTemplate.findFirst({
     where: {
-      id: params.id,
+      id: id,
       OR: [
         { companyId: authResult.companyId },
         { isGlobal: true },
@@ -67,11 +68,12 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const rl = applyRateLimit(request);
   if (rl) return rl;
-  const invalid = validateCuidParam(params.id);
+  const { id } = await params;
+  const invalid = validateCuidParam(id);
   if (invalid) return invalid;
 
   const authResult = await requireAdminOrHR();
@@ -84,7 +86,7 @@ export async function PATCH(
     // Only company-owned templates can be edited (not global)
     const existing = await prisma.evaluationTemplate.findFirst({
       where: {
-        id: params.id,
+        id: id,
         companyId: authResult.companyId,
         isGlobal: false,
       },
@@ -104,7 +106,7 @@ export async function PATCH(
     if (validated.sections) updateData.sections = JSON.parse(JSON.stringify(validated.sections));
 
     const template = await prisma.evaluationTemplate.update({
-      where: { id: params.id },
+      where: { id: id },
       data: updateData,
     });
 
@@ -129,11 +131,12 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const rl = applyRateLimit(request);
   if (rl) return rl;
-  const invalid = validateCuidParam(params.id);
+  const { id } = await params;
+  const invalid = validateCuidParam(id);
   if (invalid) return invalid;
 
   const authResult = await requireAdminOrHR();
@@ -141,7 +144,7 @@ export async function DELETE(
 
   const template = await prisma.evaluationTemplate.findFirst({
     where: {
-      id: params.id,
+      id: id,
       companyId: authResult.companyId,
       isGlobal: false,
     },
@@ -158,7 +161,7 @@ export async function DELETE(
   // Check if template is used in active cycles
   const activeCycleCount = await prisma.cycleTeam.count({
     where: {
-      templateId: params.id,
+      templateId: id,
       cycle: { status: { in: ["ACTIVE", "CLOSED"] } },
     },
   });
@@ -172,7 +175,7 @@ export async function DELETE(
   }
 
   await prisma.evaluationTemplate.delete({
-    where: { id: params.id },
+    where: { id: id },
   });
 
   return NextResponse.json({

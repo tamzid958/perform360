@@ -48,7 +48,7 @@ describe("GET /api/evaluate/[token] — token validation edge cases", () => {
     } as any);
 
     const req = makeRequest(`http://localhost:3000/api/evaluate/${TOKEN}`);
-    const res = await validateToken(req, { params: { token: TOKEN } });
+    const res = await validateToken(req, { params: Promise.resolve({ token: TOKEN }) });
     const { status, body } = await parseResponse(res);
 
     expect(status).toBe(410);
@@ -66,7 +66,7 @@ describe("GET /api/evaluate/[token] — token validation edge cases", () => {
     } as any);
 
     const req = makeRequest(`http://localhost:3000/api/evaluate/${TOKEN}`);
-    const res = await validateToken(req, { params: { token: TOKEN } });
+    const res = await validateToken(req, { params: Promise.resolve({ token: TOKEN }) });
     const { status, body } = await parseResponse(res);
 
     expect(status).toBe(410);
@@ -84,7 +84,7 @@ describe("GET /api/evaluate/[token] — token validation edge cases", () => {
     } as any);
 
     const req = makeRequest(`http://localhost:3000/api/evaluate/${TOKEN}`);
-    const res = await validateToken(req, { params: { token: TOKEN } });
+    const res = await validateToken(req, { params: Promise.resolve({ token: TOKEN }) });
     const { status, body } = await parseResponse(res);
 
     expect(status).toBe(410);
@@ -95,7 +95,7 @@ describe("GET /api/evaluate/[token] — token validation edge cases", () => {
     vi.mocked(prisma.evaluationAssignment.findUnique).mockResolvedValue(null);
 
     const req = makeRequest(`http://localhost:3000/api/evaluate/bad-token`);
-    const res = await validateToken(req, { params: { token: "bad-token" } });
+    const res = await validateToken(req, { params: Promise.resolve({ token: "bad-token" }) });
     const { status, body } = await parseResponse(res);
 
     expect(status).toBe(404);
@@ -127,7 +127,7 @@ describe("POST /api/evaluate/[token]/otp/send — OTP send edge cases", () => {
       method: "POST",
       body: { recaptchaToken: "tok" },
     });
-    const res = await sendOTP(req, { params: { token: TOKEN } });
+    const res = await sendOTP(req, { params: Promise.resolve({ token: TOKEN }) });
     const { status, body } = await parseResponse(res);
 
     expect(status).toBe(429);
@@ -147,7 +147,7 @@ describe("POST /api/evaluate/[token]/otp/send — OTP send edge cases", () => {
       method: "POST",
       body: { recaptchaToken: "tok" },
     });
-    const res = await sendOTP(req, { params: { token: TOKEN } });
+    const res = await sendOTP(req, { params: Promise.resolve({ token: TOKEN }) });
     const { status, body } = await parseResponse(res);
 
     expect(status).toBe(410);
@@ -163,7 +163,7 @@ describe("POST /api/evaluate/[token]/otp/verify — OTP verify edge cases", () =
       method: "POST",
       body: { otp: "abcdef" },
     });
-    const res = await verifyOTP(req, { params: { token: TOKEN } });
+    const res = await verifyOTP(req, { params: Promise.resolve({ token: TOKEN }) });
     const { status } = await parseResponse(res);
 
     expect(status).toBe(400);
@@ -174,7 +174,7 @@ describe("POST /api/evaluate/[token]/otp/verify — OTP verify edge cases", () =
       method: "POST",
       body: { otp: "12345" },
     });
-    const res = await verifyOTP(req, { params: { token: TOKEN } });
+    const res = await verifyOTP(req, { params: Promise.resolve({ token: TOKEN }) });
     const { status } = await parseResponse(res);
 
     expect(status).toBe(400);
@@ -190,7 +190,7 @@ describe("POST /api/evaluate/[token]/otp/verify — OTP verify edge cases", () =
       method: "POST",
       body: { otp: "123456" },
     });
-    const res = await verifyOTP(req, { params: { token: TOKEN } });
+    const res = await verifyOTP(req, { params: Promise.resolve({ token: TOKEN }) });
     const { status, body } = await parseResponse(res);
 
     expect(status).toBe(400);
@@ -213,7 +213,7 @@ describe("POST /api/evaluate/[token]/otp/verify — OTP verify edge cases", () =
       method: "POST",
       body: { otp: "123456" },
     });
-    const res = await verifyOTP(req, { params: { token: TOKEN } });
+    const res = await verifyOTP(req, { params: Promise.resolve({ token: TOKEN }) });
     const { status, body } = await parseResponse(res);
 
     expect(status).toBe(410);
@@ -236,7 +236,7 @@ describe("POST /api/evaluate/[token]/otp/verify — OTP verify edge cases", () =
       method: "POST",
       body: { otp: "123456" },
     });
-    const res = await verifyOTP(req, { params: { token: TOKEN } });
+    const res = await verifyOTP(req, { params: Promise.resolve({ token: TOKEN }) });
     const { status, body } = await parseResponse(res);
 
     expect(status).toBe(429);
@@ -252,7 +252,7 @@ describe("POST /api/evaluate/[token] — submission edge cases", () => {
       method: "POST",
       body: { answers: { q1: 5 } },
     });
-    const res = await submitEvaluation(req, { params: { token: TOKEN } });
+    const res = await submitEvaluation(req, { params: Promise.resolve({ token: TOKEN }) });
     const { status, body } = await parseResponse(res);
 
     expect(status).toBe(401);
@@ -281,7 +281,7 @@ describe("POST /api/evaluate/[token] — submission edge cases", () => {
       body: {},
       cookies: { evaluation_session: "valid-session" },
     });
-    const res = await submitEvaluation(req, { params: { token: TOKEN } });
+    const res = await submitEvaluation(req, { params: Promise.resolve({ token: TOKEN }) });
     const { status } = await parseResponse(res);
 
     expect(status).toBe(400);
@@ -309,7 +309,7 @@ describe("POST /api/evaluate/[token] — submission edge cases", () => {
       body: { answers: { q1: 5 } },
       cookies: { evaluation_session: "valid-session" },
     });
-    const res = await submitEvaluation(req, { params: { token: TOKEN } });
+    const res = await submitEvaluation(req, { params: Promise.resolve({ token: TOKEN }) });
     const { status, body } = await parseResponse(res);
 
     expect(status).toBe(410);
@@ -351,7 +351,7 @@ describe("POST /api/evaluate/[token] — submission edge cases", () => {
       body: { answers: { q1: 5 } },
       cookies: { evaluation_session: "valid-session" },
     });
-    const res = await submitEvaluation(req, { params: { token: TOKEN } });
+    const res = await submitEvaluation(req, { params: Promise.resolve({ token: TOKEN }) });
     const { status, body } = await parseResponse(res);
 
     expect(status).toBe(400);

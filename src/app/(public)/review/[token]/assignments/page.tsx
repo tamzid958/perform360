@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { use, useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -22,7 +22,8 @@ interface AssignmentsData {
   assignments: Assignment[];
 }
 
-export default function ReviewAssignmentsPage({ params }: { params: { token: string } }) {
+export default function ReviewAssignmentsPage({ params: paramsPromise }: { params: Promise<{ token: string }> }) {
+  const params = use(paramsPromise);
   const router = useRouter();
   const [data, setData] = useState<AssignmentsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);

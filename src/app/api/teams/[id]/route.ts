@@ -13,11 +13,12 @@ const updateTeamSchema = z.object({
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const rl = applyRateLimit(request);
   if (rl) return rl;
-  const invalid = validateCuidParam(params.id);
+  const { id } = await params;
+  const invalid = validateCuidParam(id);
   if (invalid) return invalid;
 
   const authResult = await requireAuth();
@@ -25,7 +26,7 @@ export async function GET(
 
   const team = await prisma.team.findFirst({
     where: {
-      id: params.id,
+      id: id,
       companyId: authResult.companyId,
     },
     include: {
@@ -55,11 +56,12 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const rl = applyRateLimit(request);
   if (rl) return rl;
-  const invalid = validateCuidParam(params.id);
+  const { id } = await params;
+  const invalid = validateCuidParam(id);
   if (invalid) return invalid;
 
   const authResult = await requireAdminOrHR();
@@ -71,7 +73,7 @@ export async function PATCH(
 
     const existing = await prisma.team.findFirst({
       where: {
-        id: params.id,
+        id: id,
         companyId: authResult.companyId,
       },
     });
@@ -90,7 +92,7 @@ export async function PATCH(
     if (archived === false) data.archivedAt = null;
 
     const team = await prisma.team.update({
-      where: { id: params.id },
+      where: { id: id },
       data,
       include: {
         members: {
@@ -124,11 +126,12 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const rl = applyRateLimit(request);
   if (rl) return rl;
-  const invalid = validateCuidParam(params.id);
+  const { id } = await params;
+  const invalid = validateCuidParam(id);
   if (invalid) return invalid;
 
   const authResult = await requireAdminOrHR();
@@ -136,7 +139,7 @@ export async function DELETE(
 
   const team = await prisma.team.findFirst({
     where: {
-      id: params.id,
+      id: id,
       companyId: authResult.companyId,
     },
   });
@@ -150,7 +153,7 @@ export async function DELETE(
   }
 
   const linkedCycleCount = await prisma.cycleTeam.count({
-    where: { teamId: params.id },
+    where: { teamId: id },
   });
 
   if (linkedCycleCount > 0) {
@@ -163,10 +166,10 @@ export async function DELETE(
 
   await prisma.$transaction([
     prisma.teamMember.deleteMany({
-      where: { teamId: params.id },
+      where: { teamId: id },
     }),
     prisma.team.delete({
-      where: { id: params.id },
+      where: { id: id },
     }),
   ]);
 

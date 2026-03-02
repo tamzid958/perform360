@@ -11,10 +11,10 @@ type ApiResponse<T> =
 // ─── GET: Token Validation ───
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { token: string } }
+  { params }: { params: Promise<{ token: string }> }
 ) {
   try {
-    const { token } = params;
+    const { token } = await params;
 
     const assignment = await prisma.evaluationAssignment.findUnique({
       where: { token },
@@ -91,10 +91,10 @@ export async function GET(
 // ─── POST: Submit Evaluation ───
 export async function POST(
   request: NextRequest,
-  { params }: { params: { token: string } }
+  { params }: { params: Promise<{ token: string }> }
 ) {
   try {
-    const { token } = params;
+    const { token } = await params;
 
     // Validate OTP session from cookie (supports both direct and summary sessions)
     const sessionToken = request.cookies.get("evaluation_session")?.value;
