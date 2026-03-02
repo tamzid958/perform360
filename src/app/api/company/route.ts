@@ -6,8 +6,8 @@ import { applyRateLimit } from "@/lib/rate-limit";
 
 const notificationSettingsSchema = z.object({
   evaluationInvitations: z.boolean(),
-  submissionConfirmations: z.boolean(),
-  cycleReminders: z.boolean(),
+  submissionConfirmations: z.boolean().optional(),
+  cycleReminders: z.boolean().optional(),
   cycleCompletion: z.boolean(),
 });
 

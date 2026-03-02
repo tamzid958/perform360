@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import Link from "next/link";
-
+import { ResetEncryptionButton } from "./reset-encryption-button";
 const CUID_REGEX = /^c[a-z0-9]{20,28}$/;
 
 const ROLE_COLORS: Record<string, string> = {
@@ -201,6 +201,12 @@ export default async function CompanyAnalyticsPage({
             <Shield size={12} strokeWidth={1.5} className="mr-1" />
             {company.encryptionConfigured ? "Encryption Configured" : "Encryption Pending"}
           </Badge>
+          {company.encryptionConfigured && (
+            <ResetEncryptionButton
+              companyId={company.id}
+              companyName={company.name}
+            />
+          )}
         </div>
       </div>
 

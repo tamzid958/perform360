@@ -14,15 +14,11 @@ import Link from "next/link";
 
 interface NotificationSettings {
   evaluationInvitations: boolean;
-  submissionConfirmations: boolean;
-  cycleReminders: boolean;
   cycleCompletion: boolean;
 }
 
 const DEFAULT_NOTIFICATIONS: NotificationSettings = {
   evaluationInvitations: true,
-  submissionConfirmations: true,
-  cycleReminders: true,
   cycleCompletion: true,
 };
 
@@ -40,8 +36,6 @@ interface Company {
 
 const NOTIFICATION_ITEMS: { key: keyof NotificationSettings; label: string; description: string }[] = [
   { key: "evaluationInvitations", label: "Evaluation invitations", description: "Notify reviewers when assigned a new evaluation" },
-  { key: "submissionConfirmations", label: "Submission confirmations", description: "Confirm to reviewers when their submission is recorded" },
-  { key: "cycleReminders", label: "Cycle reminders", description: "Automatic reminders for pending evaluations" },
   { key: "cycleCompletion", label: "Cycle completion", description: "Notify admins when a cycle reaches 100% completion" },
 ];
 
