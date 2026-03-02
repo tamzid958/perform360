@@ -5,6 +5,7 @@ import type {
   IndividualSummary,
   CategoryScore,
   RelationshipScores,
+  RelationshipWeights,
   QuestionDetail,
   TextFeedbackGroup,
   CycleReport,
@@ -298,6 +299,156 @@ export function calculateOverallScore(
   return count > 0 ? parseFloat((total / count).toFixed(2)) : 0;
 }
 
+// ─── Weighted Scoring ───
+
+export interface WeightConfig {
+  manager: number;
+  peer: number;
+  directReport: number;
+  self: number;
+  external: number;
+}
+
+const WEIGHT_REL_KEYS: [keyof WeightConfig, string][] = [
+  ["manager", "manager"],
+  ["peer", "peer"],
+  ["directReport", "direct_report"],
+  ["self", "self"],
+  ["external", "external"],
+];
+
+/**
+ * Apply percentage weights to per-relationship average scores.
+ * Redistributes weight from relationship types that have no data
+ * proportionally among types that do.
+ */
+export function applyWeightsToRelationshipAverages(
+  relGroups: Record<string, number[]>,
+  weights: WeightConfig | null
+): { score: number; appliedWeights: RelationshipWeights } | null {
+  if (!weights) return null;
+
+  const avg = (arr: number[]): number | null =>
+    arr.length > 0 ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
+
+  const averages: Record<string, number | null> = {
+    manager: avg(relGroups.manager ?? []),
+    peer: avg(relGroups.peer ?? []),
+    directReport: avg(relGroups.direct_report ?? []),
+    self: avg(relGroups.self ?? []),
+    external: avg(relGroups.external ?? []),
+  };
+
+  const presentKeys = WEIGHT_REL_KEYS.filter(([wk]) => averages[wk] !== null);
+  const absentWeightSum = WEIGHT_REL_KEYS
+    .filter(([wk]) => averages[wk] === null)
+    .reduce((sum, [wk]) => sum + weights[wk], 0);
+
+  if (presentKeys.length === 0) {
+    return {
+      score: 0,
+      appliedWeights: { manager: 0, peer: 0, directReport: 0, self: 0, external: 0 },
+    };
+  }
+
+  const presentWeightSum = presentKeys.reduce((sum, [wk]) => sum + weights[wk], 0);
+
+  const appliedWeights: Record<string, number> = {};
+  let weightedScore = 0;
+
+  for (const [wk] of WEIGHT_REL_KEYS) {
+    if (averages[wk] === null) {
+      appliedWeights[wk] = 0;
+    } else {
+      const adjusted = presentWeightSum > 0
+        ? weights[wk] + (weights[wk] / presentWeightSum) * absentWeightSum
+        : 1 / presentKeys.length;
+      appliedWeights[wk] = adjusted;
+      weightedScore += (averages[wk] as number) * adjusted;
+    }
+  }
+
+  return {
+    score: parseFloat(weightedScore.toFixed(2)),
+    appliedWeights: appliedWeights as unknown as RelationshipWeights,
+  };
+}
+
+/**
+ * Calculate weighted overall score using relationship-type weights.
+ * Returns null when weights are null (backward-compatible fallback).
+ */
+export function calculateWeightedOverallScore(
+  responses: DecryptedResponse[],
+  sections: TemplateSection[],
+  weights: WeightConfig | null
+): { score: number; appliedWeights: RelationshipWeights } | null {
+  if (!weights) return null;
+
+  const allQuestions = sections.flatMap((s) => s.questions);
+  const ratingQuestions = allQuestions.filter((q) => q.type === "rating_scale");
+
+  const groups: Record<string, number[]> = {
+    manager: [], peer: [], direct_report: [], self: [], external: [],
+  };
+
+  for (const resp of responses) {
+    const scores = extractRatingScores(resp.answers, ratingQuestions);
+    if (scores.length > 0) {
+      const respAvg = scores.reduce((sum, s) => sum + s.score, 0) / scores.length;
+      if (groups[resp.relationship]) {
+        groups[resp.relationship].push(respAvg);
+      }
+    }
+  }
+
+  return applyWeightsToRelationshipAverages(groups, weights);
+}
+
+/**
+ * Build weighted category scores using relationship-type weights.
+ * Returns null when weights are null.
+ */
+export function buildWeightedCategoryScores(
+  responses: DecryptedResponse[],
+  sections: TemplateSection[],
+  weights: WeightConfig | null
+): CategoryScore[] | null {
+  if (!weights) return null;
+
+  return sections.map((section) => {
+    const ratingQuestions = section.questions.filter((q) => q.type === "rating_scale");
+    if (ratingQuestions.length === 0) {
+      return { category: section.title, score: 0, maxScore: 5 };
+    }
+
+    const maxScale = ratingQuestions[0]?.scaleMax ?? 5;
+
+    const relGroups: Record<string, number[]> = {
+      manager: [], peer: [], direct_report: [], self: [], external: [],
+    };
+
+    for (const resp of responses) {
+      let total = 0;
+      let count = 0;
+      for (const q of ratingQuestions) {
+        const v = resp.answers[q.id];
+        if (typeof v === "number") { total += v; count++; }
+      }
+      if (count > 0 && relGroups[resp.relationship]) {
+        relGroups[resp.relationship].push(total / count);
+      }
+    }
+
+    const result = applyWeightsToRelationshipAverages(relGroups, weights);
+    return {
+      category: section.title,
+      score: result?.score ?? 0,
+      maxScore: maxScale,
+    };
+  });
+}
+
 // ─── Full Report Builders ───
 
 /**
@@ -374,6 +525,22 @@ export async function buildIndividualReport(
     }
   }
 
+  // Build weight lookup per team
+  const teamWeightMap = new Map<string, WeightConfig | null>(
+    cycleTeams.map((ct) => [
+      ct.team.id,
+      ct.weightManager !== null
+        ? {
+            manager: ct.weightManager,
+            peer: ct.weightPeer!,
+            directReport: ct.weightDirectReport!,
+            self: ct.weightSelf!,
+            external: ct.weightExternal!,
+          }
+        : null,
+    ])
+  );
+
   const teamBreakdowns = Array.from(responsesByTeam.values()).map(({ teamId, teamName, responses: teamResponses }) => {
     // Find which templateId this team uses in this cycle
     const teamCycleTeam = cycleTeams.find((ct) => ct.team.id === teamId);
@@ -381,16 +548,31 @@ export async function buildIndividualReport(
       ? (templateSectionsMap.get(teamCycleTeam.templateId) ?? sections)
       : sections;
 
+    const teamWeights = teamWeightMap.get(teamId) ?? null;
+    const weightedResult = calculateWeightedOverallScore(teamResponses, teamSections, teamWeights);
+
     return {
       teamId,
       teamName,
       overallScore: calculateOverallScore(teamResponses, teamSections),
+      weightedOverallScore: weightedResult?.score ?? null,
+      appliedWeights: weightedResult?.appliedWeights ?? null,
       categoryScores: buildCategoryScores(teamResponses, teamSections),
+      weightedCategoryScores: buildWeightedCategoryScores(teamResponses, teamSections, teamWeights),
       scoresByRelationship: buildRelationshipScores(teamResponses, teamSections),
       questionDetails: buildQuestionDetails(teamResponses, teamSections),
       textFeedback: buildTextFeedback(teamResponses, teamSections),
     };
   });
+
+  // Cross-team weighted overall score (average of per-team weighted scores)
+  const teamsWithWeights = teamBreakdowns.filter((tb) => tb.weightedOverallScore !== null);
+  const weightedOverallScore = teamsWithWeights.length > 0
+    ? parseFloat(
+        (teamsWithWeights.reduce((sum, tb) => sum + tb.weightedOverallScore!, 0) / teamsWithWeights.length)
+          .toFixed(2)
+      )
+    : null;
 
   return {
     subjectId,
@@ -398,6 +580,7 @@ export async function buildIndividualReport(
     cycleId,
     cycleName: cycle.name,
     overallScore: calculateOverallScore(responses, sections),
+    weightedOverallScore,
     categoryScores: buildCategoryScores(responses, sections),
     scoresByRelationship: buildRelationshipScores(responses, sections),
     questionDetails: buildQuestionDetails(responses, sections),
@@ -506,10 +689,18 @@ export async function buildCycleReport(
   const subjectNameMap = new Map(subjectUsers.map((u) => [u.id, u.name]));
 
   if (completedAssignments > 0) {
-    // Fetch all templates used in this cycle via CycleTeam
+    // Fetch all CycleTeams with templates and weights
     const cycleTeams = await prisma.cycleTeam.findMany({
       where: { cycleId },
-      select: { templateId: true },
+      select: {
+        teamId: true,
+        templateId: true,
+        weightManager: true,
+        weightPeer: true,
+        weightDirectReport: true,
+        weightSelf: true,
+        weightExternal: true,
+      },
     });
     const templateIds = Array.from(new Set(cycleTeams.map((ct) => ct.templateId)));
 
@@ -541,8 +732,36 @@ export async function buildCycleReport(
         },
       });
 
+      // Build team weight lookup and subject-to-team mapping
+      const cycleTeamWeightMap = new Map<string, WeightConfig | null>(
+        cycleTeams.map((ct) => [
+          ct.teamId,
+          ct.weightManager !== null
+            ? {
+                manager: ct.weightManager,
+                peer: ct.weightPeer!,
+                directReport: ct.weightDirectReport!,
+                self: ct.weightSelf!,
+                external: ct.weightExternal!,
+              }
+            : null,
+        ])
+      );
+
+      // Map subjects to their team(s) via team membership
+      const subjectTeamMap = new Map<string, string[]>();
+      for (const team of teams) {
+        for (const m of team.members) {
+          const existing = subjectTeamMap.get(m.userId) ?? [];
+          existing.push(team.id);
+          subjectTeamMap.set(m.userId, existing);
+        }
+      }
+
       // Per-subject score accumulation
       const subjectScores = new Map<string, { total: number; count: number }>();
+      // Per-subject per-relationship score accumulation (for weighted scoring)
+      const subjectRelScores = new Map<string, Record<string, number[]>>();
       // Per-relationship score accumulation
       const relationshipScoreGroups: Record<string, number[]> = {
         manager: [],
@@ -580,6 +799,20 @@ export async function buildCycleReport(
 
           subjectScores.set(resp.subjectId, accum);
 
+          // Per-subject per-relationship tracking
+          if (respCount > 0) {
+            const rel = resp.assignment.relationship;
+            if (!subjectRelScores.has(resp.subjectId)) {
+              subjectRelScores.set(resp.subjectId, {
+                manager: [], peer: [], direct_report: [], self: [], external: [],
+              });
+            }
+            const relMap = subjectRelScores.get(resp.subjectId)!;
+            if (relMap[rel]) {
+              relMap[rel].push(respTotal / respCount);
+            }
+          }
+
           // Relationship scores
           if (respCount > 0) {
             const rel = resp.assignment.relationship;
@@ -598,16 +831,39 @@ export async function buildCycleReport(
         }
       }
 
-      // Build individual summaries
+      // Build individual summaries with weighted scores
       for (const subjectId of subjectIds) {
         const scores = subjectScores.get(subjectId);
         const counts = subjectAssignmentCounts.get(subjectId) ?? { total: 0, completed: 0 };
+        const overallScore = scores && scores.count > 0
+          ? parseFloat((scores.total / scores.count).toFixed(2))
+          : 0;
+
+        // Compute weighted score using the subject's team weights
+        let weightedOverallScore: number | null = null;
+        const subjectTeamIds = subjectTeamMap.get(subjectId) ?? [];
+        const relScores = subjectRelScores.get(subjectId);
+        if (relScores && subjectTeamIds.length > 0) {
+          const weightedScores: number[] = [];
+          for (const teamId of subjectTeamIds) {
+            const weights = cycleTeamWeightMap.get(teamId);
+            if (weights) {
+              const result = applyWeightsToRelationshipAverages(relScores, weights);
+              if (result) weightedScores.push(result.score);
+            }
+          }
+          if (weightedScores.length > 0) {
+            weightedOverallScore = parseFloat(
+              (weightedScores.reduce((a, b) => a + b, 0) / weightedScores.length).toFixed(2)
+            );
+          }
+        }
+
         individualSummaries.push({
           subjectId,
           subjectName: subjectNameMap.get(subjectId) ?? "Unknown",
-          overallScore: scores && scores.count > 0
-            ? parseFloat((scores.total / scores.count).toFixed(2))
-            : 0,
+          overallScore,
+          weightedOverallScore,
           reviewCount: counts.total,
           completedCount: counts.completed,
         });
@@ -627,15 +883,26 @@ export async function buildCycleReport(
         external: avgArr(relationshipScoreGroups.external),
       };
 
-      // Avg score by team
+      // Avg score by team (unweighted + weighted)
       for (const team of teams) {
         const memberIds = new Set(team.members.map((m) => m.userId));
         let teamTotal = 0;
         let teamCount = 0;
+        const teamWeightedScores: number[] = [];
+        const teamWeights = cycleTeamWeightMap.get(team.id) ?? null;
+
         for (const [sid, scores] of Array.from(subjectScores.entries())) {
           if (memberIds.has(sid) && scores.count > 0) {
             teamTotal += scores.total / scores.count;
             teamCount++;
+
+            if (teamWeights) {
+              const relScores = subjectRelScores.get(sid);
+              if (relScores) {
+                const result = applyWeightsToRelationshipAverages(relScores, teamWeights);
+                if (result) teamWeightedScores.push(result.score);
+              }
+            }
           }
         }
         if (teamCount > 0) {
@@ -643,6 +910,11 @@ export async function buildCycleReport(
             teamId: team.id,
             teamName: team.name,
             avgScore: parseFloat((teamTotal / teamCount).toFixed(2)),
+            weightedAvgScore: teamWeightedScores.length > 0
+              ? parseFloat(
+                  (teamWeightedScores.reduce((a, b) => a + b, 0) / teamWeightedScores.length).toFixed(2)
+                )
+              : null,
           });
         }
       }
@@ -668,6 +940,7 @@ export async function buildCycleReport(
         subjectId,
         subjectName: subjectNameMap.get(subjectId) ?? "Unknown",
         overallScore: 0,
+        weightedOverallScore: null,
         reviewCount: counts.total,
         completedCount: counts.completed,
       });

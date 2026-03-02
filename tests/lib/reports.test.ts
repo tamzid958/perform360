@@ -12,7 +12,11 @@ import {
   buildQuestionDetails,
   buildTextFeedback,
   calculateOverallScore,
+  applyWeightsToRelationshipAverages,
+  calculateWeightedOverallScore,
+  buildWeightedCategoryScores,
 } from "@/lib/reports";
+import type { WeightConfig } from "@/lib/reports";
 import { decrypt } from "@/lib/encryption";
 
 const dataKey = Buffer.alloc(32, "k");
@@ -33,7 +37,7 @@ const sections = [
   },
 ];
 
-const responses = [
+const responses: { reviewerId: string; subjectId: string; relationship: string; templateId: string; answers: Record<string, string | number | boolean>; submittedAt: Date }[] = [
   { reviewerId: "r1", subjectId: "s1", relationship: "peer", templateId: "t1", answers: { q1: 4, q2: "Great leader", q3: 5 }, submittedAt: new Date() },
   { reviewerId: "r2", subjectId: "s1", relationship: "manager", templateId: "t1", answers: { q1: 3, q2: "Needs work", q3: 4 }, submittedAt: new Date() },
   { reviewerId: "r3", subjectId: "s1", relationship: "self", templateId: "t1", answers: { q1: 5, q3: 5 }, submittedAt: new Date() },
@@ -146,5 +150,150 @@ describe("calculateOverallScore", () => {
       { title: "Text", questions: [{ id: "q1", text: "Comments", type: "text" as const, required: false }] },
     ];
     expect(calculateOverallScore(responses, noRatingSections)).toBe(0);
+  });
+});
+
+// ─── Weighted Scoring Tests ───
+
+const equalWeights: WeightConfig = {
+  manager: 0.2,
+  peer: 0.2,
+  directReport: 0.2,
+  self: 0.2,
+  external: 0.2,
+};
+
+describe("applyWeightsToRelationshipAverages", () => {
+  it("returns null when weights are null", () => {
+    const groups = { manager: [4], peer: [3], direct_report: [], self: [], external: [] };
+    expect(applyWeightsToRelationshipAverages(groups, null)).toBeNull();
+  });
+
+  it("applies weights and redistributes absent types", () => {
+    // Only manager and peer have data
+    const groups = {
+      manager: [4],
+      peer: [3],
+      direct_report: [],
+      self: [],
+      external: [],
+    };
+    const weights: WeightConfig = { manager: 0.4, peer: 0.3, directReport: 0.1, self: 0.1, external: 0.1 };
+    const result = applyWeightsToRelationshipAverages(groups, weights)!;
+
+    // Absent weight = 0.1 + 0.1 + 0.1 = 0.3, present sum = 0.4 + 0.3 = 0.7
+    // adj_manager = 0.4 + (0.4/0.7)*0.3 = 0.4 + 0.1714... ≈ 0.5714
+    // adj_peer = 0.3 + (0.3/0.7)*0.3 = 0.3 + 0.1286... ≈ 0.4286
+    // score = 4*0.5714 + 3*0.4286 = 2.2857 + 1.2857 = 3.57
+    expect(result.score).toBe(3.57);
+    expect(result.appliedWeights.directReport).toBe(0);
+    expect(result.appliedWeights.self).toBe(0);
+    expect(result.appliedWeights.external).toBe(0);
+  });
+
+  it("collapses all weight to single present type", () => {
+    const groups = {
+      manager: [4.5],
+      peer: [],
+      direct_report: [],
+      self: [],
+      external: [],
+    };
+    const weights: WeightConfig = { manager: 0.3, peer: 0.3, directReport: 0.2, self: 0.1, external: 0.1 };
+    const result = applyWeightsToRelationshipAverages(groups, weights)!;
+
+    expect(result.score).toBe(4.5);
+    expect(result.appliedWeights.manager).toBeCloseTo(1.0);
+  });
+
+  it("returns 0 when all groups are empty", () => {
+    const groups = { manager: [], peer: [], direct_report: [], self: [], external: [] };
+    const result = applyWeightsToRelationshipAverages(groups, equalWeights)!;
+    expect(result.score).toBe(0);
+  });
+
+  it("averages multiple responses within a relationship group", () => {
+    const groups = {
+      manager: [4, 5],  // avg = 4.5
+      peer: [3],        // avg = 3
+      direct_report: [],
+      self: [],
+      external: [],
+    };
+    const weights: WeightConfig = { manager: 0.6, peer: 0.4, directReport: 0, self: 0, external: 0 };
+    const result = applyWeightsToRelationshipAverages(groups, weights)!;
+
+    // manager avg = 4.5, peer avg = 3
+    // No absent weight to redistribute (dr/self/ext have 0 weight)
+    // score = 4.5*0.6 + 3*0.4 = 2.7 + 1.2 = 3.9
+    expect(result.score).toBe(3.9);
+  });
+});
+
+describe("calculateWeightedOverallScore", () => {
+  it("returns null when weights are null", () => {
+    expect(calculateWeightedOverallScore(responses, sections, null)).toBeNull();
+  });
+
+  it("calculates weighted score using relationship averages", () => {
+    // responses: peer(q1:4,q3:5)=4.5, manager(q1:3,q3:4)=3.5, self(q1:5,q3:5)=5
+    const weights: WeightConfig = { manager: 0.5, peer: 0.3, directReport: 0, self: 0.2, external: 0 };
+    const result = calculateWeightedOverallScore(responses, sections, weights)!;
+
+    // No absent groups with weight (dr=0, ext=0), so no redistribution
+    // score = 3.5*0.5 + 4.5*0.3 + 5*0.2 = 1.75 + 1.35 + 1.0 = 4.1
+    expect(result.score).toBe(4.1);
+  });
+
+  it("redistributes weight from absent external", () => {
+    // responses have no external
+    const weights: WeightConfig = { manager: 0.4, peer: 0.3, directReport: 0, self: 0.2, external: 0.1 };
+    const result = calculateWeightedOverallScore(responses, sections, weights)!;
+
+    // present: manager(0.4), peer(0.3), self(0.2) = 0.9, absent: ext(0.1)
+    // adj_manager = 0.4 + (0.4/0.9)*0.1 ≈ 0.4444
+    // adj_peer = 0.3 + (0.3/0.9)*0.1 ≈ 0.3333
+    // adj_self = 0.2 + (0.2/0.9)*0.1 ≈ 0.2222
+    // score = 3.5*0.4444 + 4.5*0.3333 + 5*0.2222 ≈ 1.5556 + 1.5 + 1.1111 ≈ 4.17
+    expect(result.score).toBe(4.17);
+  });
+
+  it("returns 0 when no responses", () => {
+    const weights: WeightConfig = { manager: 0.5, peer: 0.5, directReport: 0, self: 0, external: 0 };
+    const result = calculateWeightedOverallScore([], sections, weights)!;
+    expect(result.score).toBe(0);
+  });
+});
+
+describe("buildWeightedCategoryScores", () => {
+  it("returns null when weights are null", () => {
+    expect(buildWeightedCategoryScores(responses, sections, null)).toBeNull();
+  });
+
+  it("applies weights per category section", () => {
+    const weights: WeightConfig = { manager: 0.5, peer: 0.3, directReport: 0, self: 0.2, external: 0 };
+    const result = buildWeightedCategoryScores(responses, sections, weights)!;
+
+    expect(result).toHaveLength(2);
+
+    // Leadership (q1): peer=4, manager=3, self=5
+    // score = 3*0.5 + 4*0.3 + 5*0.2 = 1.5 + 1.2 + 1.0 = 3.7
+    expect(result[0].category).toBe("Leadership");
+    expect(result[0].score).toBe(3.7);
+    expect(result[0].maxScore).toBe(5);
+
+    // Communication (q3): peer=5, manager=4, self=5
+    // score = 4*0.5 + 5*0.3 + 5*0.2 = 2.0 + 1.5 + 1.0 = 4.5
+    expect(result[1].category).toBe("Communication");
+    expect(result[1].score).toBe(4.5);
+  });
+
+  it("returns 0 for sections with no rating questions", () => {
+    const textOnlySections = [
+      { title: "Feedback", questions: [{ id: "q1", text: "Comments", type: "text" as const, required: false }] },
+    ];
+    const weights: WeightConfig = { manager: 0.5, peer: 0.5, directReport: 0, self: 0, external: 0 };
+    const result = buildWeightedCategoryScores(responses, textOnlySections, weights)!;
+    expect(result[0].score).toBe(0);
   });
 });

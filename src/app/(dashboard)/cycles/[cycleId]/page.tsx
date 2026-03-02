@@ -70,6 +70,13 @@ interface TeamTemplate {
   teamName: string;
   templateId: string;
   templateName: string;
+  weights: {
+    manager: number;
+    peer: number;
+    directReport: number;
+    self: number;
+    external: number;
+  } | null;
 }
 
 interface CycleApiData {
@@ -269,11 +276,15 @@ export default function CycleDetailPage() {
 
   // ─── Report computed data ───
 
+  const hasWeightedScores = cycleReport?.individualSummaries?.some(
+    (s) => s.weightedOverallScore !== null && s.weightedOverallScore !== undefined
+  ) ?? false;
+
   const avgScore =
     cycleReport?.individualSummaries &&
     cycleReport.individualSummaries.length > 0
       ? cycleReport.individualSummaries.reduce(
-          (sum, s) => sum + s.overallScore,
+          (sum, s) => sum + (hasWeightedScores && s.weightedOverallScore != null ? s.weightedOverallScore : s.overallScore),
           0
         ) / cycleReport.individualSummaries.length
       : 0;
@@ -298,19 +309,27 @@ export default function CycleDetailPage() {
     );
   }, [cycleReport, reportTeamFilter, subjectTeamMap]);
 
+  const getDisplayScore = useCallback(
+    (s: { overallScore: number; weightedOverallScore?: number | null }) =>
+      hasWeightedScores && s.weightedOverallScore != null
+        ? s.weightedOverallScore
+        : s.overallScore,
+    [hasWeightedScores]
+  );
+
   const topPerformers = useMemo(() => {
     return [...filteredReportSummaries]
-      .filter((s) => s.completedCount > 0 && s.overallScore > 0)
-      .sort((a, b) => b.overallScore - a.overallScore)
+      .filter((s) => s.completedCount > 0 && getDisplayScore(s) > 0)
+      .sort((a, b) => getDisplayScore(b) - getDisplayScore(a))
       .slice(0, 5);
-  }, [filteredReportSummaries]);
+  }, [filteredReportSummaries, getDisplayScore]);
 
   const bottomPerformers = useMemo(() => {
     return [...filteredReportSummaries]
-      .filter((s) => s.completedCount > 0 && s.overallScore > 0)
-      .sort((a, b) => a.overallScore - b.overallScore)
+      .filter((s) => s.completedCount > 0 && getDisplayScore(s) > 0)
+      .sort((a, b) => getDisplayScore(a) - getDisplayScore(b))
       .slice(0, 5);
-  }, [filteredReportSummaries]);
+  }, [filteredReportSummaries, getDisplayScore]);
 
   // ─── Handlers ───
 
@@ -609,14 +628,23 @@ export default function CycleDetailPage() {
               </CardHeader>
               <div className="divide-y divide-gray-50">
                 {cycle.teamTemplates.map((tt) => (
-                  <div
-                    key={tt.teamId}
-                    className="flex items-center justify-between px-4 py-2.5"
-                  >
-                    <span className="text-[14px] font-medium text-gray-900">
-                      {tt.teamName}
-                    </span>
-                    <Badge variant="outline">{tt.templateName}</Badge>
+                  <div key={tt.teamId} className="px-4 py-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[14px] font-medium text-gray-900">
+                        {tt.teamName}
+                      </span>
+                      <Badge variant="outline">{tt.templateName}</Badge>
+                    </div>
+                    {tt.weights && (
+                      <div className="mt-1.5 flex items-center gap-3 text-[11px] text-gray-400">
+                        <span>Weights:</span>
+                        <span>Mgr {tt.weights.manager}%</span>
+                        <span>Peer {tt.weights.peer}%</span>
+                        <span>DR {tt.weights.directReport}%</span>
+                        <span>Self {tt.weights.self}%</span>
+                        <span>Ext {tt.weights.external}%</span>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -971,7 +999,7 @@ export default function CycleDetailPage() {
                 <TeamScoreChart
                   teams={cycleReport.avgScoreByTeam.map((t) => ({
                     teamName: t.teamName,
-                    avgScore: t.avgScore,
+                    avgScore: t.weightedAvgScore ?? t.avgScore,
                   }))}
                 />
               </Card>
@@ -1038,7 +1066,7 @@ export default function CycleDetailPage() {
                                 {person.subjectName}
                               </span>
                             </div>
-                            <ScoreBadge score={person.overallScore} />
+                            <ScoreBadge score={getDisplayScore(person)} />
                           </div>
                         </Link>
                       ))}
@@ -1072,7 +1100,7 @@ export default function CycleDetailPage() {
                                 {person.subjectName}
                               </span>
                             </div>
-                            <ScoreBadge score={person.overallScore} />
+                            <ScoreBadge score={getDisplayScore(person)} />
                           </div>
                         </Link>
                       ))}
@@ -1117,7 +1145,7 @@ export default function CycleDetailPage() {
                           </div>
                           <div className="flex items-center gap-3">
                             {person.completedCount > 0 && (
-                              <ScoreBadge score={person.overallScore} />
+                              <ScoreBadge score={getDisplayScore(person)} />
                             )}
                             <ChevronRight
                               size={16}

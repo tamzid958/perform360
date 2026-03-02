@@ -6,9 +6,21 @@ import { createAssignmentsForCycle } from "@/lib/assignments";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { validateCuidParam } from "@/lib/validation";
 
+const relationshipWeightsSchema = z.object({
+  manager: z.number().min(0).max(100),
+  peer: z.number().min(0).max(100),
+  directReport: z.number().min(0).max(100),
+  self: z.number().min(0).max(100),
+  external: z.number().min(0).max(100),
+}).refine(
+  (w) => Math.abs(w.manager + w.peer + w.directReport + w.self + w.external - 100) < 0.01,
+  { message: "Weights must sum to 100%" }
+);
+
 const teamTemplateSchema = z.object({
   teamId: z.string().min(1),
   templateId: z.string().min(1),
+  weights: relationshipWeightsSchema.optional(),
 });
 
 const updateCycleSchema = z.object({
@@ -157,6 +169,15 @@ export async function GET(
     teamName: ct.team.name,
     templateId: ct.template.id,
     templateName: ct.template.name,
+    weights: ct.weightManager !== null
+      ? {
+          manager: Math.round(ct.weightManager * 100),
+          peer: Math.round(ct.weightPeer! * 100),
+          directReport: Math.round(ct.weightDirectReport! * 100),
+          self: Math.round(ct.weightSelf! * 100),
+          external: Math.round(ct.weightExternal! * 100),
+        }
+      : null,
   }));
 
   return NextResponse.json({
@@ -290,6 +311,11 @@ export async function PATCH(
             cycleId: params.id,
             teamId: tt.teamId,
             templateId: tt.templateId,
+            weightManager: tt.weights ? tt.weights.manager / 100 : null,
+            weightPeer: tt.weights ? tt.weights.peer / 100 : null,
+            weightDirectReport: tt.weights ? tt.weights.directReport / 100 : null,
+            weightSelf: tt.weights ? tt.weights.self / 100 : null,
+            weightExternal: tt.weights ? tt.weights.external / 100 : null,
           })),
         });
       }

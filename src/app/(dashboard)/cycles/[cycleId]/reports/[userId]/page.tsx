@@ -99,9 +99,11 @@ export default function IndividualReportPage() {
   }
 
   // Derive display data based on selected team
-  const displayData: ReportDisplayData = selectedTeam === "all"
-    ? report
-    : report.teamBreakdowns.find((t) => t.teamId === selectedTeam) ?? report;
+  const selectedBreakdown = selectedTeam === "all"
+    ? null
+    : report.teamBreakdowns.find((t) => t.teamId === selectedTeam) ?? null;
+
+  const displayData: ReportDisplayData = selectedBreakdown ?? report;
 
   const showTeamSelector = report.teamBreakdowns.length > 1;
 
@@ -123,7 +125,11 @@ export default function IndividualReportPage() {
 type ReportDisplayData = Pick<
   IndividualReport | TeamBreakdown,
   "overallScore" | "categoryScores" | "scoresByRelationship" | "questionDetails" | "textFeedback"
->;
+> & {
+  weightedOverallScore?: number | null;
+  weightedCategoryScores?: import("@/types/report").CategoryScore[] | null;
+  appliedWeights?: import("@/types/report").RelationshipWeights | null;
+};
 
 // ─── Main Report Content ───
 
@@ -224,7 +230,9 @@ function ReportContent({
           <CardHeader>
             <CardTitle>Overall Score</CardTitle>
           </CardHeader>
-          <ScoreGauge score={displayData.overallScore} />
+          <ScoreGauge
+            score={displayData.weightedOverallScore ?? displayData.overallScore}
+          />
           <div className="flex items-center justify-center gap-4 mt-1">
             <span className="text-[12px] text-gray-400">
               {totalResponses} reviewer{totalResponses !== 1 ? "s" : ""}
@@ -233,6 +241,20 @@ function ReportContent({
               {displayData.categoryScores.length} competencies
             </span>
           </div>
+          {displayData.weightedOverallScore != null && (
+            <p className="text-center text-[11px] text-gray-400 mt-1">
+              Weighted (unweighted: {displayData.overallScore.toFixed(2)})
+            </p>
+          )}
+          {displayData.appliedWeights && (
+            <div className="flex items-center justify-center gap-2 mt-2 text-[10px] text-gray-400">
+              <span>Mgr {Math.round(displayData.appliedWeights.manager * 100)}%</span>
+              <span>Peer {Math.round(displayData.appliedWeights.peer * 100)}%</span>
+              <span>DR {Math.round(displayData.appliedWeights.directReport * 100)}%</span>
+              <span>Self {Math.round(displayData.appliedWeights.self * 100)}%</span>
+              <span>Ext {Math.round(displayData.appliedWeights.external * 100)}%</span>
+            </div>
+          )}
         </Card>
         <Card padding="md">
           <CardHeader>
@@ -254,13 +276,17 @@ function ReportContent({
           <CardHeader>
             <CardTitle>Competency Radar</CardTitle>
           </CardHeader>
-          <CompetencyRadarChart categories={displayData.categoryScores} />
+          <CompetencyRadarChart
+            categories={displayData.weightedCategoryScores ?? displayData.categoryScores}
+          />
         </Card>
         <Card>
           <CardHeader>
             <CardTitle>Competency Scores</CardTitle>
           </CardHeader>
-          <ScoreBreakdown categories={displayData.categoryScores} />
+          <ScoreBreakdown
+            categories={displayData.weightedCategoryScores ?? displayData.categoryScores}
+          />
         </Card>
       </div>
 

@@ -1,8 +1,19 @@
+export interface RelationshipWeights {
+  manager: number;
+  peer: number;
+  directReport: number;
+  self: number;
+  external: number;
+}
+
 export interface TeamBreakdown {
   teamId: string;
   teamName: string;
   overallScore: number;
+  weightedOverallScore: number | null;
+  appliedWeights: RelationshipWeights | null;
   categoryScores: CategoryScore[];
+  weightedCategoryScores: CategoryScore[] | null;
   scoresByRelationship: RelationshipScores;
   questionDetails: QuestionDetail[];
   textFeedback: TextFeedbackGroup[];
@@ -14,6 +25,7 @@ export interface IndividualReport {
   cycleId: string;
   cycleName: string;
   overallScore: number;
+  weightedOverallScore: number | null;
   categoryScores: CategoryScore[];
   scoresByRelationship: RelationshipScores;
   questionDetails: QuestionDetail[];
@@ -55,6 +67,7 @@ export interface IndividualSummary {
   subjectId: string;
   subjectName: string;
   overallScore: number;
+  weightedOverallScore: number | null;
   reviewCount: number;
   completedCount: number;
 }
@@ -63,6 +76,7 @@ export interface TeamScore {
   teamId: string;
   teamName: string;
   avgScore: number;
+  weightedAvgScore: number | null;
 }
 
 export interface SubmissionTrendPoint {
