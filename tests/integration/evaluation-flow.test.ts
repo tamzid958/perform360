@@ -449,6 +449,10 @@ describe("Integration: Evaluation Flow", () => {
       vi.mocked(prisma.evaluationResponse.create).mockResolvedValue({} as any);
       vi.mocked(prisma.evaluationAssignment.update).mockResolvedValue({} as any);
 
+      // Post-submission: cycle completion check + remaining pending evaluations
+      vi.mocked(prisma.evaluationAssignment.count).mockResolvedValue(1);
+      vi.mocked(prisma.evaluationAssignment.findMany).mockResolvedValue([]);
+
       const res = await submitEvaluation(req, { params: Promise.resolve({ token: TOKEN }) });
       const { status, body } = await parseResponse(res);
 
@@ -494,6 +498,10 @@ describe("Integration: Evaluation Flow", () => {
       } as any);
 
       vi.mocked(prisma.$transaction).mockResolvedValue([{}, {}]);
+
+      // Post-submission: cycle completion check + remaining pending evaluations
+      vi.mocked(prisma.evaluationAssignment.count).mockResolvedValue(1);
+      vi.mocked(prisma.evaluationAssignment.findMany).mockResolvedValue([]);
 
       const res = await submitEvaluation(req, { params: Promise.resolve({ token: TOKEN }) });
       const { status, body } = await parseResponse(res);

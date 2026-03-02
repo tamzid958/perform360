@@ -33,6 +33,11 @@ describe("API /api/cycles", () => {
           status: "DRAFT",
           companyId: fixtures.admin.companyId,
           _count: { assignments: 10 },
+          assignments: [
+            { status: "SUBMITTED" },
+            { status: "SUBMITTED" },
+            { status: "PENDING" },
+          ],
           cycleTeams: [],
         },
       ];
