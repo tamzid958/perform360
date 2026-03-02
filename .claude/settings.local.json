@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(wc -l /c/perform360/src/app/\\\\\\(dashboard\\\\\\)/cycles/[cycleId]/page.tsx)",
-      "Bash(grep -n \"activate\\\\|Activate\" /c/perform360/src/app/\\\\\\(dashboard\\\\\\)/cycles/[cycleId]/page.tsx)"
+      "Bash(grep -n \"activate\\\\|Activate\" /c/perform360/src/app/\\\\\\(dashboard\\\\\\)/cycles/[cycleId]/page.tsx)",
+      "Bash(node -e \"const p = require\\(''/c/perform360/package.json''\\); console.log\\(''next:'', p.dependencies.next\\)\")",
+      "Bash(rm /c/perform360/src/middleware.ts)"
     ]
   }
 }
