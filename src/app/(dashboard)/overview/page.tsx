@@ -42,6 +42,8 @@ interface Cycle {
   endDate: string;
   templateId: string;
   _count: { assignments: number };
+  submittedCount: number;
+  pendingCount: number;
 }
 
 interface ActivityItem {
@@ -253,9 +255,8 @@ export default function DashboardPage() {
     ? Math.max(0, Math.ceil((new Date(activeCycle.endDate).getTime() - Date.now()) / 86400000))
     : 0;
 
-  const completedCount = activeCycle
-    ? activeCycle._count.assignments - (stats?.pendingReviews ?? 0)
-    : 0;
+  const completedCount = activeCycle?.submittedCount ?? 0;
+  const pendingCount = activeCycle?.pendingCount ?? 0;
 
   const statItems = [
     {
@@ -360,7 +361,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="text-center p-3 sm:p-4 rounded-xl bg-amber-50/60 border border-amber-100/50">
                     <p className="text-[20px] sm:text-[24px] font-bold text-amber-700 tracking-tight">
-                      {stats?.pendingReviews ?? 0}
+                      {pendingCount}
                     </p>
                     <p className="text-[11px] sm:text-[12px] font-medium text-amber-600 mt-0.5">Pending</p>
                   </div>

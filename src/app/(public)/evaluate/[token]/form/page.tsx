@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/ca
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle2, ChevronLeft, ChevronRight, Send, Loader2, AlertCircle, Check, Shield } from "lucide-react";
+import { CheckCircle2, ChevronLeft, ChevronRight, Send, Loader2, AlertCircle, Check, Shield, ArrowRight } from "lucide-react";
 
 interface TemplateQuestion {
   id: string;
@@ -43,6 +43,9 @@ export default function EvaluationFormPage({ params: paramsPromise }: { params: 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [remainingEvals, setRemainingEvals] = useState<
+    Array<{ token: string; subjectName: string; cycleName: string; relationship: string }>
+  >([]);
 
   useEffect(() => {
     function handleBeforeUnload(e: BeforeUnloadEvent) {
@@ -142,6 +145,7 @@ export default function EvaluationFormPage({ params: paramsPromise }: { params: 
       });
       const data = await res.json();
       if (res.ok && data.success) {
+        setRemainingEvals(data.data?.remaining ?? []);
         setIsSubmitted(true);
       } else {
         setSubmitError(data.error || "Failed to submit evaluation");
@@ -181,6 +185,29 @@ export default function EvaluationFormPage({ params: paramsPromise }: { params: 
               </div>
             </div>
           </Card>
+
+          {remainingEvals.length > 0 && (
+            <Card padding="md" className="mt-4">
+              <p className="text-callout font-medium text-gray-700 mb-3">
+                You have {remainingEvals.length} more evaluation{remainingEvals.length > 1 ? "s" : ""} to complete
+              </p>
+              <div className="space-y-2">
+                {remainingEvals.map((ev) => (
+                  <a
+                    key={ev.token}
+                    href={`/evaluate/${ev.token}`}
+                    className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200/60 transition-colors group"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-[14px] font-medium text-gray-800 truncate">{ev.subjectName}</p>
+                      <p className="text-[12px] text-gray-500 truncate">{ev.cycleName} &middot; {ev.relationship}</p>
+                    </div>
+                    <ArrowRight size={16} strokeWidth={1.5} className="text-gray-400 group-hover:text-brand-500 flex-shrink-0 transition-colors" />
+                  </a>
+                ))}
+              </div>
+            </Card>
+          )}
         </div>
       </div>
     );

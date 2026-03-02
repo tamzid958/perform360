@@ -47,7 +47,7 @@ interface SendEmailOptions {
 interface SendEmailWithAttachmentsOptions extends SendEmailOptions {
   attachments: Array<{
     filename: string;
-    content: string;
+    content: string | Buffer;
     contentType: string;
   }>;
 }
@@ -97,7 +97,7 @@ export async function sendEmailWithAttachments({
       ...(text ? { text } : {}),
       attachments: attachments.map((a) => ({
         filename: a.filename,
-        content: Buffer.from(a.content),
+        content: typeof a.content === "string" ? Buffer.from(a.content) : a.content,
         contentType: a.contentType,
       })),
     });
@@ -114,7 +114,7 @@ export async function sendEmailWithAttachments({
       ...(text ? { text } : {}),
       attachments: attachments.map((a) => ({
         filename: a.filename,
-        content: Buffer.from(a.content, "base64"),
+        content: typeof a.content === "string" ? Buffer.from(a.content, "base64") : a.content,
         contentType: a.contentType,
       })),
     });
@@ -423,6 +423,31 @@ export function getCompanyDestroyedEmail(
   );
 
   const text = `Hi,\n\nThis email confirms that ${companyName} and all associated data have been permanently deleted from Performs360.\n\nCompany: ${companyName}\nDeleted on: ${destroyedAt}\nInitiated by: ${initiatedBy}\n\nThis action is irreversible. All users, teams, evaluation cycles, responses, encryption keys, and audit logs have been permanently removed.\n\nIf you did not initiate this action, please contact support immediately.`;
+
+  return { html, text };
+}
+
+// ─── Reports Export ───
+
+export function getReportsExportEmail(
+  cycleName: string,
+  subjectCount: number
+): { html: string; text: string } {
+  const html = emailWrapper(
+    "Reports Export",
+    `
+    <p style="margin: 0 0 16px; font-size: 15px; color: #1d1d1f; line-height: 1.5;">Hi,</p>
+    <p style="margin: 0 0 16px; font-size: 15px; color: #48484a; line-height: 1.5;">
+      Your report export for the <strong>${escapeHtml(cycleName)}</strong> cycle is ready.
+      The attached ZIP contains ${subjectCount} individual report PDF${subjectCount !== 1 ? "s" : ""}.
+    </p>
+    <p style="margin: 0; font-size: 13px; color: #86868b; line-height: 1.4;">
+      This file contains evaluation scores and feedback. Please store it securely.
+    </p>
+    `
+  );
+
+  const text = `Hi,\n\nYour report export for the ${cycleName} cycle is ready. The attached ZIP contains ${subjectCount} individual report PDF${subjectCount !== 1 ? "s" : ""}.\n\nThis file contains evaluation scores and feedback. Please store it securely.`;
 
   return { html, text };
 }

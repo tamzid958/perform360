@@ -192,6 +192,7 @@ export default function CycleDetailPage() {
   const [closing, setClosing] = useState(false);
   const [showReopenDialog, setShowReopenDialog] = useState(false);
   const [reopening, setReopening] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const { locked, reset, handleApiResponse, handleUnlocked } = useEncryptionUnlock();
   const { addToast } = useToast();
 
@@ -336,8 +337,26 @@ export default function CycleDetailPage() {
 
   // ─── Handlers ───
 
-  function handleExport() {
-    window.open(`/api/reports/cycle/${cycleId}/export`, "_blank");
+  async function handleExport() {
+    setExporting(true);
+    try {
+      const res = await fetch(`/api/reports/cycle/${cycleId}/export`, {
+        method: "POST",
+      });
+      const json = await res.json();
+      if (handleApiResponse(json)) return;
+      if (!json.success) {
+        throw new Error(json.error || "Failed to start export");
+      }
+      addToast("Export started — check your email shortly", "success");
+    } catch (err) {
+      addToast(
+        err instanceof Error ? err.message : "Failed to start export",
+        "error"
+      );
+    } finally {
+      setExporting(false);
+    }
   }
 
   async function handleRemind() {
@@ -542,9 +561,9 @@ export default function CycleDetailPage() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               {activeTab === "reports" && (
-                <DropdownMenuItem onClick={handleExport}>
+                <DropdownMenuItem onClick={handleExport} disabled={exporting}>
                   <Download size={15} strokeWidth={1.5} className="mr-2" />
-                  Export PDF
+                  {exporting ? "Starting export\u2026" : "Export PDF"}
                 </DropdownMenuItem>
               )}
               {cycle.status === "ACTIVE" && (

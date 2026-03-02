@@ -69,12 +69,12 @@ describe("buildCategoryScores", () => {
     expect(scores[1].score).toBe(4.67);
   });
 
-  it("returns 0 for sections with no rating questions", () => {
+  it("excludes sections with no rating questions", () => {
     const textOnlySections = [
       { title: "Feedback", questions: [{ id: "q1", text: "Comments", type: "text" as const, required: false }] },
     ];
     const scores = buildCategoryScores(responses, textOnlySections);
-    expect(scores[0].score).toBe(0);
+    expect(scores).toHaveLength(0);
   });
 });
 
@@ -288,12 +288,12 @@ describe("buildWeightedCategoryScores", () => {
     expect(result[1].score).toBe(4.5);
   });
 
-  it("returns 0 for sections with no rating questions", () => {
+  it("excludes sections with no rating questions", () => {
     const textOnlySections = [
       { title: "Feedback", questions: [{ id: "q1", text: "Comments", type: "text" as const, required: false }] },
     ];
     const weights: WeightConfig = { manager: 0.5, peer: 0.5, directReport: 0, self: 0, external: 0 };
     const result = buildWeightedCategoryScores(responses, textOnlySections, weights)!;
-    expect(result[0].score).toBe(0);
+    expect(result).toHaveLength(0);
   });
 });

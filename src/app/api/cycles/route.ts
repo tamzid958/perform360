@@ -61,6 +61,9 @@ export async function GET(request: NextRequest) {
         _count: {
           select: { assignments: true },
         },
+        assignments: {
+          select: { status: true },
+        },
         cycleTeams: {
           include: {
             team: { select: { id: true, name: true } },
@@ -75,9 +78,15 @@ export async function GET(request: NextRequest) {
     prisma.evaluationCycle.count({ where }),
   ]);
 
+  const cyclesWithCounts = cycles.map(({ assignments, ...cycle }) => ({
+    ...cycle,
+    submittedCount: assignments.filter((a) => a.status === "SUBMITTED").length,
+    pendingCount: assignments.filter((a) => a.status !== "SUBMITTED").length,
+  }));
+
   return NextResponse.json({
     success: true,
-    data: cycles,
+    data: cyclesWithCounts,
     pagination: buildPaginationMeta(page, limit, total),
   });
 }

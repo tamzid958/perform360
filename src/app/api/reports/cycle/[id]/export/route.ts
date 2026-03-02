@@ -7,6 +7,8 @@ import { RELATIONSHIP_LABELS } from "@/lib/constants";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { validateCuidParam } from "@/lib/validation";
 import { writeAuditLog } from "@/lib/audit";
+import { enqueue } from "@/lib/queue";
+import { JOB_TYPES } from "@/types/job";
 import type { RelationshipScores } from "@/types/report";
 
 type ApiResponse<T> =
@@ -143,6 +145,72 @@ export async function GET(
       { status: 500 }
     );
   }
+}
+
+/**
+ * Enqueue a background job to generate individual PDFs, ZIP them, and email the ZIP.
+ */
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const rl = applyRateLimit(request);
+  if (rl) return rl;
+  const { id: cycleId } = await params;
+  const invalid = validateCuidParam(cycleId);
+  if (invalid) return invalid;
+
+  const authResult = await requireAdminOrHR();
+  if (isAuthError(authResult)) return authResult;
+  const { companyId } = authResult;
+
+  const cycle = await prisma.evaluationCycle.findFirst({
+    where: { id: cycleId, companyId },
+    select: { id: true },
+  });
+
+  if (!cycle) {
+    return NextResponse.json<ApiResponse<never>>(
+      { success: false, error: "Cycle not found", code: "NOT_FOUND" },
+      { status: 404 }
+    );
+  }
+
+  const company = await prisma.company.findUnique({
+    where: { id: companyId },
+    select: { encryptionSetupAt: true },
+  });
+  if (!company?.encryptionSetupAt) {
+    return NextResponse.json<ApiResponse<never>>(
+      { success: false, error: "Encryption key was changed. Data from the previous encryption key cannot be viewed.", code: "ENCRYPTION_RESET" },
+      { status: 403 }
+    );
+  }
+
+  const dataKey = getDataKeyFromRequest(request);
+  if (!dataKey) {
+    return NextResponse.json<ApiResponse<never>>(
+      { success: false, error: "Encryption locked. Enter your passphrase to export reports.", code: "ENCRYPTION_LOCKED" },
+      { status: 403 }
+    );
+  }
+
+  const jobId = await enqueue(
+    JOB_TYPES.REPORTS_EXPORT_CYCLE,
+    {
+      cycleId,
+      companyId,
+      userId: authResult.userId,
+      userEmail: authResult.email,
+      dataKeyHex: dataKey.toString("hex"),
+    },
+    { maxAttempts: 1 }
+  );
+
+  return NextResponse.json<ApiResponse<{ jobId: string }>>(
+    { success: true, data: { jobId } },
+    { status: 202 }
+  );
 }
 
 // ─── HTML Report Rendering ───

@@ -264,9 +264,44 @@ export async function POST(
       console.error("Failed to queue cycle completion email:", err);
     }
 
-    return NextResponse.json<ApiResponse<{ submitted: true }>>({
+    // Fetch remaining pending evaluations for this reviewer
+    const pendingAssignments = await prisma.evaluationAssignment.findMany({
+      where: {
+        reviewerId: assignment.reviewerId,
+        status: { not: "SUBMITTED" },
+        id: { not: assignment.id },
+        cycle: { status: "ACTIVE" },
+      },
+      select: {
+        token: true,
+        relationship: true,
+        subjectId: true,
+        cycle: { select: { name: true } },
+      },
+    });
+
+    const subjectIds = [...new Set(pendingAssignments.map((a) => a.subjectId))];
+    const subjects = subjectIds.length > 0
+      ? await prisma.user.findMany({
+          where: { id: { in: subjectIds } },
+          select: { id: true, name: true },
+        })
+      : [];
+    const subjectMap = new Map(subjects.map((s) => [s.id, s.name]));
+
+    const remaining = pendingAssignments.map((a) => ({
+      token: a.token,
+      subjectName: subjectMap.get(a.subjectId) ?? "Unknown",
+      cycleName: a.cycle.name,
+      relationship: a.relationship,
+    }));
+
+    return NextResponse.json<ApiResponse<{
+      submitted: true;
+      remaining: typeof remaining;
+    }>>({
       success: true,
-      data: { submitted: true },
+      data: { submitted: true, remaining },
     });
   } catch (error) {
     console.error("Submission error:", error);

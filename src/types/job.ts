@@ -11,6 +11,7 @@ export const JOB_TYPES = {
   CLEANUP_OTP_SESSIONS: "cleanup.otp-sessions",
   DATA_EXPORT: "data.export",
   COMPANY_DESTROY: "company.destroy",
+  REPORTS_EXPORT_CYCLE: "reports.export-cycle",
 } as const;
 
 export type JobType = (typeof JOB_TYPES)[keyof typeof JOB_TYPES];
@@ -65,6 +66,14 @@ export interface CompanyDestroyPayload {
   exportJobId?: string;
 }
 
+export interface ReportsExportCyclePayload {
+  cycleId: string;
+  companyId: string;
+  userId: string;
+  userEmail: string;
+  dataKeyHex: string;
+}
+
 // ─── Payload Map ───
 
 export interface JobPayloadMap {
@@ -76,6 +85,7 @@ export interface JobPayloadMap {
   "cleanup.otp-sessions": CleanupOtpSessionsPayload;
   "data.export": DataExportPayload;
   "company.destroy": CompanyDestroyPayload;
+  "reports.export-cycle": ReportsExportCyclePayload;
 }
 
 // ─── Handler Interface ───

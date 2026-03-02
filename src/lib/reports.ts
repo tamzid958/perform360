@@ -125,35 +125,35 @@ export function buildCategoryScores(
   responses: DecryptedResponse[],
   sections: TemplateSection[]
 ): CategoryScore[] {
-  return sections.map((section) => {
-    const ratingQuestions = section.questions.filter(
-      (q) => q.type === "rating_scale"
-    );
+  return sections
+    .filter((section) =>
+      section.questions.some((q) => q.type === "rating_scale")
+    )
+    .map((section) => {
+      const ratingQuestions = section.questions.filter(
+        (q) => q.type === "rating_scale"
+      );
 
-    if (ratingQuestions.length === 0) {
-      return { category: section.title, score: 0, maxScore: 5 };
-    }
+      let totalScore = 0;
+      let totalCount = 0;
+      const maxScale = ratingQuestions[0]?.scaleMax ?? 5;
 
-    let totalScore = 0;
-    let totalCount = 0;
-    const maxScale = ratingQuestions[0]?.scaleMax ?? 5;
-
-    for (const resp of responses) {
-      for (const q of ratingQuestions) {
-        const value = resp.answers[q.id];
-        if (typeof value === "number") {
-          totalScore += value;
-          totalCount++;
+      for (const resp of responses) {
+        for (const q of ratingQuestions) {
+          const value = resp.answers[q.id];
+          if (typeof value === "number") {
+            totalScore += value;
+            totalCount++;
+          }
         }
       }
-    }
 
-    return {
-      category: section.title,
-      score: totalCount > 0 ? parseFloat((totalScore / totalCount).toFixed(2)) : 0,
-      maxScore: maxScale,
-    };
-  });
+      return {
+        category: section.title,
+        score: totalCount > 0 ? parseFloat((totalScore / totalCount).toFixed(2)) : 0,
+        maxScore: maxScale,
+      };
+    });
 }
 
 /**
@@ -424,37 +424,37 @@ export function buildWeightedCategoryScores(
 ): CategoryScore[] | null {
   if (!weights) return null;
 
-  return sections.map((section) => {
-    const ratingQuestions = section.questions.filter((q) => q.type === "rating_scale");
-    if (ratingQuestions.length === 0) {
-      return { category: section.title, score: 0, maxScore: 5 };
-    }
+  return sections
+    .filter((section) =>
+      section.questions.some((q) => q.type === "rating_scale")
+    )
+    .map((section) => {
+      const ratingQuestions = section.questions.filter((q) => q.type === "rating_scale");
+      const maxScale = ratingQuestions[0]?.scaleMax ?? 5;
 
-    const maxScale = ratingQuestions[0]?.scaleMax ?? 5;
+      const relGroups: Record<string, number[]> = {
+        manager: [], peer: [], direct_report: [], self: [], external: [],
+      };
 
-    const relGroups: Record<string, number[]> = {
-      manager: [], peer: [], direct_report: [], self: [], external: [],
-    };
-
-    for (const resp of responses) {
-      let total = 0;
-      let count = 0;
-      for (const q of ratingQuestions) {
-        const v = resp.answers[q.id];
-        if (typeof v === "number") { total += v; count++; }
+      for (const resp of responses) {
+        let total = 0;
+        let count = 0;
+        for (const q of ratingQuestions) {
+          const v = resp.answers[q.id];
+          if (typeof v === "number") { total += v; count++; }
+        }
+        if (count > 0 && relGroups[resp.relationship]) {
+          relGroups[resp.relationship].push(total / count);
+        }
       }
-      if (count > 0 && relGroups[resp.relationship]) {
-        relGroups[resp.relationship].push(total / count);
-      }
-    }
 
-    const result = applyWeightsToRelationshipAverages(relGroups, weights);
-    return {
-      category: section.title,
-      score: result?.score ?? 0,
-      maxScore: maxScale,
-    };
-  });
+      const result = applyWeightsToRelationshipAverages(relGroups, weights);
+      return {
+        category: section.title,
+        score: result?.score ?? 0,
+        maxScore: maxScale,
+      };
+    });
 }
 
 // ─── Full Report Builders ───
