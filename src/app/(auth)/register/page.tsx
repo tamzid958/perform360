@@ -123,7 +123,7 @@ export default function RegisterPage() {
             <Building2
               size={16}
               strokeWidth={1.5}
-              className="absolute left-4 top-[34px] text-gray-400 pointer-events-none"
+              className="absolute left-4 top-[40px] text-gray-400 pointer-events-none"
             />
           </div>
 
@@ -141,7 +141,7 @@ export default function RegisterPage() {
             <User
               size={16}
               strokeWidth={1.5}
-              className="absolute left-4 top-[34px] text-gray-400 pointer-events-none"
+              className="absolute left-4 top-[40px] text-gray-400 pointer-events-none"
             />
           </div>
 
@@ -159,7 +159,7 @@ export default function RegisterPage() {
             <Mail
               size={16}
               strokeWidth={1.5}
-              className="absolute left-4 top-[34px] text-gray-400 pointer-events-none"
+              className="absolute left-4 top-[40px] text-gray-400 pointer-events-none"
             />
           </div>
 
