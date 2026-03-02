@@ -17,6 +17,9 @@ export interface TeamBreakdown {
   scoresByRelationship: RelationshipScores;
   questionDetails: QuestionDetail[];
   textFeedback: TextFeedbackGroup[];
+  calibrationOffset: number | null;
+  calibratedScore: number | null;
+  calibrationJustification: string | null;
 }
 
 export interface IndividualReport {
@@ -31,6 +34,9 @@ export interface IndividualReport {
   questionDetails: QuestionDetail[];
   textFeedback: TextFeedbackGroup[];
   teamBreakdowns: TeamBreakdown[];
+  calibratedScore: number | null;
+  calibrationJustification: string | null;
+  calibrationAdjustedBy: string | null;
 }
 
 export interface CategoryScore {
@@ -70,6 +76,7 @@ export interface IndividualSummary {
   weightedOverallScore: number | null;
   reviewCount: number;
   completedCount: number;
+  calibratedScore: number | null;
 }
 
 export interface TeamScore {
@@ -77,6 +84,7 @@ export interface TeamScore {
   teamName: string;
   avgScore: number;
   weightedAvgScore: number | null;
+  calibratedAvgScore: number | null;
 }
 
 export interface SubmissionTrendPoint {
@@ -96,6 +104,7 @@ export interface CycleReport {
   avgScoreByTeam: TeamScore[];
   avgScoreByRelationship: RelationshipScores;
   submissionTrend: SubmissionTrendPoint[];
+  isCalibrated: boolean;
 }
 
 export interface TeamCompletionRate {

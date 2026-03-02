@@ -520,6 +520,15 @@ export async function buildIndividualReport(
 
   const responses = await getDecryptedResponsesForSubject(cycleId, subjectId, dataKey);
 
+  // Fetch member-level calibration overrides for this subject
+  const memberCalibrations = await prisma.calibrationAdjustment.findMany({
+    where: { cycleId, subjectId },
+    include: { adjuster: { select: { name: true } } },
+  });
+  const memberCalibByTeam = new Map(
+    memberCalibrations.map((c) => [c.teamId, c])
+  );
+
   // Build per-team breakdowns
   const responsesByTeam = new Map<string, { teamId: string; teamName: string; responses: DecryptedResponse[] }>();
   for (const resp of responses) {
@@ -558,11 +567,26 @@ export async function buildIndividualReport(
 
     const teamWeights = teamWeightMap.get(teamId) ?? null;
     const weightedResult = calculateWeightedOverallScore(teamResponses, teamSections, teamWeights);
+    const rawScore = calculateOverallScore(teamResponses, teamSections);
+
+    // Calibration: member override takes priority, then team offset
+    const memberCalib = memberCalibByTeam.get(teamId);
+    const teamOffset = teamCycleTeam?.calibrationOffset ?? null;
+
+    let calibratedScore: number | null = null;
+    let calibrationJustification: string | null = null;
+    if (memberCalib) {
+      calibratedScore = memberCalib.calibratedScore;
+      calibrationJustification = memberCalib.justification;
+    } else if (teamOffset !== null) {
+      calibratedScore = parseFloat(Math.min(5, Math.max(0, rawScore + teamOffset)).toFixed(2));
+      calibrationJustification = teamCycleTeam?.calibrationJustification ?? null;
+    }
 
     return {
       teamId,
       teamName,
-      overallScore: calculateOverallScore(teamResponses, teamSections),
+      overallScore: rawScore,
       weightedOverallScore: weightedResult?.score ?? null,
       appliedWeights: weightedResult?.appliedWeights ?? null,
       categoryScores: buildCategoryScores(teamResponses, teamSections),
@@ -570,6 +594,9 @@ export async function buildIndividualReport(
       scoresByRelationship: buildRelationshipScores(teamResponses, teamSections),
       questionDetails: buildQuestionDetails(teamResponses, teamSections),
       textFeedback: buildTextFeedback(teamResponses, teamSections),
+      calibrationOffset: teamOffset,
+      calibratedScore,
+      calibrationJustification,
     };
   });
 
@@ -580,6 +607,20 @@ export async function buildIndividualReport(
         (teamsWithWeights.reduce((sum, tb) => sum + tb.weightedOverallScore!, 0) / teamsWithWeights.length)
           .toFixed(2)
       )
+    : null;
+
+  // Overall calibrated score: average of per-team calibrated scores (if any exist)
+  const teamsWithCalibration = teamBreakdowns.filter((tb) => tb.calibratedScore !== null);
+  const calibratedScore = teamsWithCalibration.length > 0
+    ? parseFloat(
+        (teamsWithCalibration.reduce((sum, tb) => sum + tb.calibratedScore!, 0) / teamsWithCalibration.length)
+          .toFixed(2)
+      )
+    : null;
+
+  // Find who performed the most recent calibration adjustment
+  const latestCalib = memberCalibrations.length > 0
+    ? memberCalibrations.reduce((latest, c) => c.updatedAt > latest.updatedAt ? c : latest)
     : null;
 
   return {
@@ -594,6 +635,9 @@ export async function buildIndividualReport(
     questionDetails: buildQuestionDetails(responses, sections),
     textFeedback: buildTextFeedback(responses, sections),
     teamBreakdowns,
+    calibratedScore,
+    calibrationJustification: latestCalib?.justification ?? null,
+    calibrationAdjustedBy: latestCalib?.adjuster.name ?? null,
   };
 }
 
@@ -636,9 +680,22 @@ export async function buildCycleReport(
   // Team completion rates — only teams assigned to this cycle
   const cycleTeamLinks = await prisma.cycleTeam.findMany({
     where: { cycleId },
-    select: { teamId: true },
+    select: { teamId: true, calibrationOffset: true },
   });
   const cycleTeamIds = cycleTeamLinks.map((ct) => ct.teamId);
+
+  // Fetch all calibration data for this cycle
+  const allCalibrations = await prisma.calibrationAdjustment.findMany({
+    where: { cycleId },
+  });
+  const calibBySubjectTeam = new Map(
+    allCalibrations.map((c) => [`${c.subjectId}:${c.teamId}`, c])
+  );
+  const teamOffsetMap = new Map(
+    cycleTeamLinks.map((ct) => [ct.teamId, ct.calibrationOffset])
+  );
+  const hasAnyCalibration = allCalibrations.length > 0
+    || cycleTeamLinks.some((ct) => ct.calibrationOffset !== null);
 
   const teams = await prisma.team.findMany({
     where: { id: { in: cycleTeamIds } },
@@ -867,6 +924,25 @@ export async function buildCycleReport(
           }
         }
 
+        // Compute calibrated score: member override > team offset > null
+        let calibratedScore: number | null = null;
+        const sTeamIds = subjectTeamMap.get(subjectId) ?? [];
+        const calibScores: number[] = [];
+        for (const tid of sTeamIds) {
+          const memberCalib = calibBySubjectTeam.get(`${subjectId}:${tid}`);
+          const teamOffset = teamOffsetMap.get(tid) ?? null;
+          if (memberCalib) {
+            calibScores.push(memberCalib.calibratedScore);
+          } else if (teamOffset !== null) {
+            calibScores.push(parseFloat(Math.min(5, Math.max(0, overallScore + teamOffset)).toFixed(2)));
+          }
+        }
+        if (calibScores.length > 0) {
+          calibratedScore = parseFloat(
+            (calibScores.reduce((a, b) => a + b, 0) / calibScores.length).toFixed(2)
+          );
+        }
+
         individualSummaries.push({
           subjectId,
           subjectName: subjectNameMap.get(subjectId) ?? "Unknown",
@@ -874,6 +950,7 @@ export async function buildCycleReport(
           weightedOverallScore,
           reviewCount: counts.total,
           completedCount: counts.completed,
+          calibratedScore,
         });
       }
 
@@ -914,14 +991,34 @@ export async function buildCycleReport(
           }
         }
         if (teamCount > 0) {
+          const rawAvg = parseFloat((teamTotal / teamCount).toFixed(2));
+          const teamOffset = teamOffsetMap.get(team.id) ?? null;
+
+          // Calibrated team avg: use member overrides where available, else apply team offset
+          const calibScores: number[] = [];
+          for (const [sid, scores] of Array.from(subjectScores.entries())) {
+            if (memberIds.has(sid) && scores.count > 0) {
+              const memberRaw = scores.total / scores.count;
+              const memberCalib = calibBySubjectTeam.get(`${sid}:${team.id}`);
+              if (memberCalib) {
+                calibScores.push(memberCalib.calibratedScore);
+              } else if (teamOffset !== null) {
+                calibScores.push(parseFloat(Math.min(5, Math.max(0, memberRaw + teamOffset)).toFixed(2)));
+              }
+            }
+          }
+
           avgScoreByTeam.push({
             teamId: team.id,
             teamName: team.name,
-            avgScore: parseFloat((teamTotal / teamCount).toFixed(2)),
+            avgScore: rawAvg,
             weightedAvgScore: teamWeightedScores.length > 0
               ? parseFloat(
                   (teamWeightedScores.reduce((a, b) => a + b, 0) / teamWeightedScores.length).toFixed(2)
                 )
+              : null,
+            calibratedAvgScore: calibScores.length > 0
+              ? parseFloat((calibScores.reduce((a, b) => a + b, 0) / calibScores.length).toFixed(2))
               : null,
           });
         }
@@ -951,6 +1048,7 @@ export async function buildCycleReport(
         weightedOverallScore: null,
         reviewCount: counts.total,
         completedCount: counts.completed,
+        calibratedScore: null,
       });
     }
   }
@@ -966,5 +1064,6 @@ export async function buildCycleReport(
     avgScoreByTeam,
     avgScoreByRelationship,
     submissionTrend,
+    isCalibrated: hasAnyCalibration,
   };
 }

@@ -17,7 +17,8 @@ type AuditAction =
   | "impersonation"
   | "bulk_import"
   | "data_export"
-  | "company_destroy";
+  | "company_destroy"
+  | "calibration_adjust";
 
 interface AuditLogInput {
   companyId: string;
