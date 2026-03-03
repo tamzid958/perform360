@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Save, RotateCcw, ChevronDown, ChevronUp, AlertTriangle } from "lucide-react";
+import { Save, RotateCcw, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, AlertTriangle } from "lucide-react";
 
 interface CalibrationSubject {
   subjectId: string;
@@ -197,8 +197,8 @@ export function CalibrationPanel({ cycleId, data, readOnly = false, onSaved }: C
 
   return (
     <div className="space-y-3">
-      {/* Cross-team comparison — horizontal scroll row */}
-      <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-thin">
+      {/* Cross-team comparison — horizontal scroll with arrow buttons */}
+      <ScrollRow>
         {data.teamSummaries.map((ts) => {
           const offset = teamOffsets.get(ts.teamId);
           const effectiveAvg = offset
@@ -227,7 +227,7 @@ export function CalibrationPanel({ cycleId, data, readOnly = false, onSaved }: C
             </div>
           );
         })}
-      </div>
+      </ScrollRow>
 
       {/* Per-team calibration sections */}
       {data.teamSummaries.map((ts) => {
@@ -395,6 +395,69 @@ export function CalibrationPanel({ cycleId, data, readOnly = false, onSaved }: C
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function ScrollRow({ children }: { children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const checkScroll = useCallback(() => {
+    const el = ref.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 1);
+    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 1);
+  }, []);
+
+  useEffect(() => {
+    checkScroll();
+    const el = ref.current;
+    if (!el) return;
+    const ro = new ResizeObserver(checkScroll);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [checkScroll]);
+
+  const scroll = (dir: -1 | 1) => {
+    ref.current?.scrollBy({ left: dir * 200, behavior: "smooth" });
+  };
+
+  return (
+    <div className="relative group">
+      {/* Left arrow */}
+      {canScrollLeft && (
+        <button
+          onClick={() => scroll(-1)}
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-7 h-7 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-500 hover:text-gray-900 hover:border-gray-300 transition-all -ml-1"
+        >
+          <ChevronLeft size={14} />
+        </button>
+      )}
+      {/* Right arrow */}
+      {canScrollRight && (
+        <button
+          onClick={() => scroll(1)}
+          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-7 h-7 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-500 hover:text-gray-900 hover:border-gray-300 transition-all -mr-1"
+        >
+          <ChevronRight size={14} />
+        </button>
+      )}
+      {/* Fade edges */}
+      {canScrollLeft && (
+        <div className="absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-gray-50 to-transparent z-[1] pointer-events-none rounded-l-xl" />
+      )}
+      {canScrollRight && (
+        <div className="absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-gray-50 to-transparent z-[1] pointer-events-none rounded-r-xl" />
+      )}
+      <div
+        ref={ref}
+        onScroll={checkScroll}
+        className="flex gap-2 overflow-x-auto px-1 py-1 scrollbar-none"
+      >
+        {children}
+      </div>
     </div>
   );
 }
