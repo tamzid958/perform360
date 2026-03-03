@@ -2,7 +2,6 @@ import { prisma } from "../prisma";
 import { generate } from "../ollama";
 import {
   buildSystemPrompt,
-  buildTopicPrompt,
   buildArticlePrompt,
   validateArticleSchema,
   type ArticleOutput,
@@ -26,29 +25,7 @@ export async function handleBlogGenerate(
     try {
       console.log(`[BlogGenerate] Generating article ${i + 1}/${count}...`);
 
-      // Step 1: Generate a unique topic
-      const topicPrompt = await buildTopicPrompt();
-      const topicRaw = await generate(topicPrompt, systemPrompt, {
-        temperature: 0.9,
-        numPredict: 256,
-      });
-
-      const topicData = parseJson(topicRaw);
-      if (!topicData?.topic || !topicData?.target_keyword) {
-        throw new Error(
-          `Invalid topic response: ${topicRaw.substring(0, 200)}`
-        );
-      }
-
-      console.log(
-        `[BlogGenerate] Topic: "${topicData.topic}" (keyword: "${topicData.target_keyword}")`
-      );
-
-      // Step 2: Generate full article
-      const articlePrompt = buildArticlePrompt(
-        topicData.topic as string,
-        topicData.target_keyword as string
-      );
+      const articlePrompt = await buildArticlePrompt();
       const articleRaw = await generate(articlePrompt, systemPrompt, {
         temperature: 0.7,
         numPredict: 4096,
@@ -64,11 +41,11 @@ export async function handleBlogGenerate(
 
       const articleData = articleRawData as unknown as ArticleOutput;
 
-      // Step 3: Sanitize content and ensure unique slug
+      // Sanitize content and ensure unique slug
       const cleanHtml = sanitizeHtml(articleData.content_html);
       const slug = await ensureUniqueSlug(articleData.slug);
 
-      // Step 4: Save to database
+      // Save to database
       await prisma.blogPost.create({
         data: {
           title: articleData.title,

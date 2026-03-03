@@ -140,8 +140,9 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
             prose-headings:font-semibold prose-headings:text-gray-900
             prose-h2:text-xl prose-h2:sm:text-2xl prose-h2:mt-10 prose-h2:mb-4
             prose-h3:text-lg prose-h3:mt-8 prose-h3:mb-3
-            prose-p:text-gray-600 prose-p:leading-relaxed
-            prose-li:text-gray-600
+            prose-p:text-gray-600 prose-p:leading-relaxed prose-p:mb-5
+            prose-li:text-gray-600 prose-li:leading-relaxed
+            prose-ul:my-6 prose-ol:my-6
             prose-a:text-brand-600 prose-a:no-underline hover:prose-a:underline
             prose-strong:text-gray-900"
           dangerouslySetInnerHTML={{ __html: safeHtml }}

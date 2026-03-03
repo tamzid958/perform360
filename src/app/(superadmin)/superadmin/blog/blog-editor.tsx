@@ -57,6 +57,7 @@ export function BlogEditor({ post }: BlogEditorProps) {
   const [error, setError] = useState("");
 
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit.configure({
         heading: { levels: [2, 3] },
