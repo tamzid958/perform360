@@ -55,8 +55,6 @@ export default function IndividualReportPage() {
     window.open(`/api/reports/cycle/${cycleId}/export?userId=${userId}`, "_blank");
   }
 
-  if (loading) return <ReportSkeleton />;
-
   if (locked || reset) {
     return (
       <div>
@@ -75,6 +73,8 @@ export default function IndividualReportPage() {
       </div>
     );
   }
+
+  if (loading) return <ReportSkeleton />;
 
   if (error || !report) {
     return (

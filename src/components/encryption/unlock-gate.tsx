@@ -144,8 +144,12 @@ export function useEncryptionUnlock() {
       setLocked(true);
       return true;
     }
-    setLocked(false);
-    setReset(false);
+    // Only clear lock/reset on a genuinely successful response —
+    // non-encryption errors (500, rate-limit, etc.) should not flip the state.
+    if (json.success) {
+      setLocked(false);
+      setReset(false);
+    }
     return false;
   }, []);
 

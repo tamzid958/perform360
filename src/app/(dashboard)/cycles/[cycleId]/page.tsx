@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -235,8 +235,10 @@ export default function CycleDetailPage() {
     fetchCycle();
   }, [fetchCycle]);
 
+  const calibrationFetchingRef = useRef(false);
   const fetchCalibration = useCallback(async () => {
-    if (calibrationData || calibrationLoading) return;
+    if (calibrationData || calibrationFetchingRef.current) return;
+    calibrationFetchingRef.current = true;
     setCalibrationLoading(true);
     try {
       const res = await fetch(`/api/cycles/${cycleId}/calibration`);
@@ -246,9 +248,10 @@ export default function CycleDetailPage() {
     } catch {
       // handled by null state
     } finally {
+      calibrationFetchingRef.current = false;
       setCalibrationLoading(false);
     }
-  }, [cycleId, calibrationData, calibrationLoading, handleApiResponse]);
+  }, [cycleId, calibrationData, handleApiResponse]);
 
   useEffect(() => {
     if (activeTab === "reports") fetchReport();
