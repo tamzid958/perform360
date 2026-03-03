@@ -133,9 +133,16 @@ export default function EvaluationFormPage({ params: paramsPromise }: { params: 
   }
 
   function setAnswer(questionId: string, value: string | number | boolean) {
-    setAnswers((prev) => ({ ...prev, [questionId]: value }));
+    setAnswers((prev) => {
+      // Remove key when value is cleared so progress counter stays accurate
+      if (value === "" || value === undefined) {
+        const { [questionId]: _, ...rest } = prev;
+        return rest;
+      }
+      return { ...prev, [questionId]: value };
+    });
     // Clear error for this question as user answers it
-    if (sectionErrors.has(questionId)) {
+    if (value !== "" && value !== undefined && sectionErrors.has(questionId)) {
       setSectionErrors((prev) => {
         const next = new Set(prev);
         next.delete(questionId);
