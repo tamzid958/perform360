@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Menu, X, LogOut, Building2 } from "lucide-react";
@@ -44,9 +45,7 @@ export function MobileNav({ companyCount = 1 }: MobileNavProps) {
             {/* Logo + Close */}
             <div className="flex items-center justify-between p-4 h-16">
               <Link href="/overview" onClick={() => setOpen(false)} className="flex items-center gap-2">
-                <div className="w-8 h-8 shrink-0 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center">
-                  <span className="text-white text-[14px] font-bold">P</span>
-                </div>
+                <Image src="/logo.png" alt="Performs360" width={120} height={22} className="h-6 w-auto shrink-0" />
               </Link>
               <button onClick={() => setOpen(false)} className="p-1.5 rounded-lg hover:bg-gray-200/60 transition-colors" aria-label="Close navigation menu">
                 <X size={16} strokeWidth={1.5} className="text-gray-400" />

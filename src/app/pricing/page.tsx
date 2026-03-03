@@ -9,6 +9,55 @@ export const metadata: Metadata = {
   title: "Pricing — Free 360° Performance Reviews",
   description:
     "Performs360 is free forever. Run unlimited 360-degree performance review cycles with end-to-end encryption. No credit card required.",
+  alternates: { canonical: "/pricing" },
+};
+
+const breadcrumbJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Home", item: "https://performs360.com" },
+    { "@type": "ListItem", position: 2, name: "Pricing", item: "https://performs360.com/pricing" },
+  ],
+};
+
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: [
+    {
+      "@type": "Question",
+      name: "Is Performs360 really free?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Yes. Performs360 is free forever with no feature restrictions, no usage limits, and no credit card required. Every feature available to enterprise customers (except SSO/SAML) is included in the free plan.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "How do you make money?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "We plan to offer an Enterprise tier for organizations that need SSO/SAML, dedicated support, and custom SLAs. The core product will remain free.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Can I export my data?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Absolutely. You can export all your company data in a readable format at any time with one click. There is zero vendor lock-in.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Is my data secure?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "All evaluation data is encrypted end-to-end using AES-256-GCM with keys derived from your company's passphrase via Argon2id. Even Performs360 cannot read your data.",
+      },
+    },
+  ],
 };
 
 const freeFeatures = [
@@ -39,6 +88,14 @@ const enterpriseFeatures = [
 export default function PricingPage() {
   return (
     <div className="min-h-screen bg-white">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
       <LandingNavbar />
 
       <main className="pt-28 sm:pt-36 pb-16 sm:pb-24 px-4 sm:px-6">

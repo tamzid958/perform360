@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import {
@@ -73,12 +74,7 @@ export function Sidebar({ companyName }: SidebarProps) {
           href="/overview"
           className={cn("flex items-center gap-2", collapsed && "justify-center")}
         >
-          <div className="w-8 h-8 shrink-0 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center">
-            <span className="text-white text-[14px] font-bold">P</span>
-          </div>
-          {!collapsed && (
-            <span className="text-headline text-gray-900 dark:text-gray-100">Performs360</span>
-          )}
+          <Image src="/logo.png" alt="Performs360" width={120} height={22} className="h-6 w-auto shrink-0" />
         </Link>
         <button
           onClick={() => setCollapsed(!collapsed)}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -151,10 +152,7 @@ export default function SetupEncryptionPage() {
   return (
     <div>
       <div className="text-center mb-6">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-600 mb-3">
-          <span className="text-white text-[20px] font-bold">P</span>
-        </div>
-        <p className="text-[13px] text-gray-500">Performs360</p>
+        <Image src="/logo.png" alt="Performs360" width={160} height={30} className="h-8 w-auto mx-auto mb-3" />
       </div>
 
       <StepIndicator currentStep={step} />

@@ -3,8 +3,8 @@
 
 User-agent: *
 Allow: /
-Allow: /blog
-Allow: /guide
+Allow: /blog/
+Allow: /guide/
 Allow: /pricing
 Allow: /privacy
 Allow: /security-policy
@@ -23,6 +23,95 @@ Disallow: /select-company
 Disallow: /api/
 Disallow: /evaluate/
 Disallow: /review/
+
+# AI/LLM crawlers — allow public marketing pages only
+User-agent: GPTBot
+Allow: /blog/
+Allow: /guide/
+Allow: /pricing
+Allow: /privacy
+Allow: /security-policy
+Allow: /terms
+Disallow: /
+
+User-agent: ChatGPT-User
+Allow: /blog/
+Allow: /guide/
+Allow: /pricing
+Allow: /privacy
+Allow: /security-policy
+Allow: /terms
+Disallow: /
+
+User-agent: Google-Extended
+Allow: /blog/
+Allow: /guide/
+Allow: /pricing
+Allow: /privacy
+Allow: /security-policy
+Allow: /terms
+Disallow: /
+
+User-agent: PerplexityBot
+Allow: /blog/
+Allow: /guide/
+Allow: /pricing
+Allow: /privacy
+Allow: /security-policy
+Allow: /terms
+Disallow: /
+
+User-agent: YouBot
+Allow: /blog/
+Allow: /guide/
+Allow: /pricing
+Allow: /privacy
+Allow: /security-policy
+Allow: /terms
+Disallow: /
+
+User-agent: Applebot-Extended
+Allow: /blog/
+Allow: /guide/
+Allow: /pricing
+Allow: /privacy
+Allow: /security-policy
+Allow: /terms
+Disallow: /
+
+# Block AI training-only crawlers entirely
+User-agent: CCBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: ClaudeBot
+Disallow: /
+
+User-agent: Claude-Web
+Disallow: /
+
+User-agent: Bytespider
+Disallow: /
+
+User-agent: Cohere-ai
+Disallow: /
+
+User-agent: FacebookBot
+Disallow: /
+
+User-agent: Meta-ExternalAgent
+Disallow: /
+
+User-agent: Omgilibot
+Disallow: /
+
+User-agent: Diffbot
+Disallow: /
+
+User-agent: Amazonbot
+Disallow: /
 
 # Sitemap
 Sitemap: https://performs360.com/sitemap.xml

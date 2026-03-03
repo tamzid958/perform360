@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { Mail } from "lucide-react";
 
@@ -22,11 +23,8 @@ export function LandingFooter() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-8">
           {/* Brand column */}
           <div className="sm:col-span-2 lg:col-span-1">
-            <Link href="/" className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
-                <span className="text-[15px] font-bold text-white">P</span>
-              </div>
-              <span className="text-headline text-white">Performs360</span>
+            <Link href="/">
+              <Image src="/logo.png" alt="Performs360" width={120} height={22} className="h-6 w-auto brightness-0 invert" />
             </Link>
             <p className="text-[14px] text-gray-400 mt-4 leading-relaxed max-w-xs">
               Free 360-degree performance review platform with end-to-end

@@ -80,11 +80,25 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
       "@type": "Organization",
       name: "Performs360",
       url: "https://performs360.com",
+      logo: {
+        "@type": "ImageObject",
+        url: "https://performs360.com/logo.png",
+      },
     },
     mainEntityOfPage: {
       "@type": "WebPage",
       "@id": `https://performs360.com/blog/${post.slug}`,
     },
+  };
+
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: "https://performs360.com" },
+      { "@type": "ListItem", position: 2, name: "Blog", item: "https://performs360.com/blog" },
+      { "@type": "ListItem", position: 3, name: post.title, item: `https://performs360.com/blog/${post.slug}` },
+    ],
   };
 
   // Sanitize HTML at render time as defense-in-depth
@@ -95,6 +109,10 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
 
       <article className="max-w-3xl mx-auto px-4 sm:px-6 py-12 sm:py-16">

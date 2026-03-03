@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -47,13 +48,8 @@ export function LandingNavbar() {
     >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center">
-            <span className="text-white text-[16px] font-bold leading-none">
-              P
-            </span>
-          </div>
-          <span className="text-headline text-gray-900">Performs360</span>
+        <Link href="/">
+          <Image src="/logo.png" alt="Performs360" width={120} height={22} className="h-6 w-auto" />
         </Link>
 
         {/* Center Nav Links — hidden on mobile */}

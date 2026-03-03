@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import { Shield, BarChart3, Users, Zap } from "lucide-react";
 import { auth } from "@/lib/auth";
@@ -82,13 +83,8 @@ export default async function AuthLayout({
 
         {/* Logo */}
         <div className="relative z-10">
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center shadow-lg shadow-brand-500/25">
-              <span className="text-white text-[18px] font-bold">P</span>
-            </div>
-            <span className="text-[20px] font-semibold tracking-tight text-gray-900 group-hover:text-gray-700 transition-colors">
-              Performs360
-            </span>
+          <Link href="/">
+            <Image src="/logo.png" alt="Performs360" width={160} height={30} className="h-8 w-auto" />
           </Link>
         </div>
 

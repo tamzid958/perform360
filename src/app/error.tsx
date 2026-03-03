@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -19,11 +20,8 @@ export default function Error({
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
       {/* Logo */}
-      <Link href="/" className="flex items-center gap-2.5 mb-10">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center">
-          <span className="text-white text-[16px] font-bold leading-none">P</span>
-        </div>
-        <span className="text-headline text-gray-900">Performs360</span>
+      <Link href="/" className="mb-10">
+        <Image src="/logo.png" alt="Performs360" width={140} height={26} className="h-7 w-auto" />
       </Link>
 
       <div className="w-full max-w-[420px] text-center space-y-6">

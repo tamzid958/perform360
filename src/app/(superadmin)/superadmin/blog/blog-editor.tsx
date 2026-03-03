@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -21,6 +21,9 @@ import {
   Loader2,
   ArrowLeft,
   Save,
+  ChevronDown,
+  FileText,
+  Globe,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -55,6 +58,28 @@ export function BlogEditor({ post }: BlogEditorProps) {
   const [status, setStatus] = useState<"DRAFT" | "PUBLISHED">(post?.status ?? "DRAFT");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [statusOpen, setStatusOpen] = useState(false);
+  const statusRef = useRef<HTMLDivElement>(null);
+
+  const closeStatus = useCallback(() => setStatusOpen(false), []);
+
+  useEffect(() => {
+    if (!statusOpen) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (statusRef.current && !statusRef.current.contains(e.target as Node)) {
+        closeStatus();
+      }
+    }
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key === "Escape") closeStatus();
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [statusOpen, closeStatus]);
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -169,14 +194,57 @@ export function BlogEditor({ post }: BlogEditorProps) {
           </h1>
         </div>
         <div className="flex items-center gap-2">
-          <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value as "DRAFT" | "PUBLISHED")}
-            className="h-9 px-3 rounded-lg bg-white border border-gray-200 text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-500/40"
-          >
-            <option value="DRAFT">Draft</option>
-            <option value="PUBLISHED">Published</option>
-          </select>
+          <div className="relative" ref={statusRef}>
+            <button
+              type="button"
+              onClick={() => setStatusOpen((o) => !o)}
+              aria-haspopup="listbox"
+              aria-expanded={statusOpen}
+              className={`inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border text-[13px] font-medium transition-all focus:outline-none focus:ring-2 focus:ring-brand-500/40 ${
+                status === "PUBLISHED"
+                  ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+                  : "bg-amber-50 border-amber-200 text-amber-700"
+              }`}
+            >
+              {status === "PUBLISHED" ? (
+                <Globe size={14} strokeWidth={1.5} />
+              ) : (
+                <FileText size={14} strokeWidth={1.5} />
+              )}
+              {status === "PUBLISHED" ? "Published" : "Draft"}
+              <ChevronDown size={14} strokeWidth={1.5} className={`transition-transform duration-200 ${statusOpen ? "rotate-180" : ""}`} />
+            </button>
+            <div
+              role="listbox"
+              aria-label="Post status"
+              className={`absolute right-0 top-full mt-1 w-40 bg-white rounded-lg border border-gray-200 shadow-lg py-1 z-20 transition-all duration-150 origin-top-right ${
+                statusOpen
+                  ? "opacity-100 scale-100"
+                  : "opacity-0 scale-95 pointer-events-none"
+              }`}
+            >
+              <button
+                type="button"
+                role="option"
+                aria-selected={status === "DRAFT"}
+                onClick={() => { setStatus("DRAFT"); setStatusOpen(false); }}
+                className={`w-full flex items-center gap-2 px-3 py-2 text-[13px] text-left transition-colors hover:bg-gray-50 ${status === "DRAFT" ? "text-amber-700 font-medium bg-amber-50/50" : "text-gray-600"}`}
+              >
+                <FileText size={14} strokeWidth={1.5} />
+                Draft
+              </button>
+              <button
+                type="button"
+                role="option"
+                aria-selected={status === "PUBLISHED"}
+                onClick={() => { setStatus("PUBLISHED"); setStatusOpen(false); }}
+                className={`w-full flex items-center gap-2 px-3 py-2 text-[13px] text-left transition-colors hover:bg-gray-50 ${status === "PUBLISHED" ? "text-emerald-700 font-medium bg-emerald-50/50" : "text-gray-600"}`}
+              >
+                <Globe size={14} strokeWidth={1.5} />
+                Published
+              </button>
+            </div>
+          </div>
           <Button onClick={handleSave} disabled={saving || !title.trim()}>
             {saving ? (
               <Loader2 size={16} className="mr-1.5 animate-spin" />
@@ -312,8 +380,8 @@ export function BlogEditor({ post }: BlogEditorProps) {
                   placeholder="Brief summary for card display"
                   value={excerpt}
                   onChange={(e) => setExcerpt(e.target.value)}
-                  rows={3}
-                  className="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 text-[14px] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500 transition-all resize-none"
+                  rows={5}
+                  className="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 text-[14px] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500 transition-all resize-y"
                 />
               </div>
             </div>
@@ -344,12 +412,19 @@ export function BlogEditor({ post }: BlogEditorProps) {
                   placeholder="SEO description (150-160 chars)"
                   value={metaDescription}
                   onChange={(e) => setMetaDescription(e.target.value)}
-                  rows={2}
+                  rows={4}
                   maxLength={160}
-                  className="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 text-[14px] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500 transition-all resize-none"
+                  className="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 text-[14px] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500 transition-all resize-y"
                 />
-                <p className="text-[11px] text-gray-400 mt-1">
+                <p className={`text-[11px] mt-1 transition-colors ${
+                  metaDescription.length >= 155
+                    ? "text-red-500"
+                    : metaDescription.length >= 140
+                      ? "text-amber-500"
+                      : "text-gray-400"
+                }`}>
                   {metaDescription.length}/160
+                  {metaDescription.length >= 150 && metaDescription.length < 160 && " — ideal length"}
                 </p>
               </div>
               <Input
@@ -371,8 +446,8 @@ export function BlogEditor({ post }: BlogEditorProps) {
                   placeholder="Comma-separated keywords"
                   value={keywordsInput}
                   onChange={(e) => setKeywordsInput(e.target.value)}
-                  rows={2}
-                  className="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 text-[14px] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500 transition-all resize-none"
+                  rows={4}
+                  className="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 text-[14px] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500 transition-all resize-y"
                 />
               </div>
             </div>

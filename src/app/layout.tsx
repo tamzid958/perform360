@@ -65,8 +65,8 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: "/logo.svg",
-    apple: "/logo.svg",
+    icon: "/logo.png",
+    apple: "/logo.png",
   },
   alternates: {
     canonical: BASE_URL,
@@ -98,24 +98,77 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               "@context": "https://schema.org",
-              "@type": "SoftwareApplication",
-              name: "Performs360",
-              url: BASE_URL,
-              applicationCategory: "BusinessApplication",
-              operatingSystem: "Web",
-              description:
-                "Free 360-degree performance review platform with end-to-end encryption. Collect multi-rater feedback from managers, peers, and direct reports.",
-              offers: {
-                "@type": "Offer",
-                price: "0",
-                priceCurrency: "USD",
-              },
-              creator: {
-                "@type": "Organization",
-                name: "Performs360",
-                url: BASE_URL,
-                email: "support@performs360.com",
-              },
+              "@graph": [
+                {
+                  "@type": "Organization",
+                  "@id": `${BASE_URL}/#organization`,
+                  name: "Performs360",
+                  url: BASE_URL,
+                  logo: {
+                    "@type": "ImageObject",
+                    url: `${BASE_URL}/logo.png`,
+                  },
+                  email: "support@performs360.com",
+                  description:
+                    "Free 360-degree performance review platform with end-to-end encryption.",
+                },
+                {
+                  "@type": "WebSite",
+                  "@id": `${BASE_URL}/#website`,
+                  url: BASE_URL,
+                  name: "Performs360",
+                  publisher: { "@id": `${BASE_URL}/#organization` },
+                  inLanguage: "en-US",
+                },
+                {
+                  "@type": "SoftwareApplication",
+                  "@id": `${BASE_URL}/#software`,
+                  name: "Performs360",
+                  url: BASE_URL,
+                  applicationCategory: "BusinessApplication",
+                  operatingSystem: "Web",
+                  description:
+                    "Free 360-degree performance review platform with end-to-end encryption. Collect multi-rater feedback from managers, peers, and direct reports.",
+                  offers: {
+                    "@type": "Offer",
+                    price: "0",
+                    priceCurrency: "USD",
+                  },
+                  creator: { "@id": `${BASE_URL}/#organization` },
+                },
+                {
+                  "@type": "SiteNavigationElement",
+                  "@id": `${BASE_URL}/#navigation`,
+                  name: "Main Navigation",
+                  hasPart: [
+                    {
+                      "@type": "WebPage",
+                      name: "Pricing",
+                      url: `${BASE_URL}/pricing`,
+                    },
+                    {
+                      "@type": "WebPage",
+                      name: "Guide",
+                      url: `${BASE_URL}/guide`,
+                    },
+                    {
+                      "@type": "WebPage",
+                      name: "Blog",
+                      url: `${BASE_URL}/blog`,
+                    },
+                    {
+                      "@type": "WebPage",
+                      name: "Login",
+                      url: `${BASE_URL}/login`,
+                    },
+                    {
+                      "@type": "WebPage",
+                      name: "Get Started",
+                      url: `${BASE_URL}/register`,
+                    },
+                  ],
+                },
+              ],
             }),
           }}
         />

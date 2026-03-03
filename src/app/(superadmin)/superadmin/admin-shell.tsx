@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
@@ -22,10 +23,7 @@ export function SuperAdminShell({ children }: { children: React.ReactNode }) {
       <header className="bg-gray-900 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center">
-              <span className="text-[12px] font-bold">P</span>
-            </div>
-            <span className="text-[15px] font-semibold">Performs360</span>
+            <Image src="/logo.png" alt="Performs360" width={100} height={19} className="h-5 w-auto brightness-0 invert" />
             <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[11px] font-medium">
               Super Admin
             </span>

@@ -75,9 +75,7 @@ export default function SelectCompanyPage() {
   return (
     <div className="space-y-6">
       <div className="text-center space-y-2">
-        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center mx-auto">
-          <span className="text-white text-[20px] font-bold">P</span>
-        </div>
+        <Image src="/logo.png" alt="Performs360" width={160} height={30} className="h-8 w-auto mx-auto" />
         <h1 className="text-[22px] font-semibold text-gray-900">
           Select a company
         </h1>

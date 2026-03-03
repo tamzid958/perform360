@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { signIn } from "next-auth/react";
+import Image from "next/image";
 import Link from "next/link";
 import Script from "next/script";
 import { ArrowRight, Building2, Loader2, User, Mail, Clock } from "lucide-react";
@@ -91,13 +92,8 @@ export default function RegisterPage() {
         />
       )}
       {/* Mobile-only logo */}
-      <div className="flex items-center justify-center gap-3 lg:hidden">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center">
-          <span className="text-white text-[18px] font-bold">P</span>
-        </div>
-        <span className="text-[20px] font-semibold tracking-tight text-gray-900">
-          Performs360
-        </span>
+      <div className="flex items-center justify-center lg:hidden">
+        <Image src="/logo.png" alt="Performs360" width={140} height={26} className="h-7 w-auto" />
       </div>
 
       <div className="text-center lg:text-left">

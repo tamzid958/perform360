@@ -16,11 +16,21 @@ export const metadata: Metadata = {
       "Expert articles on 360-degree feedback, performance reviews, employee engagement, and team productivity.",
     type: "website",
   },
+  alternates: { canonical: "/blog" },
 };
 
 interface BlogPageProps {
   searchParams: Promise<{ page?: string }>;
 }
+
+const breadcrumbJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Home", item: "https://performs360.com" },
+    { "@type": "ListItem", position: 2, name: "Blog", item: "https://performs360.com/blog" },
+  ],
+};
 
 export default async function BlogPage({ searchParams }: BlogPageProps) {
   const params = await searchParams;
@@ -48,6 +58,10 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       {/* Header */}
       <div className="text-center mb-12">
         <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">
