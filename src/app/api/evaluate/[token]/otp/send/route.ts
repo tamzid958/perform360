@@ -68,6 +68,24 @@ export async function POST(
       );
     }
 
+    // Check if reviewer already has a valid (verified, non-expired) session
+    const existingSession = await prisma.otpSession.findFirst({
+      where: {
+        email: reviewer.email,
+        verifiedAt: { not: null },
+        sessionExpiry: { gt: new Date() },
+        sessionToken: { not: null },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    if (existingSession) {
+      return NextResponse.json<ApiResponse<{ sent: false; alreadyVerified: true }>>({
+        success: true,
+        data: { sent: false, alreadyVerified: true },
+      });
+    }
+
     // Rate limit: max 5 sends per email per hour
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
     const recentSendCount = await prisma.otpSession.count({

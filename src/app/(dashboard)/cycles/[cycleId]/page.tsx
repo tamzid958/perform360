@@ -314,14 +314,13 @@ export default function CycleDetailPage() {
         ) / cycleReport.individualSummaries.length
       : 0;
 
-  // Resolve which subjects belong to which team for report filtering
+  // Resolve which subjects belong to which team(s) for report filtering
   const subjectTeamMap = useMemo(() => {
-    const map = new Map<string, string>();
+    const map = new Map<string, Set<string>>();
     for (const a of assignments) {
-      // Map subject to their team (first occurrence wins)
-      if (!map.has(a.subjectId)) {
-        map.set(a.subjectId, a.teamId);
-      }
+      const teams = map.get(a.subjectId) ?? new Set<string>();
+      teams.add(a.teamId);
+      map.set(a.subjectId, teams);
     }
     return map;
   }, [assignments]);
@@ -330,7 +329,7 @@ export default function CycleDetailPage() {
     if (!cycleReport) return [];
     if (reportTeamFilter === "all") return cycleReport.individualSummaries;
     return cycleReport.individualSummaries.filter(
-      (s) => subjectTeamMap.get(s.subjectId) === reportTeamFilter
+      (s) => subjectTeamMap.get(s.subjectId)?.has(reportTeamFilter)
     );
   }, [cycleReport, reportTeamFilter, subjectTeamMap]);
 

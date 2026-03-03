@@ -43,6 +43,8 @@ export default function EvaluationFormPage({ params: paramsPromise }: { params: 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [sectionErrors, setSectionErrors] = useState<Set<string>>(new Set());
+  const [showValidation, setShowValidation] = useState(false);
   const [remainingEvals, setRemainingEvals] = useState<
     Array<{ token: string; subjectName: string; cycleName: string; relationship: string }>
   >([]);
@@ -132,6 +134,62 @@ export default function EvaluationFormPage({ params: paramsPromise }: { params: 
 
   function setAnswer(questionId: string, value: string | number | boolean) {
     setAnswers((prev) => ({ ...prev, [questionId]: value }));
+    // Clear error for this question as user answers it
+    if (sectionErrors.has(questionId)) {
+      setSectionErrors((prev) => {
+        const next = new Set(prev);
+        next.delete(questionId);
+        return next;
+      });
+    }
+  }
+
+  function validateSection(sectionIndex: number): boolean {
+    const s = sections[sectionIndex];
+    const unanswered = s.questions
+      .filter((q) => q.required && (answers[q.id] === undefined || answers[q.id] === ""))
+      .map((q) => q.id);
+
+    if (unanswered.length > 0) {
+      setSectionErrors(new Set(unanswered));
+      setShowValidation(true);
+      return false;
+    }
+    setSectionErrors(new Set());
+    setShowValidation(false);
+    return true;
+  }
+
+  function validateAllSections(): { valid: boolean; firstInvalidSection: number } {
+    const allMissing: string[] = [];
+    let firstInvalid = -1;
+
+    for (let i = 0; i < sections.length; i++) {
+      const s = sections[i];
+      const unanswered = s.questions
+        .filter((q) => q.required && (answers[q.id] === undefined || answers[q.id] === ""))
+        .map((q) => q.id);
+      if (unanswered.length > 0 && firstInvalid === -1) {
+        firstInvalid = i;
+      }
+      allMissing.push(...unanswered);
+    }
+
+    if (allMissing.length > 0) {
+      // Navigate to first incomplete section and show its errors
+      const sectionQuestionIds = new Set(
+        sections[firstInvalid].questions
+          .filter((q) => q.required && (answers[q.id] === undefined || answers[q.id] === ""))
+          .map((q) => q.id)
+      );
+      setSectionErrors(sectionQuestionIds);
+      setShowValidation(true);
+      return { valid: false, firstInvalidSection: firstInvalid };
+    }
+
+    setSectionErrors(new Set());
+    setShowValidation(false);
+    return { valid: true, firstInvalidSection: -1 };
   }
 
   async function handleSubmit() {
@@ -148,6 +206,13 @@ export default function EvaluationFormPage({ params: paramsPromise }: { params: 
         setRemainingEvals(data.data?.remaining ?? []);
         setIsSubmitted(true);
       } else {
+        // If server says required fields missing, trigger client-side validation UI
+        if (data.code === "MISSING_REQUIRED") {
+          const result = validateAllSections();
+          if (!result.valid && result.firstInvalidSection !== currentSection) {
+            setCurrentSection(result.firstInvalidSection);
+          }
+        }
         setSubmitError(data.error || "Failed to submit evaluation");
       }
     } catch {
@@ -253,7 +318,7 @@ export default function EvaluationFormPage({ params: paramsPromise }: { params: 
       <main className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {/* Section Stepper */}
         <nav className="mb-8">
-          <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-none">
+          <div className="flex items-center justify-center gap-0">
             {sections.map((s, i) => {
               const complete = isSectionComplete(i);
               const active = i === currentSection;
@@ -261,40 +326,49 @@ export default function EvaluationFormPage({ params: paramsPromise }: { params: 
               const total = s.questions.length;
 
               return (
-                <button
-                  key={i}
-                  onClick={() => setCurrentSection(i)}
-                  className={`
-                    flex items-center gap-2 flex-shrink-0 pl-2 pr-3.5 py-2 rounded-full text-[13px] font-medium
-                    transition-all duration-200
-                    ${active
-                      ? "bg-brand-500 text-white shadow-sm"
-                      : complete
-                        ? "bg-green-50 text-green-700 hover:bg-green-100"
-                        : "bg-white text-gray-500 hover:bg-gray-50 border border-gray-200/60"
-                    }
-                  `}
-                >
-                  <span
+                <div key={i} className="flex items-center">
+                  {/* Connector line before (except first) */}
+                  {i > 0 && (
+                    <div
+                      className={`h-[2px] w-6 sm:w-10 transition-colors duration-200 ${
+                        isSectionComplete(i - 1) ? "bg-green-400" : "bg-gray-200"
+                      }`}
+                    />
+                  )}
+                  {/* Step dot */}
+                  <button
+                    onClick={() => { setSectionErrors(new Set()); setShowValidation(false); setCurrentSection(i); }}
                     className={`
-                      w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-semibold flex-shrink-0
+                      relative flex items-center justify-center rounded-full transition-all duration-200
                       ${active
-                        ? "bg-white/20 text-white"
+                        ? "w-9 h-9 bg-brand-500 text-white shadow-md ring-4 ring-brand-500/15"
                         : complete
-                          ? "bg-green-500 text-white"
-                          : "bg-gray-100 text-gray-400"
+                          ? "w-7 h-7 bg-green-500 text-white hover:ring-4 hover:ring-green-500/15"
+                          : answered > 0
+                            ? "w-7 h-7 bg-white text-gray-500 border-2 border-brand-300 hover:border-brand-400"
+                            : "w-7 h-7 bg-white text-gray-400 border-2 border-gray-200 hover:border-gray-300"
                       }
                     `}
+                    title={`${s.title} (${answered}/${total})`}
                   >
-                    {complete && !active ? <Check size={11} strokeWidth={2.5} /> : i + 1}
-                  </span>
-                  <span className="truncate max-w-[120px]">{s.title}</span>
-                  {!active && !complete && answered > 0 && (
-                    <span className="text-[11px] opacity-60">{answered}/{total}</span>
-                  )}
-                </button>
+                    {complete ? (
+                      <Check size={active ? 15 : 13} strokeWidth={2.5} />
+                    ) : (
+                      <span className={`font-semibold ${active ? "text-[14px]" : "text-[12px]"}`}>
+                        {i + 1}
+                      </span>
+                    )}
+                  </button>
+                </div>
               );
             })}
+          </div>
+          {/* Active section label */}
+          <div className="text-center mt-3">
+            <p className="text-[14px] font-medium text-gray-800">{section.title}</p>
+            <p className="text-[12px] text-gray-400 mt-0.5">
+              {getSectionAnsweredCount(currentSection)}/{section.questions.length} answered
+            </p>
           </div>
         </nav>
 
@@ -314,13 +388,27 @@ export default function EvaluationFormPage({ params: paramsPromise }: { params: 
             </div>
           </CardHeader>
 
+          {/* Validation Banner */}
+          {showValidation && sectionErrors.size > 0 && (
+            <div className="mb-6 flex items-center gap-2.5 px-4 py-3 bg-red-50 border border-red-200 rounded-xl">
+              <AlertCircle size={16} strokeWidth={1.5} className="text-red-500 flex-shrink-0" />
+              <p className="text-[13px] text-red-600">
+                Please answer {sectionErrors.size} required {sectionErrors.size === 1 ? "question" : "questions"} before continuing
+              </p>
+            </div>
+          )}
+
           <div className="space-y-10">
             {section.questions.map((q, qIdx) => {
               const questionNumber = currentQuestionOffset + qIdx + 1;
               const isAnswered = answers[q.id] !== undefined;
+              const hasError = showValidation && sectionErrors.has(q.id);
+              const questionClasses = hasError
+                ? "relative rounded-xl ring-2 ring-red-300 bg-red-50/30 p-4 -m-4"
+                : "relative";
 
               return (
-                <div key={q.id} className="relative">
+                <div key={q.id} className={questionClasses}>
                   {/* Question Number & Label */}
                   <div className="flex items-start gap-3 mb-4">
                     <span
@@ -435,6 +523,11 @@ export default function EvaluationFormPage({ params: paramsPromise }: { params: 
                       })}
                     </div>
                   )}
+
+                  {/* Inline Validation Error */}
+                  {hasError && (
+                    <p className="pl-10 mt-2 text-[13px] text-red-500">This question is required</p>
+                  )}
                 </div>
               );
             })}
@@ -453,7 +546,7 @@ export default function EvaluationFormPage({ params: paramsPromise }: { params: 
         <div className="flex items-center justify-between mt-6 pb-8">
           <Button
             variant="ghost"
-            onClick={() => setCurrentSection(Math.max(0, currentSection - 1))}
+            onClick={() => { setSectionErrors(new Set()); setShowValidation(false); setCurrentSection(Math.max(0, currentSection - 1)); }}
             disabled={currentSection === 0}
           >
             <ChevronLeft size={16} strokeWidth={1.5} className="mr-1" />
@@ -465,12 +558,25 @@ export default function EvaluationFormPage({ params: paramsPromise }: { params: 
           </span>
 
           {currentSection < sections.length - 1 ? (
-            <Button onClick={() => setCurrentSection(currentSection + 1)}>
+            <Button onClick={() => {
+              if (validateSection(currentSection)) {
+                setCurrentSection(currentSection + 1);
+              }
+            }}>
               Next
               <ChevronRight size={16} strokeWidth={1.5} className="ml-1" />
             </Button>
           ) : (
-            <Button onClick={handleSubmit} disabled={isSubmitting}>
+            <Button onClick={() => {
+              const result = validateAllSections();
+              if (!result.valid) {
+                if (result.firstInvalidSection !== currentSection) {
+                  setCurrentSection(result.firstInvalidSection);
+                }
+                return;
+              }
+              handleSubmit();
+            }} disabled={isSubmitting}>
               {isSubmitting ? (
                 <Loader2 size={16} strokeWidth={1.5} className="mr-1.5 animate-spin" />
               ) : (

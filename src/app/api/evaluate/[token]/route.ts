@@ -158,21 +158,27 @@ export async function POST(
     }
 
     const sections = template.sections as Array<{
-      questions: Array<{ id: string; required: boolean }>;
+      title: string;
+      questions: Array<{ id: string; text: string; required: boolean }>;
     }>;
-    const requiredIds = sections
-      .flatMap((s) => s.questions)
-      .filter((q) => q.required)
-      .map((q) => q.id);
+    const allQuestions = sections.flatMap((s) =>
+      s.questions.map((q) => ({ ...q, sectionTitle: s.title }))
+    );
+    const requiredQuestions = allQuestions.filter((q) => q.required);
 
-    const missing = requiredIds.filter(
-      (id) => answers[id] === undefined || answers[id] === ""
+    const missing = requiredQuestions.filter(
+      (q) => answers[q.id] === undefined || answers[q.id] === ""
     );
     if (missing.length > 0) {
+      const missingLabels = missing
+        .slice(0, 5)
+        .map((q) => `"${q.text}"`)
+        .join(", ");
+      const extra = missing.length > 5 ? ` and ${missing.length - 5} more` : "";
       return NextResponse.json<ApiResponse<never>>(
         {
           success: false,
-          error: `Missing required answers: ${missing.join(", ")}`,
+          error: `Please answer ${missing.length} required ${missing.length === 1 ? "question" : "questions"}: ${missingLabels}${extra}`,
           code: "MISSING_REQUIRED",
         },
         { status: 400 }

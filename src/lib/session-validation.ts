@@ -49,17 +49,49 @@ export async function validateEvaluationSession(
 
   // Direct assignment session
   if (otpSession.assignmentId && otpSession.assignment) {
-    if (otpSession.assignment.token !== assignmentToken) {
+    if (otpSession.assignment.token === assignmentToken) {
       return {
-        ok: false,
-        status: 403,
-        error: "Session does not match this evaluation",
-        code: "SESSION_MISMATCH",
+        ok: true,
+        session: { type: "direct", assignment: otpSession.assignment },
       };
     }
+
+    // Session was created for a different assignment — check if it belongs
+    // to the same reviewer (by email) so one OTP covers all their evaluations
+    const requestedAssignment = await prisma.evaluationAssignment.findUnique({
+      where: { token: assignmentToken },
+      include: {
+        cycle: { select: { status: true, companyId: true } },
+      },
+    });
+
+    if (!requestedAssignment) {
+      return {
+        ok: false,
+        status: 404,
+        error: "Invalid evaluation link",
+        code: "INVALID_TOKEN",
+      };
+    }
+
+    // Look up the reviewer email for the requested assignment
+    const reviewer = await prisma.user.findFirst({
+      where: { id: requestedAssignment.reviewerId },
+      select: { email: true },
+    });
+
+    if (reviewer && reviewer.email === otpSession.email) {
+      return {
+        ok: true,
+        session: { type: "direct", assignment: requestedAssignment },
+      };
+    }
+
     return {
-      ok: true,
-      session: { type: "direct", assignment: otpSession.assignment },
+      ok: false,
+      status: 403,
+      error: "Session does not match this evaluation",
+      code: "SESSION_MISMATCH",
     };
   }
 

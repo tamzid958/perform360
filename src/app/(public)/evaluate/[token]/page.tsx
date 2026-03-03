@@ -70,14 +70,27 @@ export default function EvaluateOTPPage({ params: paramsPromise }: { params: Pro
     validate();
   }, [params.token]);
 
-  // Auto-send OTP once token is validated
+  // Check for existing valid session, then auto-send OTP if needed
   const hasSentRef = useRef(false);
   useEffect(() => {
-    if (tokenData && !hasSentRef.current) {
-      hasSentRef.current = true;
+    if (!tokenData || hasSentRef.current) return;
+    hasSentRef.current = true;
+
+    // Try loading the form — if the session cookie is still valid, skip OTP
+    async function checkSessionAndSend() {
+      try {
+        const res = await fetch(`/api/evaluate/${params.token}/form`);
+        if (res.ok) {
+          router.push(`/evaluate/${params.token}/form`);
+          return;
+        }
+      } catch {
+        // No valid session — proceed to OTP
+      }
       sendOTP();
     }
-  }, [tokenData, sendOTP]);
+    checkSessionAndSend();
+  }, [tokenData, sendOTP, params.token, router]);
 
   function handleChange(index: number, value: string) {
     if (!/^\d*$/.test(value)) return;
@@ -253,7 +266,7 @@ export default function EvaluateOTPPage({ params: paramsPromise }: { params: Pro
         </Card>
 
         <p className="text-center text-[12px] text-gray-400">
-          This code expires in 10 minutes. Session valid for 2 hours after verification.
+          This code expires in 10 minutes. Session valid for 4 hours after verification.
         </p>
       </div>
     </div>
