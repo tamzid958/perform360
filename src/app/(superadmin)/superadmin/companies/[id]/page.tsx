@@ -16,6 +16,7 @@ import {
 import { formatDate } from "@/lib/utils";
 import Link from "next/link";
 import { ResetEncryptionButton } from "./reset-encryption-button";
+import { PaginatedTeams, PaginatedCycles } from "./paginated-sections";
 const CUID_REGEX = /^c[a-z0-9]{20,28}$/;
 
 const ROLE_COLORS: Record<string, string> = {
@@ -23,13 +24,6 @@ const ROLE_COLORS: Record<string, string> = {
   HR: "bg-purple-50 text-purple-700",
   EMPLOYEE: "bg-gray-50 text-gray-700",
   EXTERNAL: "bg-orange-50 text-orange-700",
-};
-
-const CYCLE_STATUS_VARIANT: Record<string, "default" | "success" | "info" | "outline"> = {
-  DRAFT: "default",
-  ACTIVE: "success",
-  CLOSED: "info",
-  ARCHIVED: "outline",
 };
 
 async function getCompanyAnalytics(companyId: string) {
@@ -234,7 +228,7 @@ export default async function CompanyAnalyticsPage({
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left column — 2/3 */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 flex flex-col gap-6">
           {/* User Role Distribution */}
           <Card>
             <CardHeader>
@@ -271,70 +265,17 @@ export default async function CompanyAnalyticsPage({
           </Card>
 
           {/* Cycles */}
-          <Card padding="sm">
+          <Card padding="sm" className="flex-1 flex flex-col">
             <CardHeader>
               <CardTitle>Evaluation Cycles</CardTitle>
               <CardDescription>{cycles.length} total cycles</CardDescription>
             </CardHeader>
-            {cycles.length === 0 ? (
-              <p className="text-[14px] text-gray-400 text-center py-6 px-4">No cycles created yet</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-100">
-                      <th className="text-left text-[12px] font-medium text-gray-400 uppercase tracking-wider px-4 py-3">
-                        Cycle
-                      </th>
-                      <th className="text-left text-[12px] font-medium text-gray-400 uppercase tracking-wider px-4 py-3">
-                        Status
-                      </th>
-                      <th className="text-left text-[12px] font-medium text-gray-400 uppercase tracking-wider px-4 py-3">
-                        Date Range
-                      </th>
-                      <th className="text-left text-[12px] font-medium text-gray-400 uppercase tracking-wider px-4 py-3">
-                        Progress
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {cycles.map((cycle) => {
-                      const pct = cycle.assignmentCount > 0
-                        ? Math.round((cycle.submittedCount / cycle.assignmentCount) * 100)
-                        : 0;
-                      return (
-                        <tr key={cycle.id} className="hover:bg-gray-50/50 transition-colors">
-                          <td className="px-4 py-3">
-                            <p className="text-[14px] font-medium text-gray-900">{cycle.name}</p>
-                          </td>
-                          <td className="px-4 py-3">
-                            <Badge variant={CYCLE_STATUS_VARIANT[cycle.status] ?? "default"}>
-                              {cycle.status}
-                            </Badge>
-                          </td>
-                          <td className="px-4 py-3 text-[13px] text-gray-500">
-                            {formatDate(cycle.startDate)} &mdash; {formatDate(cycle.endDate)}
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-2">
-                              <Progress value={pct} className="w-20" />
-                              <span className="text-[12px] text-gray-500">
-                                {cycle.submittedCount}/{cycle.assignmentCount}
-                              </span>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
+            <PaginatedCycles cycles={cycles} />
           </Card>
         </div>
 
         {/* Right column — 1/3 */}
-        <div className="space-y-6">
+        <div className="flex flex-col gap-6">
           {/* Completion Overview */}
           <Card>
             <CardHeader>
@@ -352,26 +293,12 @@ export default async function CompanyAnalyticsPage({
           </Card>
 
           {/* Teams */}
-          <Card>
+          <Card className="flex-1 flex flex-col">
             <CardHeader>
               <CardTitle>Teams</CardTitle>
               <CardDescription>{teams.length} total</CardDescription>
             </CardHeader>
-            {teams.length === 0 ? (
-              <p className="text-[14px] text-gray-400 text-center py-4">No teams yet</p>
-            ) : (
-              <div className="divide-y divide-gray-50">
-                {teams.map((team) => (
-                  <div key={team.id} className="flex items-center justify-between py-2.5">
-                    <p className="text-[14px] font-medium text-gray-900">{team.name}</p>
-                    <div className="flex items-center gap-1.5 text-[13px] text-gray-400">
-                      <Users size={14} strokeWidth={1.5} />
-                      {team.memberCount}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            <PaginatedTeams teams={teams} />
           </Card>
         </div>
       </div>
