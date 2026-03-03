@@ -74,13 +74,15 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
               href={`/blog/${post.slug}`}
               className="group rounded-2xl border border-gray-200 bg-white p-6 hover:shadow-lg hover:border-gray-300 transition-all"
             >
-              <div className="flex items-center gap-2 mb-3">
-                {post.primaryKeyword && (
-                  <span className="text-[11px] font-medium text-brand-600 bg-brand-50 px-2 py-0.5 rounded-full">
+              <div className="flex items-center justify-between gap-2 mb-3 min-w-0">
+                {post.primaryKeyword ? (
+                  <span className="text-[11px] font-medium text-brand-600 bg-brand-50 px-2 py-0.5 rounded-full truncate min-w-0">
                     {post.primaryKeyword}
                   </span>
+                ) : (
+                  <span />
                 )}
-                <span className="text-[12px] text-gray-400">
+                <span className="text-[12px] text-gray-400 flex-shrink-0">
                   {post.publishedAt ? formatDate(post.publishedAt.toISOString()) : ""}
                 </span>
               </div>
