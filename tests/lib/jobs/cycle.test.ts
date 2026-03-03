@@ -36,6 +36,7 @@ describe("handleCycleActivate", () => {
       cycleId: "cycle-1",
       companyId: "co-1",
       userId: "admin-1",
+      cachedDataKeyEncrypted: "encrypted-key-1",
     });
 
     expect(prisma.cycleReviewerLink.upsert).toHaveBeenCalledTimes(1);
@@ -72,7 +73,7 @@ describe("handleCycleActivate", () => {
     ] as any);
     vi.mocked(prisma.cycleReviewerLink.upsert).mockResolvedValue({ token: "t" } as any);
 
-    await handleCycleActivate({ cycleId: "c1", companyId: "co-1", userId: "u1" });
+    await handleCycleActivate({ cycleId: "c1", companyId: "co-1", userId: "u1", cachedDataKeyEncrypted: "encrypted-key-1" });
 
     // Links still created, but no emails enqueued
     expect(prisma.cycleReviewerLink.upsert).toHaveBeenCalled();
@@ -84,7 +85,7 @@ describe("handleCycleActivate", () => {
     vi.mocked(prisma.company.findUnique).mockResolvedValue({ settings: null } as any);
     vi.mocked(prisma.evaluationAssignment.findMany).mockResolvedValue([]);
 
-    await handleCycleActivate({ cycleId: "c1", companyId: "co-1", userId: "u1" });
+    await handleCycleActivate({ cycleId: "c1", companyId: "co-1", userId: "u1", cachedDataKeyEncrypted: "encrypted-key-1" });
 
     expect(prisma.user.findMany).not.toHaveBeenCalled();
     expect(enqueueBatch).not.toHaveBeenCalled();
@@ -95,7 +96,7 @@ describe("handleCycleActivate", () => {
     vi.mocked(prisma.company.findUnique).mockResolvedValue({ settings: null } as any);
 
     await expect(
-      handleCycleActivate({ cycleId: "bad-id", companyId: "co-1", userId: "u1" })
+      handleCycleActivate({ cycleId: "bad-id", companyId: "co-1", userId: "u1", cachedDataKeyEncrypted: "encrypted-key-1" })
     ).rejects.toThrow("Cycle not found");
   });
 });
