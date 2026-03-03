@@ -74,7 +74,11 @@ export function Sidebar({ companyName }: SidebarProps) {
           href="/overview"
           className={cn("flex items-center gap-2", collapsed && "justify-center")}
         >
-          <Image src="/logo.png" alt="Performs360" width={120} height={22} className="h-6 w-auto shrink-0" />
+          {collapsed ? (
+            <span className="text-lg font-bold text-gray-700 dark:text-gray-200">P</span>
+          ) : (
+            <Image src="/logo.png" alt="Performs360" width={120} height={22} className="h-6 w-auto shrink-0" />
+          )}
         </Link>
         <button
           onClick={() => setCollapsed(!collapsed)}
