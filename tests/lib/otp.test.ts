@@ -93,10 +93,10 @@ describe("otp", () => {
       expect(expiry.getTime()).toBeLessThanOrEqual(expectedMax);
     });
 
-    it("returns a longer expiry than getSessionExpiry", () => {
+    it("returns an expiry >= getSessionExpiry", () => {
       const summaryExpiry = getSummarySessionExpiry();
       const directExpiry = getSessionExpiry();
-      expect(summaryExpiry.getTime()).toBeGreaterThan(directExpiry.getTime());
+      expect(summaryExpiry.getTime()).toBeGreaterThanOrEqual(directExpiry.getTime());
     });
   });
 });

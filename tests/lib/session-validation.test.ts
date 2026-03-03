@@ -91,14 +91,53 @@ describe("validateEvaluationSession", () => {
     }
   });
 
-  it("returns SESSION_MISMATCH for direct session with wrong token", async () => {
+  it("returns success for direct session with different token but same reviewer email", async () => {
     vi.mocked(prisma.otpSession.findUnique).mockResolvedValue({
       sessionToken: SESSION_TOKEN,
       sessionExpiry: new Date(Date.now() + 3600_000),
       assignmentId: "a1",
       assignment: { ...baseAssignment, token: "other-token" },
+      email: "reviewer@test.com",
       reviewerLinkId: null,
       reviewerLink: null,
+    } as any);
+
+    vi.mocked(prisma.evaluationAssignment.findUnique).mockResolvedValue({
+      ...baseAssignment,
+      reviewerId: "r1",
+    } as any);
+
+    vi.mocked(prisma.user.findFirst).mockResolvedValue({
+      email: "reviewer@test.com",
+    } as any);
+
+    const result = await validateEvaluationSession(SESSION_TOKEN, ASSIGNMENT_TOKEN);
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.session.type).toBe("direct");
+      expect(result.session.assignment.token).toBe(ASSIGNMENT_TOKEN);
+    }
+  });
+
+  it("returns SESSION_MISMATCH for direct session with different token and different reviewer", async () => {
+    vi.mocked(prisma.otpSession.findUnique).mockResolvedValue({
+      sessionToken: SESSION_TOKEN,
+      sessionExpiry: new Date(Date.now() + 3600_000),
+      assignmentId: "a1",
+      assignment: { ...baseAssignment, token: "other-token" },
+      email: "reviewer@test.com",
+      reviewerLinkId: null,
+      reviewerLink: null,
+    } as any);
+
+    vi.mocked(prisma.evaluationAssignment.findUnique).mockResolvedValue({
+      ...baseAssignment,
+      reviewerId: "r2",
+    } as any);
+
+    vi.mocked(prisma.user.findFirst).mockResolvedValue({
+      email: "different-reviewer@test.com",
     } as any);
 
     const result = await validateEvaluationSession(SESSION_TOKEN, ASSIGNMENT_TOKEN);
@@ -107,6 +146,28 @@ describe("validateEvaluationSession", () => {
     if (!result.ok) {
       expect(result.status).toBe(403);
       expect(result.code).toBe("SESSION_MISMATCH");
+    }
+  });
+
+  it("returns INVALID_TOKEN for direct session with different token when assignment not found", async () => {
+    vi.mocked(prisma.otpSession.findUnique).mockResolvedValue({
+      sessionToken: SESSION_TOKEN,
+      sessionExpiry: new Date(Date.now() + 3600_000),
+      assignmentId: "a1",
+      assignment: { ...baseAssignment, token: "other-token" },
+      email: "reviewer@test.com",
+      reviewerLinkId: null,
+      reviewerLink: null,
+    } as any);
+
+    vi.mocked(prisma.evaluationAssignment.findUnique).mockResolvedValue(null);
+
+    const result = await validateEvaluationSession(SESSION_TOKEN, ASSIGNMENT_TOKEN);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.status).toBe(404);
+      expect(result.code).toBe("INVALID_TOKEN");
     }
   });
 

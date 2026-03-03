@@ -336,10 +336,11 @@ describe("POST /api/evaluate/[token] — submission edge cases", () => {
     vi.mocked(prisma.evaluationTemplate.findFirst).mockResolvedValue({
       sections: [
         {
+          title: "Section 1",
           questions: [
-            { id: "q1", required: true },
-            { id: "q2", required: true },
-            { id: "q3", required: false },
+            { id: "q1", text: "Question 1", required: true },
+            { id: "q2", text: "Question 2", required: true },
+            { id: "q3", text: "Question 3", required: false },
           ],
         },
       ],
@@ -356,6 +357,6 @@ describe("POST /api/evaluate/[token] — submission edge cases", () => {
 
     expect(status).toBe(400);
     expect(body.code).toBe("MISSING_REQUIRED");
-    expect(body.error).toContain("q2");
+    expect(body.error).toContain("Question 2");
   });
 });
