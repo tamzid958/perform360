@@ -129,6 +129,8 @@ type ReportDisplayData = Pick<
   weightedOverallScore?: number | null;
   weightedCategoryScores?: import("@/types/report").CategoryScore[] | null;
   appliedWeights?: import("@/types/report").RelationshipWeights | null;
+  calibratedScore?: number | null;
+  calibrationJustification?: string | null;
 };
 
 // ─── Main Report Content ───
@@ -186,10 +188,15 @@ function ReportContent({
       </div>
 
       <PageHeader title={report.subjectName} description={report.cycleName}>
-        <Button variant="secondary" onClick={onExport}>
-          <Download size={16} strokeWidth={1.5} className="mr-1.5" />
-          Export PDF
-        </Button>
+        <div className="flex items-center gap-2">
+          {report.calibratedScore != null && (
+            <Badge variant="info">Calibrated</Badge>
+          )}
+          <Button variant="secondary" onClick={onExport}>
+            <Download size={16} strokeWidth={1.5} className="mr-1.5" />
+            Export PDF
+          </Button>
+        </div>
       </PageHeader>
 
       {/* ─── Team Selector ─── */}
@@ -231,7 +238,7 @@ function ReportContent({
             <CardTitle>Overall Score</CardTitle>
           </CardHeader>
           <ScoreGauge
-            score={displayData.weightedOverallScore ?? displayData.overallScore}
+            score={displayData.calibratedScore ?? displayData.weightedOverallScore ?? displayData.overallScore}
           />
           <div className="flex items-center justify-center gap-4 mt-1">
             <span className="text-[12px] text-gray-400">
@@ -241,7 +248,15 @@ function ReportContent({
               {displayData.categoryScores.length} competencies
             </span>
           </div>
-          {displayData.weightedOverallScore != null && (
+          {displayData.calibratedScore != null && (
+            <p className="text-center text-[11px] text-brand-500 font-medium mt-1">
+              Calibrated
+              {displayData.weightedOverallScore != null
+                ? ` (weighted: ${displayData.weightedOverallScore.toFixed(2)}, raw: ${displayData.overallScore.toFixed(2)})`
+                : ` (raw: ${displayData.overallScore.toFixed(2)})`}
+            </p>
+          )}
+          {displayData.calibratedScore == null && displayData.weightedOverallScore != null && (
             <p className="text-center text-[11px] text-gray-400 mt-1">
               Weighted (unweighted: {displayData.overallScore.toFixed(2)})
             </p>
@@ -254,6 +269,11 @@ function ReportContent({
               <span>Self {Math.round(displayData.appliedWeights.self * 100)}%</span>
               <span>Ext {Math.round(displayData.appliedWeights.external * 100)}%</span>
             </div>
+          )}
+          {displayData.calibrationJustification && (
+            <p className="text-center text-[11px] text-gray-400 mt-1 italic">
+              {displayData.calibrationJustification}
+            </p>
           )}
         </Card>
         <Card padding="md">

@@ -451,3 +451,26 @@ export function getReportsExportEmail(
 
   return { html, text };
 }
+
+export function getReportsExportExcelEmail(
+  cycleName: string,
+  subjectCount: number,
+): { html: string; text: string } {
+  const html = emailWrapper(
+    "Excel Scores Export",
+    `
+    <p style="margin: 0 0 16px; font-size: 15px; color: #1d1d1f; line-height: 1.5;">Hi,</p>
+    <p style="margin: 0 0 16px; font-size: 15px; color: #48484a; line-height: 1.5;">
+      Your Excel scores export for the <strong>${escapeHtml(cycleName)}</strong> cycle is ready.
+      The attached spreadsheet contains scores for ${subjectCount} individual${subjectCount !== 1 ? "s" : ""} across multiple sheets.
+    </p>
+    <p style="margin: 0; font-size: 13px; color: #86868b; line-height: 1.4;">
+      This file contains evaluation scores. Please store it securely.
+    </p>
+    `,
+  );
+
+  const text = `Hi,\n\nYour Excel scores export for the ${cycleName} cycle is ready. The attached spreadsheet contains scores for ${subjectCount} individual${subjectCount !== 1 ? "s" : ""} across multiple sheets.\n\nThis file contains evaluation scores. Please store it securely.`;
+
+  return { html, text };
+}

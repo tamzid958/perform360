@@ -46,6 +46,7 @@
     "clsx": "^2.1.1",
     "cuid": "^3.0.0",
     "date-fns": "^4.1.0",
+    "exceljs": "^4.4.0",
     "framer-motion": "^12.34.3",
     "jszip": "^3.10.1",
     "lucide-react": "^0.575.0",

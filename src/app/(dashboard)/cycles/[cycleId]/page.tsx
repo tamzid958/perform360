@@ -59,6 +59,7 @@ import {
   RotateCcw,
   MoreHorizontal,
   Scale,
+  FileSpreadsheet,
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -198,6 +199,7 @@ export default function CycleDetailPage() {
   const [showReopenDialog, setShowReopenDialog] = useState(false);
   const [reopening, setReopening] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [exportingExcel, setExportingExcel] = useState(false);
   const { locked, reset, handleApiResponse, handleUnlocked } = useEncryptionUnlock();
   const { addToast } = useToast();
 
@@ -301,15 +303,29 @@ export default function CycleDetailPage() {
 
   // ─── Report computed data ───
 
+  const hasCalibratedScores = cycleReport?.individualSummaries?.some(
+    (s) => s.calibratedScore !== null && s.calibratedScore !== undefined
+  ) ?? false;
+
   const hasWeightedScores = cycleReport?.individualSummaries?.some(
     (s) => s.weightedOverallScore !== null && s.weightedOverallScore !== undefined
   ) ?? false;
+
+  const getBestScore = useCallback(
+    (s: { overallScore: number; weightedOverallScore?: number | null; calibratedScore?: number | null }) =>
+      s.calibratedScore != null
+        ? s.calibratedScore
+        : hasWeightedScores && s.weightedOverallScore != null
+          ? s.weightedOverallScore
+          : s.overallScore,
+    [hasWeightedScores]
+  );
 
   const avgScore =
     cycleReport?.individualSummaries &&
     cycleReport.individualSummaries.length > 0
       ? cycleReport.individualSummaries.reduce(
-          (sum, s) => sum + (hasWeightedScores && s.weightedOverallScore != null ? s.weightedOverallScore : s.overallScore),
+          (sum, s) => sum + getBestScore(s),
           0
         ) / cycleReport.individualSummaries.length
       : 0;
@@ -334,10 +350,12 @@ export default function CycleDetailPage() {
   }, [cycleReport, reportTeamFilter, subjectTeamMap]);
 
   const getDisplayScore = useCallback(
-    (s: { overallScore: number; weightedOverallScore?: number | null }) =>
-      hasWeightedScores && s.weightedOverallScore != null
-        ? s.weightedOverallScore
-        : s.overallScore,
+    (s: { overallScore: number; weightedOverallScore?: number | null; calibratedScore?: number | null }) =>
+      s.calibratedScore != null
+        ? s.calibratedScore
+        : hasWeightedScores && s.weightedOverallScore != null
+          ? s.weightedOverallScore
+          : s.overallScore,
     [hasWeightedScores]
   );
 
@@ -369,7 +387,7 @@ export default function CycleDetailPage() {
       if (!json.success) {
         throw new Error(json.error || "Failed to start export");
       }
-      addToast("Export started — check your email shortly", "success");
+      addToast("PDF export started — check your email shortly", "success");
     } catch (err) {
       addToast(
         err instanceof Error ? err.message : "Failed to start export",
@@ -377,6 +395,30 @@ export default function CycleDetailPage() {
       );
     } finally {
       setExporting(false);
+    }
+  }
+
+  async function handleExportExcel() {
+    setExportingExcel(true);
+    try {
+      const res = await fetch(`/api/reports/cycle/${cycleId}/export`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ format: "excel" }),
+      });
+      const json = await res.json();
+      if (handleApiResponse(json)) return;
+      if (!json.success) {
+        throw new Error(json.error || "Failed to start export");
+      }
+      addToast("Excel export started — check your email shortly", "success");
+    } catch (err) {
+      addToast(
+        err instanceof Error ? err.message : "Failed to start export",
+        "error"
+      );
+    } finally {
+      setExportingExcel(false);
     }
   }
 
@@ -578,10 +620,16 @@ export default function CycleDetailPage() {
               </DropdownMenuItem>
             )}
             {activeTab === "reports" && (
-              <DropdownMenuItem onClick={handleExport} disabled={exporting}>
-                <Download size={15} strokeWidth={1.5} className="mr-2" />
-                {exporting ? "Starting export…" : "Export PDF"}
-              </DropdownMenuItem>
+              <>
+                <DropdownMenuItem onClick={handleExport} disabled={exporting}>
+                  <Download size={15} strokeWidth={1.5} className="mr-2" />
+                  {exporting ? "Starting export…" : "Export PDF"}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportExcel} disabled={exportingExcel}>
+                  <FileSpreadsheet size={15} strokeWidth={1.5} className="mr-2" />
+                  {exportingExcel ? "Starting export…" : "Export Excel"}
+                </DropdownMenuItem>
+              </>
             )}
             <DropdownMenuSeparator />
             {cycle.status === "ACTIVE" && (
@@ -995,7 +1043,9 @@ export default function CycleDetailPage() {
                   <p className="text-title-small text-gray-900 mt-1">
                     {avgScore.toFixed(2)}
                   </p>
-                  <p className="text-[12px] text-gray-400 mt-1">out of 5.0</p>
+                  <p className="text-[12px] text-gray-400 mt-1">
+                    {hasCalibratedScores ? "calibrated" : "out of 5.0"}
+                  </p>
                 </Card>
                 <Card padding="md" className="text-center">
                   <p className="text-callout text-gray-500">Participants</p>
@@ -1052,7 +1102,9 @@ export default function CycleDetailPage() {
                 <TeamScoreChart
                   teams={cycleReport.avgScoreByTeam.map((t) => ({
                     teamName: t.teamName,
-                    avgScore: t.weightedAvgScore ?? t.avgScore,
+                    avgScore: t.calibratedAvgScore ?? t.weightedAvgScore ?? t.avgScore,
+                    rawAvgScore: t.weightedAvgScore ?? t.avgScore,
+                    hasCalibration: t.calibratedAvgScore != null,
                   }))}
                 />
               </Card>
@@ -1198,7 +1250,14 @@ export default function CycleDetailPage() {
                           </div>
                           <div className="flex items-center gap-3 shrink-0">
                             {person.completedCount > 0 && (
-                              <ScoreBadge score={getDisplayScore(person)} />
+                              <>
+                                {person.calibratedScore != null && (
+                                  <span className="text-[11px] text-gray-400 line-through tabular-nums">
+                                    {(person.weightedOverallScore ?? person.overallScore).toFixed(1)}
+                                  </span>
+                                )}
+                                <ScoreBadge score={getDisplayScore(person)} />
+                              </>
                             )}
                             <ChevronRight
                               size={16}

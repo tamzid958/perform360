@@ -12,6 +12,7 @@ export const JOB_TYPES = {
   DATA_EXPORT: "data.export",
   COMPANY_DESTROY: "company.destroy",
   REPORTS_EXPORT_CYCLE: "reports.export-cycle",
+  REPORTS_EXPORT_CYCLE_EXCEL: "reports.export-cycle-excel",
 } as const;
 
 export type JobType = (typeof JOB_TYPES)[keyof typeof JOB_TYPES];
@@ -74,6 +75,14 @@ export interface ReportsExportCyclePayload {
   dataKeyHex: string;
 }
 
+export interface ReportsExportCycleExcelPayload {
+  cycleId: string;
+  companyId: string;
+  userId: string;
+  userEmail: string;
+  dataKeyHex: string;
+}
+
 // ─── Payload Map ───
 
 export interface JobPayloadMap {
@@ -86,6 +95,7 @@ export interface JobPayloadMap {
   "data.export": DataExportPayload;
   "company.destroy": CompanyDestroyPayload;
   "reports.export-cycle": ReportsExportCyclePayload;
+  "reports.export-cycle-excel": ReportsExportCycleExcelPayload;
 }
 
 // ─── Handler Interface ───

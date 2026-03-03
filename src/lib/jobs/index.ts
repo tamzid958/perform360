@@ -6,6 +6,7 @@ import { handleCleanupOtpSessions } from "./cleanup";
 import { handleDataExport } from "./data-export";
 import { handleCompanyDestroy } from "./company-destroy";
 import { handleReportsExportCycle } from "./reports-export";
+import { handleReportsExportCycleExcel } from "./reports-export-excel";
 
 export const jobHandlers = new Map<string, JobHandler<never>>([
   ["email.send", handleEmailSend as JobHandler<never>],
@@ -17,4 +18,5 @@ export const jobHandlers = new Map<string, JobHandler<never>>([
   ["data.export", handleDataExport as JobHandler<never>],
   ["company.destroy", handleCompanyDestroy as JobHandler<never>],
   ["reports.export-cycle", handleReportsExportCycle as JobHandler<never>],
+  ["reports.export-cycle-excel", handleReportsExportCycleExcel as JobHandler<never>],
 ]);

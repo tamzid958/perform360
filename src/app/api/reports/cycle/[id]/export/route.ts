@@ -148,7 +148,8 @@ export async function GET(
 }
 
 /**
- * Enqueue a background job to generate individual PDFs, ZIP them, and email the ZIP.
+ * Enqueue a background job to generate reports and email them.
+ * Body: { format?: "pdf" | "excel" } — defaults to "pdf".
  */
 export async function POST(
   request: NextRequest,
@@ -163,6 +164,15 @@ export async function POST(
   const authResult = await requireAdminOrHR();
   if (isAuthError(authResult)) return authResult;
   const { companyId } = authResult;
+
+  // Parse optional body for format
+  let format: "pdf" | "excel" = "pdf";
+  try {
+    const body = await request.json();
+    if (body?.format === "excel") format = "excel";
+  } catch {
+    // No body or invalid JSON — default to pdf
+  }
 
   const cycle = await prisma.evaluationCycle.findFirst({
     where: { id: cycleId, companyId },
@@ -195,8 +205,12 @@ export async function POST(
     );
   }
 
+  const jobType = format === "excel"
+    ? JOB_TYPES.REPORTS_EXPORT_CYCLE_EXCEL
+    : JOB_TYPES.REPORTS_EXPORT_CYCLE;
+
   const jobId = await enqueue(
-    JOB_TYPES.REPORTS_EXPORT_CYCLE,
+    jobType,
     {
       cycleId,
       companyId,
@@ -228,11 +242,19 @@ function renderScoreSection(
     weightedCategoryScores?: { category: string; score: number; maxScore: number }[] | null;
     scoresByRelationship: RelationshipScores;
     textFeedback: { relationship: string; questionText: string; responses: string[] }[];
+    calibratedScore?: number | null;
+    calibrationJustification?: string | null;
   },
   relLabels: Record<string, string>
 ): string {
-  const displayScore = data.weightedOverallScore ?? data.overallScore;
+  const displayScore = data.calibratedScore ?? data.weightedOverallScore ?? data.overallScore;
   const displayCategories = data.weightedCategoryScores ?? data.categoryScores;
+
+  const scoreLabel = data.calibratedScore != null
+    ? "Overall Score (Calibrated)"
+    : data.weightedOverallScore != null
+      ? "Overall Score (Weighted)"
+      : "Overall Score";
 
   const categoryRows = displayCategories
     .map(
@@ -276,15 +298,24 @@ function renderScoreSection(
       </p>`
     : "";
 
-  const unweightedNote = data.weightedOverallScore != null
-    ? `<p style="text-align:center;color:#aaa;font-size:11px;">Unweighted: ${data.overallScore.toFixed(1)}</p>`
-    : "";
+  let subScoreNote = "";
+  if (data.calibratedScore != null) {
+    const parts = [];
+    if (data.weightedOverallScore != null) parts.push(`Weighted: ${data.weightedOverallScore.toFixed(1)}`);
+    parts.push(`Raw: ${data.overallScore.toFixed(1)}`);
+    subScoreNote = `<p style="text-align:center;color:#aaa;font-size:11px;">${parts.join(" · ")}</p>`;
+    if (data.calibrationJustification) {
+      subScoreNote += `<p style="text-align:center;color:#aaa;font-size:10px;font-style:italic;">${escapeHtml(data.calibrationJustification)}</p>`;
+    }
+  } else if (data.weightedOverallScore != null) {
+    subScoreNote = `<p style="text-align:center;color:#aaa;font-size:11px;">Unweighted: ${data.overallScore.toFixed(1)}</p>`;
+  }
 
   return `
   <div class="score-hero">
     <div class="score-value">${displayScore.toFixed(1)}</div>
-    <div class="score-label">Overall Score${data.weightedOverallScore != null ? " (Weighted)" : ""}</div>
-    ${unweightedNote}
+    <div class="score-label">${scoreLabel}</div>
+    ${subScoreNote}
     ${weightsRow}
   </div>
 
@@ -371,13 +402,22 @@ function renderCycleExportHtml(
     )
     .join("");
 
-  const sortedIndividuals = individuals.sort((a, b) => b.overallScore - a.overallScore);
+  const sortedIndividuals = individuals.sort((a, b) => {
+    const scoreA = a.calibratedScore ?? a.weightedOverallScore ?? a.overallScore;
+    const scoreB = b.calibratedScore ?? b.weightedOverallScore ?? b.overallScore;
+    return scoreB - scoreA;
+  });
+
+  const hasAnyCalibration = sortedIndividuals.some((r) => r.calibratedScore != null);
 
   const participantRows = sortedIndividuals
-    .map(
-      (r) =>
-        `<tr><td>${escapeHtml(r.subjectName)}</td><td>${r.overallScore.toFixed(1)}</td></tr>`
-    )
+    .map((r) => {
+      const displayScore = r.calibratedScore ?? r.weightedOverallScore ?? r.overallScore;
+      const rawScore = r.weightedOverallScore ?? r.overallScore;
+      return hasAnyCalibration
+        ? `<tr><td>${escapeHtml(r.subjectName)}</td><td>${rawScore.toFixed(1)}</td><td>${r.calibratedScore != null ? r.calibratedScore.toFixed(1) : "—"}</td></tr>`
+        : `<tr><td>${escapeHtml(r.subjectName)}</td><td>${displayScore.toFixed(1)}</td></tr>`;
+    })
     .join("");
 
   const relLabels: Record<string, string> = RELATIONSHIP_LABELS;
@@ -448,7 +488,7 @@ function renderCycleExportHtml(
 
   <section>
     <h2>Individual Scores</h2>
-    <table><thead><tr><th>Name</th><th>Overall Score</th></tr></thead>
+    <table><thead><tr><th>Name</th>${hasAnyCalibration ? "<th>Raw Score</th><th>Calibrated</th>" : "<th>Overall Score</th>"}</tr></thead>
     <tbody>${participantRows}</tbody></table>
   </section>
 </div>

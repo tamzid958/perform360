@@ -201,8 +201,19 @@ export function CalibrationPanel({ cycleId, data, readOnly = false, onSaved }: C
       <ScrollRow>
         {data.teamSummaries.map((ts) => {
           const offset = teamOffsets.get(ts.teamId);
-          const effectiveAvg = offset
-            ? parseFloat(Math.min(5, Math.max(0, ts.avgRawScore + offset.offset)).toFixed(2))
+          const members = subjectsByTeam.get(ts.teamId) ?? [];
+          const teamOff = offset?.offset ?? 0;
+
+          // Compute effective avg from each member's actual effective score
+          const scores = members.map((m) => {
+            const edit = memberEdits.get(`${m.subjectId}:${m.teamId}`);
+            if (edit) return edit.calibratedScore;
+            if (teamOff !== 0) return Math.min(5, Math.max(0, m.rawScore + teamOff));
+            return m.calibratedScore;
+          }).filter((s): s is number => s !== null);
+
+          const effectiveAvg = scores.length > 0
+            ? parseFloat((scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(2))
             : ts.avgCalibratedScore;
 
           return (

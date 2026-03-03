@@ -481,17 +481,34 @@ export default function EvaluationFormPage({ params: paramsPromise }: { params: 
                   )}
 
                   {/* Text Input */}
-                  {q.type === "text" && (
-                    <div className="pl-10">
-                      <textarea
-                        value={(answers[q.id] as string) || ""}
-                        onChange={(e) => setAnswer(q.id, e.target.value)}
-                        placeholder="Share your thoughts..."
-                        rows={4}
-                        className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-[15px] text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all duration-200 resize-none"
-                      />
-                    </div>
-                  )}
+                  {q.type === "text" && (() => {
+                    const MAX_WORDS = 1000;
+                    const text = (answers[q.id] as string) || "";
+                    const wordCount = text.trim() === "" ? 0 : text.trim().split(/\s+/).length;
+                    const isOverLimit = wordCount > MAX_WORDS;
+                    return (
+                      <div className="pl-10">
+                        <textarea
+                          value={text}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            const count = value.trim() === "" ? 0 : value.trim().split(/\s+/).length;
+                            if (count <= MAX_WORDS) {
+                              setAnswer(q.id, value);
+                            }
+                          }}
+                          placeholder="Share your thoughts..."
+                          rows={4}
+                          className={`w-full px-4 py-3 rounded-xl border bg-white text-[15px] text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all duration-200 resize-none ${isOverLimit ? "border-red-300" : "border-gray-200"}`}
+                        />
+                        <div className="flex justify-end mt-1.5">
+                          <span className={`text-[12px] tabular-nums ${isOverLimit ? "text-red-500" : wordCount >= MAX_WORDS * 0.9 ? "text-amber-500" : "text-gray-400"}`}>
+                            {wordCount}/{MAX_WORDS} words
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   {/* Multiple Choice */}
                   {q.type === "multiple_choice" && q.options && (

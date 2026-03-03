@@ -96,12 +96,19 @@ function renderHeader(
 
 function renderOverallScore(
   doc: PDFKit.PDFDocument,
-  report: { overallScore: number; weightedOverallScore?: number | null }
+  report: {
+    overallScore: number;
+    weightedOverallScore?: number | null;
+    calibratedScore?: number | null;
+    calibrationJustification?: string | null;
+  }
 ): void {
-  const displayScore = report.weightedOverallScore ?? report.overallScore;
-  const label = report.weightedOverallScore != null
-    ? "Overall Score (Weighted)"
-    : "Overall Score";
+  const displayScore = report.calibratedScore ?? report.weightedOverallScore ?? report.overallScore;
+  const label = report.calibratedScore != null
+    ? "Overall Score (Calibrated)"
+    : report.weightedOverallScore != null
+      ? "Overall Score (Weighted)"
+      : "Overall Score";
 
   doc
     .font("Helvetica-Bold")
@@ -114,7 +121,21 @@ function renderOverallScore(
     .fillColor(COLORS.muted)
     .text(label, { align: "center" });
 
-  if (report.weightedOverallScore != null) {
+  if (report.calibratedScore != null) {
+    const rawLabel = report.weightedOverallScore != null
+      ? `Weighted: ${report.weightedOverallScore.toFixed(1)} | Raw: ${report.overallScore.toFixed(1)}`
+      : `Raw: ${report.overallScore.toFixed(1)}`;
+    doc
+      .fontSize(10)
+      .fillColor(COLORS.light)
+      .text(rawLabel, { align: "center" });
+    if (report.calibrationJustification) {
+      doc
+        .fontSize(9)
+        .fillColor(COLORS.light)
+        .text(`Justification: ${report.calibrationJustification}`, { align: "center" });
+    }
+  } else if (report.weightedOverallScore != null) {
     doc
       .fontSize(10)
       .fillColor(COLORS.light)
