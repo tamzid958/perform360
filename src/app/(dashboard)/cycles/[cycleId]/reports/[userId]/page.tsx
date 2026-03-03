@@ -10,8 +10,8 @@ import { CompetencyRadarChart } from "@/components/reports/radar-chart";
 import { ScoreBreakdown } from "@/components/reports/score-breakdown";
 import { ScoreGauge } from "@/components/reports/score-gauge";
 import { RelationshipScoreChart } from "@/components/reports/relationship-score-chart";
-import { QuestionDetailChart } from "@/components/reports/question-detail-chart";
-import { DistributionMiniChart } from "@/components/reports/distribution-mini-chart";
+import { KeyInsights } from "@/components/reports/key-insights";
+import { QuestionInsights } from "@/components/reports/question-insights";
 import { UnlockGate, useEncryptionUnlock } from "@/components/encryption/unlock-gate";
 import { Download, ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -159,14 +159,6 @@ function ReportContent({
     [displayData.questionDetails]
   );
 
-  const questionsWithDistribution = useMemo(
-    () =>
-      displayData.questionDetails.filter(
-        (q) => Object.keys(q.distribution).length > 0
-      ),
-    [displayData.questionDetails]
-  );
-
   const totalResponses = useMemo(
     () =>
       scoredQuestions.length > 0
@@ -290,6 +282,12 @@ function ReportContent({
         </Card>
       </div>
 
+      {/* ─── Key Insights ─── */}
+      <KeyInsights
+        scoresByRelationship={displayData.scoresByRelationship}
+        questionDetails={displayData.questionDetails}
+      />
+
       {/* ─── Competency Radar + Bar Breakdown ─── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <Card>
@@ -310,45 +308,8 @@ function ReportContent({
         </Card>
       </div>
 
-      {/* ─── Per-Question Average Scores ─── */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Per-Question Scores</CardTitle>
-        </CardHeader>
-        <QuestionDetailChart questions={scoredQuestions} />
-      </Card>
-
-      {/* ─── Response Distributions ─── */}
-      {questionsWithDistribution.length > 0 && (
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Response Distributions</CardTitle>
-          </CardHeader>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {questionsWithDistribution.map((q) => (
-              <div
-                key={q.questionId}
-                className="p-3 rounded-xl bg-gray-50/80 border border-gray-100"
-              >
-                <p className="text-[12px] font-medium text-gray-700 mb-2 line-clamp-2">
-                  {q.questionText}
-                </p>
-                <DistributionMiniChart distribution={q.distribution} />
-                <div className="flex items-center justify-between mt-1">
-                  <span className="text-[11px] text-gray-400">
-                    {q.responseCount} responses
-                  </span>
-                  {q.averageScore !== null && (
-                    <span className="text-[11px] font-medium text-gray-600">
-                      avg {q.averageScore.toFixed(1)}
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-      )}
+      {/* ─── Question Insights ─── */}
+      <QuestionInsights questions={displayData.questionDetails} />
 
       {/* ─── Open Feedback ─── */}
       <Card>
