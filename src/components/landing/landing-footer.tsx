@@ -6,6 +6,7 @@ const productLinks = [
   { href: "/pricing", label: "Pricing" },
   { href: "/#security", label: "Security" },
   { href: "/guide", label: "Guide" },
+  { href: "/blog", label: "Blog" },
 ];
 
 const companyLinks = [

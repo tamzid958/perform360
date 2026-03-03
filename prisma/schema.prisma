@@ -394,6 +394,43 @@ model CalibrationAdjustment {
 }
 
 // ─────────────────────────────────────────────────────────
+// BLOG (AI-generated, SuperAdmin-managed)
+// ─────────────────────────────────────────────────────────
+
+enum BlogPostStatus {
+  DRAFT
+  PUBLISHED
+}
+
+model BlogSettings {
+  id               String   @id @default("singleton")
+  ollamaApiUrl     String   @default("")
+  ollamaApiKey     String   @default("")
+  ollamaModel      String   @default("") // preferred model; empty = auto-select from free models
+  generationPaused Boolean  @default(false)
+  updatedAt        DateTime @updatedAt
+}
+
+model BlogPost {
+  id               String         @id @default(cuid())
+  title            String
+  slug             String         @unique
+  excerpt          String         @db.Text
+  contentHtml      String         @db.Text
+  metaTitle        String
+  metaDescription  String
+  primaryKeyword   String
+  semanticKeywords Json           @default("[]") // string[]
+  status           BlogPostStatus @default(DRAFT)
+  publishedAt      DateTime?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@index([status, publishedAt])
+  @@index([slug])
+}
+
+// ─────────────────────────────────────────────────────────
 // JOB QUEUE (Postgres-backed async task processing)
 // ─────────────────────────────────────────────────────────
 

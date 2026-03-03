@@ -51,6 +51,13 @@ export const ENCRYPTION_CONFIG = {
   maxPassphraseLength: 128,
 } as const;
 
+export const BLOG_CONFIG = {
+  dailyArticleCount: 3,
+  minWords: 800,
+  maxWords: 1500,
+  postsPerPage: 9,
+} as const;
+
 export const JOB_CONFIG = {
   pollIntervalMs: 1000,
   schedulerIntervalMs: 5 * 60 * 1000,

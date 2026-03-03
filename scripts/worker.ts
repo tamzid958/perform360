@@ -2,7 +2,7 @@ import { createWorker } from "../src/lib/queue-worker";
 import { jobHandlers } from "../src/lib/jobs";
 import { enqueue, hasPendingJob } from "../src/lib/queue";
 import { prisma } from "../src/lib/prisma";
-import { JOB_CONFIG } from "../src/lib/constants";
+import { JOB_CONFIG, BLOG_CONFIG } from "../src/lib/constants";
 import { JOB_TYPES } from "../src/types/job";
 
 async function scheduleCronJobs(): Promise<void> {
@@ -14,6 +14,35 @@ async function scheduleCronJobs(): Promise<void> {
   // Enqueue cleanup.otp-sessions if not already pending
   if (!(await hasPendingJob(JOB_TYPES.CLEANUP_OTP_SESSIONS))) {
     await enqueue(JOB_TYPES.CLEANUP_OTP_SESSIONS, {});
+  }
+
+  // Enqueue blog.generate once per day (if blog settings are configured)
+  // Check DB for today's blog posts instead of in-memory state (survives worker restarts)
+  if (!(await hasPendingJob(JOB_TYPES.BLOG_GENERATE))) {
+    try {
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+
+      const todayPostCount = await prisma.blogPost.count({
+        where: { createdAt: { gte: todayStart } },
+      });
+
+      if (todayPostCount === 0) {
+        const settings = await prisma.blogSettings.findUnique({
+          where: { id: "singleton" },
+        });
+        if (settings?.ollamaApiUrl && !settings.generationPaused) {
+          await enqueue(
+            JOB_TYPES.BLOG_GENERATE,
+            { count: BLOG_CONFIG.dailyArticleCount },
+            { maxAttempts: 1 }
+          );
+          console.log("[Worker] Scheduled daily blog generation");
+        }
+      }
+    } catch {
+      // Blog settings not configured yet — skip
+    }
   }
 }
 

@@ -4,12 +4,13 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Building2, FileText } from "lucide-react";
+import { LayoutDashboard, Building2, FileText, Newspaper } from "lucide-react";
 
 const navigation = [
   { name: "Overview", href: "/superadmin", icon: LayoutDashboard },
   { name: "Companies", href: "/superadmin/companies", icon: Building2 },
   { name: "Global Templates", href: "/superadmin/global-templates", icon: FileText },
+  { name: "Blog", href: "/superadmin/blog", icon: Newspaper },
 ];
 
 export function SuperAdminShell({ children }: { children: React.ReactNode }) {
