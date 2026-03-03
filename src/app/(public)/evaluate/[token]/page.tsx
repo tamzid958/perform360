@@ -23,6 +23,7 @@ export default function EvaluateOTPPage({ params: paramsPromise }: { params: Pro
   const [isLoading, setIsLoading] = useState(false);
   const [isValidating, setIsValidating] = useState(true);
   const [isSending, setIsSending] = useState(false);
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [error, setError] = useState("");
   const [tokenError, setTokenError] = useState("");
   const [cooldown, setCooldown] = useState(0);
@@ -51,8 +52,27 @@ export default function EvaluateOTPPage({ params: paramsPromise }: { params: Pro
     }
   }, [params.token]);
 
-  // Validate token on mount
+  // Check for existing valid session first (skip OTP if still valid)
   useEffect(() => {
+    async function checkSession() {
+      try {
+        const res = await fetch(`/api/evaluate/${params.token}/form`);
+        if (res.ok) {
+          router.replace(`/evaluate/${params.token}/form`);
+          return;
+        }
+      } catch {
+        // No valid session — continue to OTP flow
+      }
+      setIsCheckingSession(false);
+    }
+    checkSession();
+  }, [params.token, router]);
+
+  // Validate token on mount (after session check)
+  useEffect(() => {
+    if (isCheckingSession) return;
+
     async function validate() {
       try {
         const res = await fetch(`/api/evaluate/${params.token}`);
@@ -68,29 +88,16 @@ export default function EvaluateOTPPage({ params: paramsPromise }: { params: Pro
       }
     }
     validate();
-  }, [params.token]);
+  }, [params.token, isCheckingSession]);
 
-  // Check for existing valid session, then auto-send OTP if needed
+  // Auto-send OTP once token is validated
   const hasSentRef = useRef(false);
   useEffect(() => {
-    if (!tokenData || hasSentRef.current) return;
-    hasSentRef.current = true;
-
-    // Try loading the form — if the session cookie is still valid, skip OTP
-    async function checkSessionAndSend() {
-      try {
-        const res = await fetch(`/api/evaluate/${params.token}/form`);
-        if (res.ok) {
-          router.push(`/evaluate/${params.token}/form`);
-          return;
-        }
-      } catch {
-        // No valid session — proceed to OTP
-      }
+    if (tokenData && !hasSentRef.current) {
+      hasSentRef.current = true;
       sendOTP();
     }
-    checkSessionAndSend();
-  }, [tokenData, sendOTP, params.token, router]);
+  }, [tokenData, sendOTP]);
 
   function handleChange(index: number, value: string) {
     if (!/^\d*$/.test(value)) return;
@@ -157,6 +164,18 @@ export default function EvaluateOTPPage({ params: paramsPromise }: { params: Pro
     } finally {
       setIsLoading(false);
     }
+  }
+
+  // Checking existing session
+  if (isCheckingSession) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 size={24} className="text-brand-500 animate-spin" />
+          <p className="text-[14px] text-gray-500">Verifying...</p>
+        </div>
+      </div>
+    );
   }
 
   // Token validation error

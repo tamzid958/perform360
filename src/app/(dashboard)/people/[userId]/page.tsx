@@ -41,7 +41,9 @@ import {
   Trash2,
   AlertCircle,
   Inbox,
+  Pencil,
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 
 interface TeamMembership {
@@ -135,6 +137,10 @@ export default function PersonDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [evalTab, setEvalTab] = useState<"receiving" | "giving">("receiving");
   const [showRoleDialog, setShowRoleDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editLoading, setEditLoading] = useState(false);
   const [newRole, setNewRole] = useState("");
   const { addToast } = useToast();
 
@@ -174,6 +180,29 @@ export default function PersonDetailPage() {
       fetchPerson();
     } catch (err) {
       addToast(err instanceof Error ? err.message : "Failed to update role", "error");
+    }
+  };
+
+  const handleEditUser = async () => {
+    if (!person || !editName.trim() || !editEmail.trim()) return;
+    setEditLoading(true);
+    try {
+      const res = await fetch(`/api/users/${person.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: editName.trim(), email: editEmail.trim() }),
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || "Failed to update user");
+      addToast("User updated", "success");
+      setShowEditDialog(false);
+      setEditName("");
+      setEditEmail("");
+      fetchPerson();
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : "Failed to update user", "error");
+    } finally {
+      setEditLoading(false);
     }
   };
 
@@ -252,6 +281,10 @@ export default function PersonDetailPage() {
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => { setEditName(person.name); setEditEmail(person.email); setShowEditDialog(true); }}>
+              <Pencil size={14} strokeWidth={1.5} className="mr-2" />
+              Edit
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => { setNewRole(person.role); setShowRoleDialog(true); }}>
               <Shield size={14} strokeWidth={1.5} className="mr-2" />
               Change Role
@@ -435,6 +468,44 @@ export default function PersonDetailPage() {
           </Tabs>
         </div>
       </Card>
+
+      {/* Edit User Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+            <DialogDescription>Update details for {person.name}</DialogDescription>
+          </DialogHeader>
+          <form
+            className="space-y-4 mt-4"
+            onSubmit={(e) => { e.preventDefault(); handleEditUser(); }}
+          >
+            <Input
+              id="edit-name"
+              label="Full Name"
+              placeholder="John Doe"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              required
+            />
+            <Input
+              id="edit-email"
+              label="Email"
+              type="email"
+              placeholder="john@example.com"
+              value={editEmail}
+              onChange={(e) => setEditEmail(e.target.value)}
+              required
+            />
+            <div className="flex gap-3 pt-2">
+              <Button type="submit" disabled={editLoading || !editName.trim() || !editEmail.trim()}>
+                {editLoading ? "Saving..." : "Save Changes"}
+              </Button>
+              <Button type="button" variant="ghost" onClick={() => setShowEditDialog(false)}>Cancel</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* Change Role Dialog */}
       <Dialog open={showRoleDialog} onOpenChange={setShowRoleDialog}>

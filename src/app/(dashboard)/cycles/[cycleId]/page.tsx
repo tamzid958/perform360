@@ -59,6 +59,7 @@ import {
   RotateCcw,
   MoreHorizontal,
   Scale,
+  Pencil,
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -198,6 +199,11 @@ export default function CycleDetailPage() {
   const [showReopenDialog, setShowReopenDialog] = useState(false);
   const [reopening, setReopening] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editStartDate, setEditStartDate] = useState("");
+  const [editEndDate, setEditEndDate] = useState("");
+  const [editLoading, setEditLoading] = useState(false);
   const { locked, reset, handleApiResponse, handleUnlocked } = useEncryptionUnlock();
   const { addToast } = useToast();
 
@@ -356,6 +362,30 @@ export default function CycleDetailPage() {
   }, [filteredReportSummaries, getDisplayScore]);
 
   // ─── Handlers ───
+
+  async function handleEditCycle() {
+    if (!editName.trim()) return;
+    setEditLoading(true);
+    try {
+      const body: Record<string, string> = { name: editName.trim() };
+      if (editStartDate) body.startDate = new Date(editStartDate).toISOString();
+      if (editEndDate) body.endDate = new Date(editEndDate).toISOString();
+      const res = await fetch(`/api/cycles/${cycleId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || "Failed to update cycle");
+      addToast("Cycle updated", "success");
+      setShowEditDialog(false);
+      fetchCycle();
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : "Failed to update cycle", "error");
+    } finally {
+      setEditLoading(false);
+    }
+  }
 
   async function handleExport() {
     setExporting(true);
@@ -557,66 +587,69 @@ export default function CycleDetailPage() {
         <Badge variant={statusBadgeVariant[cycle.status]}>
           {cycle.status.charAt(0) + cycle.status.slice(1).toLowerCase()}
         </Badge>
-        {cycle.status === "DRAFT" && (
-          <Button onClick={() => setShowActivateDialog(true)}>
-            <Play size={16} strokeWidth={1.5} className="mr-1.5" />
-            Activate
-          </Button>
-        )}
-        {cycle.status === "ACTIVE" && (
-          <Button
-            variant="secondary"
-            onClick={handleRemind}
-            disabled={reminding}
-          >
-            <Send size={16} strokeWidth={1.5} className="mr-1.5" />
-            {reminding ? "Sending\u2026" : "Send Reminders"}
-          </Button>
-        )}
-        {(cycle.status === "DRAFT" || cycle.status === "ACTIVE" || cycle.status === "CLOSED" || activeTab === "reports") && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-9 w-9 p-0" aria-label="More actions">
-                <MoreHorizontal size={18} strokeWidth={1.5} />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {activeTab === "reports" && (
-                <DropdownMenuItem onClick={handleExport} disabled={exporting}>
-                  <Download size={15} strokeWidth={1.5} className="mr-2" />
-                  {exporting ? "Starting export\u2026" : "Export PDF"}
-                </DropdownMenuItem>
-              )}
-              {cycle.status === "ACTIVE" && (
-                <>
-                  {activeTab === "reports" && <DropdownMenuSeparator />}
-                  <DropdownMenuItem
-                    onClick={() => setShowCloseDialog(true)}
-                    className="text-red-500 focus:text-red-600"
-                  >
-                    <XCircle size={15} strokeWidth={1.5} className="mr-2" />
-                    End Cycle
-                  </DropdownMenuItem>
-                </>
-              )}
-              {cycle.status === "CLOSED" && (
-                <DropdownMenuItem onClick={() => setShowReopenDialog(true)}>
-                  <RotateCcw size={15} strokeWidth={1.5} className="mr-2" />
-                  Reopen Cycle
-                </DropdownMenuItem>
-              )}
-              {cycle.status === "DRAFT" && (
-                <DropdownMenuItem
-                  onClick={() => setShowDeleteDialog(true)}
-                  className="text-red-500 focus:text-red-600"
-                >
-                  <Trash2 size={15} strokeWidth={1.5} className="mr-2" />
-                  Delete
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-9 w-9 p-0" aria-label="More actions">
+              <MoreHorizontal size={18} strokeWidth={1.5} />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {cycle.status === "DRAFT" && (
+              <DropdownMenuItem onClick={() => {
+                setEditName(cycle.name);
+                setEditStartDate(cycle.startDate.slice(0, 10));
+                setEditEndDate(cycle.endDate.slice(0, 10));
+                setShowEditDialog(true);
+              }}>
+                <Pencil size={15} strokeWidth={1.5} className="mr-2" />
+                Edit Cycle
+              </DropdownMenuItem>
+            )}
+            {cycle.status === "DRAFT" && (
+              <DropdownMenuItem onClick={() => setShowActivateDialog(true)}>
+                <Play size={15} strokeWidth={1.5} className="mr-2" />
+                Activate
+              </DropdownMenuItem>
+            )}
+            {cycle.status === "ACTIVE" && (
+              <DropdownMenuItem onClick={handleRemind} disabled={reminding}>
+                <Send size={15} strokeWidth={1.5} className="mr-2" />
+                {reminding ? "Sending…" : "Send Reminders"}
+              </DropdownMenuItem>
+            )}
+            {activeTab === "reports" && (
+              <DropdownMenuItem onClick={handleExport} disabled={exporting}>
+                <Download size={15} strokeWidth={1.5} className="mr-2" />
+                {exporting ? "Starting export…" : "Export PDF"}
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuSeparator />
+            {cycle.status === "ACTIVE" && (
+              <DropdownMenuItem
+                onClick={() => setShowCloseDialog(true)}
+                className="text-red-500 focus:text-red-600"
+              >
+                <XCircle size={15} strokeWidth={1.5} className="mr-2" />
+                End Cycle
+              </DropdownMenuItem>
+            )}
+            {cycle.status === "CLOSED" && (
+              <DropdownMenuItem onClick={() => setShowReopenDialog(true)}>
+                <RotateCcw size={15} strokeWidth={1.5} className="mr-2" />
+                Reopen Cycle
+              </DropdownMenuItem>
+            )}
+            {cycle.status === "DRAFT" && (
+              <DropdownMenuItem
+                onClick={() => setShowDeleteDialog(true)}
+                className="text-red-500 focus:text-red-600"
+              >
+                <Trash2 size={15} strokeWidth={1.5} className="mr-2" />
+                Delete
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </PageHeader>
 
       {/* ─── Top-Level Tabs ─── */}
@@ -1551,6 +1584,49 @@ export default function CycleDetailPage() {
               )}
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── Edit Cycle Dialog ─── */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Cycle</DialogTitle>
+            <DialogDescription>Update the cycle name and dates</DialogDescription>
+          </DialogHeader>
+          <form
+            className="space-y-4 mt-4"
+            onSubmit={(e) => { e.preventDefault(); handleEditCycle(); }}
+          >
+            <Input
+              id="edit-cycle-name"
+              label="Cycle Name"
+              placeholder="Q1 2026 Review"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              required
+            />
+            <Input
+              id="edit-start-date"
+              label="Start Date"
+              type="date"
+              value={editStartDate}
+              onChange={(e) => setEditStartDate(e.target.value)}
+            />
+            <Input
+              id="edit-end-date"
+              label="End Date"
+              type="date"
+              value={editEndDate}
+              onChange={(e) => setEditEndDate(e.target.value)}
+            />
+            <div className="flex gap-3 pt-2">
+              <Button type="button" variant="secondary" onClick={() => setShowEditDialog(false)}>Cancel</Button>
+              <Button type="submit" className="flex-1" disabled={editLoading || !editName.trim()}>
+                {editLoading ? "Saving..." : "Save Changes"}
+              </Button>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

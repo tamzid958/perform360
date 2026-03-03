@@ -31,7 +31,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { UserPlus, Search, MoreHorizontal, Shield, Trash2, Users } from "lucide-react";
+import { UserPlus, Search, MoreHorizontal, Shield, Trash2, Users, Pencil } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorCard } from "@/components/ui/error-card";
 import type { PaginationMeta } from "@/types/pagination";
@@ -69,7 +69,11 @@ export default function PeoplePage() {
   const [error, setError] = useState<string | null>(null);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [showRoleDialog, setShowRoleDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editLoading, setEditLoading] = useState(false);
   const [newRole, setNewRole] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("ALL");
@@ -153,6 +157,30 @@ export default function PeoplePage() {
       fetchUsers();
     } catch (err) {
       addToast(err instanceof Error ? err.message : "Failed to update role", "error");
+    }
+  };
+
+  const handleEditUser = async () => {
+    if (!selectedUser || !editName.trim() || !editEmail.trim()) return;
+    setEditLoading(true);
+    try {
+      const res = await fetch(`/api/users/${selectedUser.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: editName.trim(), email: editEmail.trim() }),
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || "Failed to update user");
+      addToast(`${editName.trim()} updated`, "success");
+      setShowEditDialog(false);
+      setSelectedUser(null);
+      setEditName("");
+      setEditEmail("");
+      fetchUsers();
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : "Failed to update user", "error");
+    } finally {
+      setEditLoading(false);
     }
   };
 
@@ -284,6 +312,15 @@ export default function PeoplePage() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => {
                               setSelectedUser(user);
+                              setEditName(user.name);
+                              setEditEmail(user.email);
+                              setShowEditDialog(true);
+                            }}>
+                              <Pencil size={14} strokeWidth={1.5} className="mr-2" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => {
+                              setSelectedUser(user);
                               setNewRole(user.role);
                               setShowRoleDialog(true);
                             }}>
@@ -370,6 +407,47 @@ export default function PeoplePage() {
               <Button type="button" variant="secondary" onClick={() => setShowInviteDialog(false)}>Cancel</Button>
               <Button type="submit" className="flex-1" disabled={inviteLoading}>
                 {inviteLoading ? "Sending..." : "Send Invitation"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit User Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+            <DialogDescription>Update details for {selectedUser?.name}</DialogDescription>
+          </DialogHeader>
+          <form
+            className="space-y-4 mt-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleEditUser();
+            }}
+          >
+            <Input
+              id="edit-name"
+              label="Full Name"
+              placeholder="John Doe"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              required
+            />
+            <Input
+              id="edit-email"
+              label="Email"
+              type="email"
+              placeholder="john@example.com"
+              value={editEmail}
+              onChange={(e) => setEditEmail(e.target.value)}
+              required
+            />
+            <div className="flex gap-3 pt-2">
+              <Button type="button" variant="secondary" onClick={() => setShowEditDialog(false)}>Cancel</Button>
+              <Button type="submit" className="flex-1" disabled={editLoading || !editName.trim() || !editEmail.trim()}>
+                {editLoading ? "Saving..." : "Save Changes"}
               </Button>
             </div>
           </form>

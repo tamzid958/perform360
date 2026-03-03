@@ -129,6 +129,7 @@ export async function GET(
 const updateUserSchema = z.object({
   role: z.enum(["ADMIN", "HR", "EMPLOYEE", "EXTERNAL"]).optional(),
   name: z.string().min(1).optional(),
+  email: z.string().email().optional(),
 });
 
 export async function PATCH(
