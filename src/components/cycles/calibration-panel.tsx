@@ -1,9 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Save, RotateCcw, ChevronDown, ChevronUp, AlertTriangle } from "lucide-react";
 
@@ -51,6 +49,17 @@ interface CalibrationPanelProps {
   data: CalibrationData;
   readOnly?: boolean;
   onSaved?: () => void;
+}
+
+// Compact inline input — bypasses the ui/Input wrapper to avoid h-11 + label chrome
+function CellInput(props: React.InputHTMLAttributes<HTMLInputElement> & { hasError?: boolean }) {
+  const { className = "", hasError, ...rest } = props;
+  return (
+    <input
+      className={`h-7 px-2 rounded-lg border bg-white text-[13px] text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-brand-500/40 focus:border-brand-500 transition-colors ${hasError ? "border-red-300 focus:ring-red-400 focus:border-red-400" : "border-gray-200"} ${className}`}
+      {...rest}
+    />
+  );
 }
 
 export function CalibrationPanel({ cycleId, data, readOnly = false, onSaved }: CalibrationPanelProps) {
@@ -126,8 +135,20 @@ export function CalibrationPanel({ cycleId, data, readOnly = false, onSaved }: C
     setSaving(true);
     setSaveError(null);
 
+    // Validate: all entries with an offset/score must have justification
+    const missingTeamJustifications = Array.from(teamOffsets.entries())
+      .filter(([, v]) => v.offset !== 0 && v.justification.trim().length === 0);
+    const missingMemberJustifications = Array.from(memberEdits.entries())
+      .filter(([, v]) => v.justification.trim().length === 0);
+
+    if (missingTeamJustifications.length > 0 || missingMemberJustifications.length > 0) {
+      setSaveError("Please add a justification for all calibration adjustments.");
+      setSaving(false);
+      return;
+    }
+
     const teamAdjustments = Array.from(teamOffsets.entries())
-      .filter(([, v]) => v.justification.trim().length > 0)
+      .filter(([, v]) => v.offset !== 0)
       .map(([teamId, v]) => ({
         teamId,
         offset: v.offset,
@@ -135,7 +156,6 @@ export function CalibrationPanel({ cycleId, data, readOnly = false, onSaved }: C
       }));
 
     const memberAdjustments = Array.from(memberEdits.entries())
-      .filter(([, v]) => v.justification.trim().length > 0)
       .map(([key, v]) => {
         const [subjectId, teamId] = key.split(":");
         const subject = data.subjects.find((s) => s.subjectId === subjectId && s.teamId === teamId);
@@ -176,9 +196,9 @@ export function CalibrationPanel({ cycleId, data, readOnly = false, onSaved }: C
   }
 
   return (
-    <div className="space-y-6">
-      {/* Cross-team comparison */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="space-y-3">
+      {/* Cross-team comparison — horizontal scroll row */}
+      <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-thin">
         {data.teamSummaries.map((ts) => {
           const offset = teamOffsets.get(ts.teamId);
           const effectiveAvg = offset
@@ -186,27 +206,25 @@ export function CalibrationPanel({ cycleId, data, readOnly = false, onSaved }: C
             : ts.avgCalibratedScore;
 
           return (
-            <Card key={ts.teamId} padding="sm">
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="text-sm font-medium text-gray-900">{ts.teamName}</h4>
-                <span className="text-xs text-gray-500">{ts.memberCount} members</span>
+            <div key={ts.teamId} className="bg-white border border-gray-100 rounded-xl px-3 py-2.5 min-w-[150px] max-w-[180px] shrink-0">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[12px] font-medium text-gray-900 truncate">{ts.teamName}</span>
+                <span className="text-[11px] text-gray-400 ml-1 shrink-0">{ts.memberCount}</span>
               </div>
-              <div className="flex items-baseline gap-3">
-                <div>
-                  <span className="text-xs text-gray-500">Raw Avg</span>
-                  <p className="text-lg font-semibold text-gray-900">{ts.avgRawScore.toFixed(2)}</p>
+              <div className="flex items-baseline gap-2.5">
+                <div className="leading-none">
+                  <span className="text-[10px] uppercase tracking-wide text-gray-400">Raw</span>
+                  <p className="text-[15px] font-semibold text-gray-900 tabular-nums">{ts.avgRawScore.toFixed(2)}</p>
                 </div>
                 {effectiveAvg !== null && (
-                  <div>
-                    <span className="text-xs text-gray-500">Calibrated</span>
-                    <p className="text-lg font-semibold text-blue-600">{effectiveAvg.toFixed(2)}</p>
+                  <div className="leading-none">
+                    <span className="text-[10px] uppercase tracking-wide text-gray-400">Cal</span>
+                    <p className="text-[15px] font-semibold text-blue-600 tabular-nums">{effectiveAvg.toFixed(2)}</p>
                   </div>
                 )}
-                {offset && (
-                  <DeltaBadge value={offset.offset} />
-                )}
+                {offset && offset.offset !== 0 && <DeltaBadge value={offset.offset} />}
               </div>
-            </Card>
+            </div>
           );
         })}
       </div>
@@ -218,164 +236,163 @@ export function CalibrationPanel({ cycleId, data, readOnly = false, onSaved }: C
         const offset = teamOffsets.get(ts.teamId);
 
         return (
-          <Card key={ts.teamId} padding="sm">
+          <div key={ts.teamId} className="bg-white border border-gray-100 rounded-xl">
             <button
               onClick={() => toggleTeam(ts.teamId)}
-              className="w-full flex items-center justify-between py-2"
+              className="w-full flex items-center justify-between px-3 py-2 hover:bg-gray-50/50 transition-colors rounded-xl"
             >
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-semibold text-gray-900">{ts.teamName}</h3>
-                <span className="text-xs text-gray-500">({members.length} members)</span>
-                {offset && <DeltaBadge value={offset.offset} />}
+              <div className="flex items-center gap-1.5">
+                <span className="text-[13px] font-semibold text-gray-900">{ts.teamName}</span>
+                <span className="text-[11px] text-gray-400">{members.length}</span>
+                {offset && offset.offset !== 0 && <DeltaBadge value={offset.offset} />}
               </div>
-              {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              {isExpanded ? <ChevronUp size={14} className="text-gray-400" /> : <ChevronDown size={14} className="text-gray-400" />}
             </button>
 
             {isExpanded && (
-              <div className="mt-3 space-y-4">
+              <div className="px-3 pb-3 space-y-2">
                 {/* Team-level offset */}
                 {!readOnly && (
-                  <div className="bg-gray-50 rounded-xl p-4 space-y-3">
-                    <h4 className="text-xs font-medium text-gray-600 uppercase tracking-wider">Team Offset</h4>
-                    <div className="flex items-center gap-3">
-                      <div className="w-24">
-                        <Input
-                          type="number"
-                          step="0.1"
-                          min={-5}
-                          max={5}
-                          placeholder="0.0"
-                          value={offset?.offset ?? ""}
-                          onChange={(e) => updateTeamOffset(ts.teamId, "offset", parseFloat(e.target.value) || 0)}
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <Input
-                          placeholder="Justification (e.g., Leniency bias adjustment)"
-                          value={offset?.justification ?? ""}
-                          onChange={(e) => updateTeamOffset(ts.teamId, "justification", e.target.value)}
-                        />
-                      </div>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2 bg-gray-50 rounded-lg px-2.5 py-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-medium text-gray-500 uppercase tracking-wider shrink-0">Offset</span>
+                      <CellInput
+                        type="number"
+                        step="0.1"
+                        min={-5}
+                        max={5}
+                        placeholder="0.0"
+                        className="w-16 text-center tabular-nums"
+                        value={offset?.offset ?? ""}
+                        onChange={(e) => updateTeamOffset(ts.teamId, "offset", parseFloat(e.target.value) || 0)}
+                      />
                     </div>
+                    <CellInput
+                      placeholder="Justification required"
+                      className="flex-1 min-w-0"
+                      value={offset?.justification ?? ""}
+                      onChange={(e) => updateTeamOffset(ts.teamId, "justification", e.target.value)}
+                      hasError={!!(offset && offset.offset !== 0 && !offset.justification?.trim())}
+                    />
                   </div>
                 )}
 
-                {/* Member table */}
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-gray-100">
-                        <th className="text-left py-2 text-xs font-medium text-gray-500 uppercase">Name</th>
-                        <th className="text-center py-2 text-xs font-medium text-gray-500 uppercase w-24">Raw</th>
-                        <th className="text-center py-2 text-xs font-medium text-gray-500 uppercase w-32">Calibrated</th>
-                        <th className="text-center py-2 text-xs font-medium text-gray-500 uppercase w-16">Delta</th>
-                        <th className="text-left py-2 text-xs font-medium text-gray-500 uppercase">Justification</th>
-                        {!readOnly && <th className="w-10"></th>}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {members.map((member) => {
-                        const key = `${member.subjectId}:${member.teamId}`;
-                        const edit = memberEdits.get(key);
-                        const teamOff = offset?.offset ?? 0;
+                {/* Member table — dense spreadsheet style */}
+                <div className="overflow-x-auto -mx-3 px-3">
+                <table className="w-full min-w-[540px]">
+                  <thead>
+                    <tr className="border-b border-gray-100">
+                      <th className="text-left py-1 text-[11px] font-medium text-gray-400 uppercase tracking-wider">Name</th>
+                      <th className="text-center py-1 text-[11px] font-medium text-gray-400 uppercase tracking-wider w-16">Raw</th>
+                      <th className="text-center py-1 text-[11px] font-medium text-gray-400 uppercase tracking-wider w-20">Cal.</th>
+                      <th className="text-center py-1 text-[11px] font-medium text-gray-400 uppercase tracking-wider w-14">&Delta;</th>
+                      <th className="text-left py-1 text-[11px] font-medium text-gray-400 uppercase tracking-wider">Justification</th>
+                      {!readOnly && <th className="w-7"></th>}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {members.map((member) => {
+                      const key = `${member.subjectId}:${member.teamId}`;
+                      const edit = memberEdits.get(key);
+                      const teamOff = offset?.offset ?? 0;
 
-                        // Effective calibrated score: member edit > team offset > null
-                        const effectiveScore = edit
-                          ? edit.calibratedScore
-                          : teamOff !== 0
-                            ? parseFloat(Math.min(5, Math.max(0, member.rawScore + teamOff)).toFixed(2))
-                            : member.calibratedScore;
-                        const delta = effectiveScore !== null ? effectiveScore - member.rawScore : null;
+                      const effectiveScore = edit
+                        ? edit.calibratedScore
+                        : teamOff !== 0
+                          ? parseFloat(Math.min(5, Math.max(0, member.rawScore + teamOff)).toFixed(2))
+                          : member.calibratedScore;
+                      const delta = effectiveScore !== null ? effectiveScore - member.rawScore : null;
 
-                        return (
-                          <tr key={key} className="border-b border-gray-50 hover:bg-gray-50/50">
-                            <td className="py-2.5 text-gray-900 font-medium">{member.subjectName}</td>
-                            <td className="py-2.5 text-center text-gray-700">{member.rawScore.toFixed(2)}</td>
-                            <td className="py-2.5 text-center">
-                              {readOnly ? (
-                                <span className={effectiveScore !== null ? "text-blue-600 font-medium" : "text-gray-400"}>
-                                  {effectiveScore?.toFixed(2) ?? "—"}
-                                </span>
-                              ) : (
-                                <Input
-                                  type="number"
-                                  step="0.1"
-                                  min={0}
-                                  max={5}
-                                  className="w-20 text-center mx-auto"
-                                  placeholder={effectiveScore?.toFixed(2) ?? "—"}
-                                  value={edit?.calibratedScore ?? ""}
-                                  onChange={(e) => {
-                                    const val = parseFloat(e.target.value);
-                                    if (!isNaN(val)) {
-                                      updateMemberEdit(key, "calibratedScore", val);
-                                    }
-                                  }}
-                                />
-                              )}
-                            </td>
-                            <td className="py-2.5 text-center">
-                              {delta !== null ? <DeltaBadge value={parseFloat(delta.toFixed(2))} /> : <span className="text-gray-300">—</span>}
-                            </td>
-                            <td className="py-2.5">
-                              {readOnly ? (
-                                <span className="text-xs text-gray-500">{edit?.justification ?? member.justification ?? "—"}</span>
-                              ) : (
-                                <Input
-                                  placeholder="Reason for adjustment"
-                                  className="text-xs"
-                                  value={edit?.justification ?? ""}
-                                  onChange={(e) => updateMemberEdit(key, "justification", e.target.value)}
-                                />
-                              )}
-                            </td>
-                            {!readOnly && (
-                              <td className="py-2.5">
-                                {edit && (
-                                  <button
-                                    onClick={() => removeMemberEdit(key)}
-                                    className="text-gray-400 hover:text-red-500 transition-colors"
-                                    title="Remove override"
-                                  >
-                                    <RotateCcw size={14} />
-                                  </button>
-                                )}
-                              </td>
+                      return (
+                        <tr key={key} className="border-b border-gray-50 hover:bg-gray-50/30">
+                          <td className="py-1.5 text-[13px] text-gray-900">{member.subjectName}</td>
+                          <td className="py-1.5 text-center text-[13px] text-gray-500 tabular-nums">{member.rawScore.toFixed(2)}</td>
+                          <td className="py-1.5 text-center">
+                            {readOnly ? (
+                              <span className={`text-[13px] tabular-nums ${effectiveScore !== null ? "text-blue-600 font-medium" : "text-gray-300"}`}>
+                                {effectiveScore?.toFixed(2) ?? "—"}
+                              </span>
+                            ) : (
+                              <CellInput
+                                type="number"
+                                step="0.1"
+                                min={0}
+                                max={5}
+                                className="w-16 text-center mx-auto tabular-nums"
+                                placeholder={effectiveScore?.toFixed(2) ?? "—"}
+                                value={edit?.calibratedScore ?? ""}
+                                onChange={(e) => {
+                                  const val = parseFloat(e.target.value);
+                                  if (!isNaN(val)) {
+                                    updateMemberEdit(key, "calibratedScore", val);
+                                  }
+                                }}
+                              />
                             )}
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                          </td>
+                          <td className="py-1.5 text-center">
+                            {delta !== null ? <DeltaBadge value={parseFloat(delta.toFixed(2))} /> : <span className="text-gray-300 text-[12px]">—</span>}
+                          </td>
+                          <td className="py-1.5">
+                            {readOnly ? (
+                              <span className="text-[12px] text-gray-500">{edit?.justification ?? member.justification ?? "—"}</span>
+                            ) : (
+                              <CellInput
+                                placeholder="Required"
+                                className="w-full text-[12px]"
+                                value={edit?.justification ?? ""}
+                                onChange={(e) => updateMemberEdit(key, "justification", e.target.value)}
+                                hasError={!!(edit && !edit.justification?.trim())}
+                              />
+                            )}
+                          </td>
+                          {!readOnly && (
+                            <td className="py-1.5 text-center">
+                              {edit && (
+                                <button
+                                  onClick={() => removeMemberEdit(key)}
+                                  className="text-gray-300 hover:text-red-500 transition-colors p-0.5"
+                                  title="Remove override"
+                                >
+                                  <RotateCcw size={12} />
+                                </button>
+                              )}
+                            </td>
+                          )}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
                 </div>
               </div>
             )}
-          </Card>
+          </div>
         );
       })}
 
-      {/* Save bar */}
+      {/* Save bar — compact sticky footer */}
       {!readOnly && (
-        <div className="sticky bottom-4 z-10">
-          <Card padding="sm" className="flex items-center justify-between shadow-lg">
-            <div className="flex items-center gap-2">
+        <div className="sticky bottom-3 z-10">
+          <div className="bg-white border border-gray-100 rounded-xl shadow-lg px-3 py-2 flex items-center justify-between">
+            <div className="flex items-center gap-1.5 min-w-0">
               {saveError && (
                 <>
-                  <AlertTriangle size={14} className="text-red-500" />
-                  <span className="text-sm text-red-600">{saveError}</span>
+                  <AlertTriangle size={12} className="text-red-500 shrink-0" />
+                  <span className="text-[12px] text-red-600 truncate">{saveError}</span>
                 </>
               )}
               {!saveError && isDirty && (
-                <span className="text-sm text-gray-500">
-                  {teamOffsets.size} team offset(s), {memberEdits.size} member override(s)
+                <span className="text-[12px] text-gray-400">
+                  {teamOffsets.size} offset(s), {memberEdits.size} override(s)
                 </span>
               )}
             </div>
-            <Button onClick={handleSave} disabled={saving || !isDirty}>
-              <Save size={14} className="mr-1.5" />
-              {saving ? "Saving..." : "Save Calibrations"}
+            <Button size="sm" onClick={handleSave} disabled={saving || !isDirty}>
+              <Save size={12} className="mr-1" />
+              {saving ? "Saving..." : "Save"}
             </Button>
-          </Card>
+          </div>
         </div>
       )}
     </div>
@@ -388,7 +405,7 @@ function DeltaBadge({ value }: { value: number }) {
   return (
     <Badge
       variant={isPositive ? "success" : "error"}
-      className="text-[11px] font-mono"
+      className="text-[10px] font-mono px-1.5 py-0"
     >
       {isPositive ? "+" : ""}{value.toFixed(2)}
     </Badge>

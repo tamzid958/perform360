@@ -162,6 +162,9 @@ export default function PeoplePage() {
 
   const handleEditUser = async () => {
     if (!selectedUser || !editName.trim() || !editEmail.trim()) return;
+    const nameUnchanged = editName.trim() === selectedUser.name;
+    const emailUnchanged = editEmail.trim() === selectedUser.email;
+    if (nameUnchanged && emailUnchanged) { setShowEditDialog(false); return; }
     setEditLoading(true);
     try {
       const res = await fetch(`/api/users/${selectedUser.id}`, {

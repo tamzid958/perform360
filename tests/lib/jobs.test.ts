@@ -265,10 +265,12 @@ describe("Job: handleCycleAutoClose", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("closes overdue ACTIVE cycles", async () => {
-    vi.mocked(prisma.evaluationCycle.findMany).mockResolvedValue([
-      { id: "c1", companyId: "co-1", name: "Q1" },
-      { id: "c2", companyId: "co-2", name: "Q2" },
-    ] as any);
+    vi.mocked(prisma.evaluationCycle.findMany)
+      .mockResolvedValueOnce([
+        { id: "c1", companyId: "co-1", name: "Q1" },
+        { id: "c2", companyId: "co-2", name: "Q2" },
+      ] as any)
+      .mockResolvedValueOnce([] as any); // no 100%-complete cycles
 
     vi.mocked(prisma.evaluationCycle.update).mockResolvedValue({} as any);
 
@@ -278,8 +280,29 @@ describe("Job: handleCycleAutoClose", () => {
     expect(writeAuditLog).toHaveBeenCalledTimes(2);
   });
 
-  it("does nothing when no overdue cycles", async () => {
-    vi.mocked(prisma.evaluationCycle.findMany).mockResolvedValue([]);
+  it("closes cycles that reached 100% completion", async () => {
+    vi.mocked(prisma.evaluationCycle.findMany)
+      .mockResolvedValueOnce([] as any) // no overdue cycles
+      .mockResolvedValueOnce([
+        { id: "c3", companyId: "co-1", name: "Q3" },
+      ] as any);
+
+    vi.mocked(prisma.evaluationCycle.update).mockResolvedValue({} as any);
+
+    await handleCycleAutoClose({});
+
+    expect(prisma.evaluationCycle.update).toHaveBeenCalledTimes(1);
+    expect(writeAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: { reason: "auto-close (100% completion)" },
+      })
+    );
+  });
+
+  it("does nothing when no overdue or completed cycles", async () => {
+    vi.mocked(prisma.evaluationCycle.findMany)
+      .mockResolvedValueOnce([] as any)
+      .mockResolvedValueOnce([] as any);
 
     await handleCycleAutoClose({});
 

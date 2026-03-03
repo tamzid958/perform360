@@ -284,4 +284,32 @@ export async function handleCycleAutoClose(
 
     console.log(`[Jobs] Auto-closed cycle "${cycle.name}" (${cycle.id})`);
   }
+
+  // Safety net: close ACTIVE cycles where 100% of assignments are submitted
+  const completedCycles = await prisma.evaluationCycle.findMany({
+    where: {
+      status: "ACTIVE",
+      assignments: {
+        every: { status: "SUBMITTED" },
+        some: {},
+      },
+    },
+    select: { id: true, companyId: true, name: true },
+  });
+
+  for (const cycle of completedCycles) {
+    await prisma.evaluationCycle.update({
+      where: { id: cycle.id },
+      data: { status: "CLOSED" },
+    });
+
+    await writeAuditLog({
+      companyId: cycle.companyId,
+      action: "cycle_close",
+      target: `cycle:${cycle.id}`,
+      metadata: { reason: "auto-close (100% completion)" },
+    });
+
+    console.log(`[Jobs] Auto-closed cycle "${cycle.name}" (${cycle.id}) — 100% complete`);
+  }
 }

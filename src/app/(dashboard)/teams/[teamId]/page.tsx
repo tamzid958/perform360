@@ -30,8 +30,7 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
-import { UserPlus, MoreHorizontal, Mail, Trash2, AlertCircle, ArrowDown, ArrowUp, ArrowLeftRight, RotateCcw, ArrowRight, Archive, ArchiveRestore, Pencil } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { UserPlus, MoreHorizontal, Mail, Trash2, AlertCircle, ArrowDown, ArrowUp, ArrowLeftRight, RotateCcw, ArrowRight, Archive, ArchiveRestore } from "lucide-react";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 
 interface TeamMember {
@@ -74,10 +73,6 @@ export default function TeamDetailPage() {
   const [usersLoading, setUsersLoading] = useState(false);
   const [addRole, setAddRole] = useState("MEMBER");
   const [addLoading, setAddLoading] = useState(false);
-  const [showEditDialog, setShowEditDialog] = useState(false);
-  const [editName, setEditName] = useState("");
-  const [editDescription, setEditDescription] = useState("");
-  const [editLoading, setEditLoading] = useState(false);
   const { addToast } = useToast();
 
   const fetchTeam = useCallback(async () => {
@@ -165,28 +160,6 @@ export default function TeamDetailPage() {
     }
   };
 
-  const handleEditTeam = async () => {
-    if (!editName.trim()) return;
-    setEditLoading(true);
-    try {
-      const res = await fetch(`/api/teams/${params.teamId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: editName.trim(), description: editDescription.trim() }),
-      });
-      const json = await res.json();
-      if (!json.success) throw new Error(json.error || "Failed to update team");
-      addToast("Team updated", "success");
-      setShowEditDialog(false);
-      setEditName("");
-      setEditDescription("");
-      fetchTeam();
-    } catch (err) {
-      addToast(err instanceof Error ? err.message : "Failed to update team", "error");
-    } finally {
-      setEditLoading(false);
-    }
-  };
 
   const handleArchive = async (archived: boolean) => {
     try {
@@ -277,9 +250,6 @@ export default function TeamDetailPage() {
     <div>
       <Breadcrumb items={[{ label: "Teams", href: "/teams" }, { label: team.name }]} />
       <PageHeader title={team.name} description={team.description ?? ""}>
-        <Button variant="ghost" className="h-9 w-9 p-0" aria-label="Edit team" onClick={() => { setEditName(team.name); setEditDescription(team.description ?? ""); setShowEditDialog(true); }}>
-          <Pencil size={16} strokeWidth={1.5} />
-        </Button>
         {team.archivedAt ? (
           <Button variant="secondary" onClick={() => handleArchive(false)}>
             <ArchiveRestore size={16} strokeWidth={1.5} className="mr-1.5" />
@@ -459,47 +429,6 @@ export default function TeamDetailPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Team Dialog */}
-      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Team</DialogTitle>
-            <DialogDescription>Update team details</DialogDescription>
-          </DialogHeader>
-          <form
-            className="space-y-4 mt-4"
-            onSubmit={(e) => { e.preventDefault(); handleEditTeam(); }}
-          >
-            <Input
-              id="edit-team-name"
-              label="Team Name"
-              placeholder="Engineering"
-              value={editName}
-              onChange={(e) => setEditName(e.target.value)}
-              required
-            />
-            <div>
-              <label htmlFor="edit-team-description" className="block text-[13px] font-medium text-gray-700 mb-1.5">
-                Description
-              </label>
-              <textarea
-                id="edit-team-description"
-                placeholder="Brief description of this team..."
-                value={editDescription}
-                onChange={(e) => setEditDescription(e.target.value)}
-                rows={3}
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-body placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500 transition-all duration-200 resize-none"
-              />
-            </div>
-            <div className="flex gap-3 pt-2">
-              <Button type="submit" disabled={editLoading || !editName.trim()}>
-                {editLoading ? "Saving..." : "Save Changes"}
-              </Button>
-              <Button type="button" variant="ghost" onClick={() => setShowEditDialog(false)}>Cancel</Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

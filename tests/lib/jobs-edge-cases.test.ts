@@ -154,11 +154,13 @@ describe("Job: handleCycleAutoClose — edge cases", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("processes multiple overdue cycles sequentially", async () => {
-    vi.mocked(prisma.evaluationCycle.findMany).mockResolvedValue([
-      { id: "c1", companyId: "co-1", name: "Q1" },
-      { id: "c2", companyId: "co-1", name: "Q2" },
-      { id: "c3", companyId: "co-2", name: "Q3" },
-    ] as any);
+    vi.mocked(prisma.evaluationCycle.findMany)
+      .mockResolvedValueOnce([
+        { id: "c1", companyId: "co-1", name: "Q1" },
+        { id: "c2", companyId: "co-1", name: "Q2" },
+        { id: "c3", companyId: "co-2", name: "Q3" },
+      ] as any)
+      .mockResolvedValueOnce([] as any); // no 100%-complete cycles
 
     vi.mocked(prisma.evaluationCycle.update).mockResolvedValue({} as any);
 

@@ -15,7 +15,15 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { Users, Plus, Search, MoreHorizontal, Eye, Trash2, Archive, ArchiveRestore, ArrowDown, ArrowUp, ArrowLeftRight, RotateCcw, ArrowRight, Upload } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Users, Plus, Search, MoreHorizontal, Eye, Trash2, Archive, ArchiveRestore, ArrowDown, ArrowUp, ArrowLeftRight, RotateCcw, ArrowRight, Upload, Pencil } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorCard } from "@/components/ui/error-card";
 import Link from "next/link";
@@ -65,6 +73,10 @@ export default function TeamsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showArchived, setShowArchived] = useState(false);
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
+  const [editTeam, setEditTeam] = useState<Team | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editLoading, setEditLoading] = useState(false);
   const { addToast } = useToast();
   const router = useRouter();
 
@@ -93,6 +105,30 @@ export default function TeamsPage() {
     const timer = setTimeout(fetchTeams, searchQuery ? 300 : 0);
     return () => clearTimeout(timer);
   }, [fetchTeams, searchQuery]);
+
+  const handleEditTeam = async () => {
+    if (!editTeam || !editName.trim()) return;
+    const nameUnchanged = editName.trim() === editTeam.name;
+    const descUnchanged = editDescription.trim() === (editTeam.description ?? "");
+    if (nameUnchanged && descUnchanged) { setEditTeam(null); return; }
+    setEditLoading(true);
+    try {
+      const res = await fetch(`/api/teams/${editTeam.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: editName.trim(), description: editDescription.trim() }),
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || "Failed to update team");
+      addToast("Team updated", "success");
+      setEditTeam(null);
+      fetchTeams();
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : "Failed to update team", "error");
+    } finally {
+      setEditLoading(false);
+    }
+  };
 
   const handleDelete = async (team: Team) => {
     try {
@@ -224,6 +260,16 @@ export default function TeamsPage() {
                             <Eye size={14} strokeWidth={1.5} className="mr-2" />
                             View
                           </DropdownMenuItem>
+                          {!team.archivedAt && (
+                            <DropdownMenuItem onClick={() => {
+                              setEditTeam(team);
+                              setEditName(team.name);
+                              setEditDescription(team.description ?? "");
+                            }}>
+                              <Pencil size={14} strokeWidth={1.5} className="mr-2" />
+                              Edit
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuSeparator />
                           {team.archivedAt ? (
                             <DropdownMenuItem onClick={() => handleArchive(team, false)}>
@@ -304,6 +350,48 @@ export default function TeamsPage() {
           )}
         </>
       )}
+
+      {/* Edit Team Dialog */}
+      <Dialog open={!!editTeam} onOpenChange={(open) => { if (!open) setEditTeam(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Team</DialogTitle>
+            <DialogDescription>Update details for {editTeam?.name}</DialogDescription>
+          </DialogHeader>
+          <form
+            className="space-y-4 mt-4"
+            onSubmit={(e) => { e.preventDefault(); handleEditTeam(); }}
+          >
+            <Input
+              id="edit-team-name"
+              label="Team Name"
+              placeholder="Engineering"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              required
+            />
+            <div>
+              <label htmlFor="edit-team-description" className="block text-[13px] font-medium text-gray-700 mb-1.5">
+                Description
+              </label>
+              <textarea
+                id="edit-team-description"
+                placeholder="Brief description of this team..."
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                rows={3}
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-body placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500 transition-all duration-200 resize-none"
+              />
+            </div>
+            <div className="flex gap-3 pt-2">
+              <Button type="button" variant="secondary" onClick={() => setEditTeam(null)}>Cancel</Button>
+              <Button type="submit" className="flex-1" disabled={editLoading || !editName.trim()}>
+                {editLoading ? "Saving..." : "Save Changes"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

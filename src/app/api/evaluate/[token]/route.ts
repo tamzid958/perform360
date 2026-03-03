@@ -7,6 +7,7 @@ import { enqueueBatch } from "@/lib/queue";
 import { JOB_TYPES } from "@/types/job";
 import { getCycleCompletionEmail } from "@/lib/email";
 import type { EmailSendPayload } from "@/types/job";
+import { writeAuditLog } from "@/lib/audit";
 
 type ApiResponse<T> =
   | { success: true; data: T }
@@ -234,15 +235,27 @@ export async function POST(
       }),
     ]);
 
-    // Post-submission: notify admins if cycle just reached 100% completion
+    // Post-submission: auto-close cycle if 100% complete, notify admins
     try {
-      const notifications = (company?.settings as Record<string, unknown> | null)
-        ?.notifications as Record<string, unknown> | undefined;
-      if (notifications?.cycleCompletion !== false) {
-        const remaining = await prisma.evaluationAssignment.count({
-          where: { cycleId: assignment.cycleId, status: { not: "SUBMITTED" } },
+      const remaining = await prisma.evaluationAssignment.count({
+        where: { cycleId: assignment.cycleId, status: { not: "SUBMITTED" } },
+      });
+      if (remaining === 0) {
+        // Auto-close cycle when 100% of assignments are submitted
+        await prisma.evaluationCycle.update({
+          where: { id: assignment.cycleId },
+          data: { status: "CLOSED" },
         });
-        if (remaining === 0) {
+        await writeAuditLog({
+          companyId: assignment.cycle.companyId,
+          action: "cycle_close",
+          target: `cycle:${assignment.cycleId}`,
+          metadata: { reason: "auto-close (100% completion)" },
+        });
+
+        const notifications = (company?.settings as Record<string, unknown> | null)
+          ?.notifications as Record<string, unknown> | undefined;
+        if (notifications?.cycleCompletion !== false) {
           const [totalAssignments, admins] = await Promise.all([
             prisma.evaluationAssignment.count({ where: { cycleId: assignment.cycleId } }),
             prisma.user.findMany({
@@ -267,7 +280,7 @@ export async function POST(
         }
       }
     } catch (err) {
-      console.error("Failed to queue cycle completion email:", err);
+      console.error("Failed to auto-close cycle or queue completion email:", err);
     }
 
     // Fetch remaining pending evaluations for this reviewer
