@@ -388,7 +388,7 @@ export default function CycleDetailPage() {
       const json = await res.json();
       if (json.success) {
         addToast(
-          `Reminders sent to ${json.data.sent} reviewer${json.data.sent !== 1 ? "s" : ""}`,
+          `Reminders sent to ${json.data.totalPending} reviewer${json.data.totalPending !== 1 ? "s" : ""}`,
           "success"
         );
       } else {
@@ -413,9 +413,9 @@ export default function CycleDetailPage() {
         body: JSON.stringify({ assignmentId }),
       });
       const json = await res.json();
-      if (json.success && json.data.sent > 0) {
+      if (json.success && json.data.totalPending > 0) {
         addToast(`Reminder sent to ${reviewerName}`, "success");
-      } else if (json.success && json.data.sent === 0) {
+      } else if (json.success && json.data.totalPending === 0) {
         addToast(json.data.message ?? "No reminder sent", "warning");
       } else {
         addToast(json.error ?? "Failed to send reminder", "error");
