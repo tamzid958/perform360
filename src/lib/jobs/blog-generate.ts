@@ -107,31 +107,37 @@ export async function handleBlogGenerate(
 }
 
 /**
- * Parse JSON from Ollama response, handling common formatting issues.
- * Uses non-greedy match to get the first complete JSON object.
+ * Parse JSON from Ollama response, handling common formatting issues
+ * like markdown code fences or surrounding prose.
  */
 function parseJson(raw: string): Record<string, unknown> | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+
+  // Direct parse
   try {
-    return JSON.parse(raw);
+    return JSON.parse(trimmed);
   } catch {
-    // Non-greedy: find the first balanced JSON object
-    const jsonMatch = raw.match(/\{[\s\S]*?\}(?=[^}]*$)/);
-    if (jsonMatch) {
+    // Strip markdown code fences (```json ... ``` or ``` ... ```)
+    const fenceMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (fenceMatch) {
       try {
-        return JSON.parse(jsonMatch[0]);
+        return JSON.parse(fenceMatch[1].trim());
       } catch {
-        // Fallback: try greedy match for nested objects
-        const greedyMatch = raw.match(/\{[\s\S]*\}/);
-        if (greedyMatch) {
-          try {
-            return JSON.parse(greedyMatch[0]);
-          } catch {
-            return null;
-          }
-        }
+        // fall through
+      }
+    }
+
+    // Greedy match: extract the outermost { ... } block
+    const braceMatch = trimmed.match(/\{[\s\S]*\}/);
+    if (braceMatch) {
+      try {
+        return JSON.parse(braceMatch[0]);
+      } catch {
         return null;
       }
     }
+
     return null;
   }
 }

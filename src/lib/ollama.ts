@@ -149,8 +149,15 @@ export async function generate(
 
       const data: OllamaGenerateResponse = await res.json();
       console.log(
-        `[Ollama] Generated with model=${model}, tokens=${data.eval_count ?? "?"}`
+        `[Ollama] Generated with model=${model}, tokens=${data.eval_count ?? "?"}, done=${data.done}, done_reason=${data.done_reason ?? "none"}`
       );
+
+      if (!data.response || data.response.trim().length === 0) {
+        throw new Error(
+          `Ollama returned empty response (model: ${model}, done: ${data.done}, done_reason: ${data.done_reason ?? "none"}, eval_count: ${data.eval_count ?? 0})`
+        );
+      }
+
       return data.response;
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));
