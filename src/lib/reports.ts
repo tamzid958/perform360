@@ -13,6 +13,10 @@ import type {
   TeamScore,
   ParticipationStats,
   SubmissionTrendPoint,
+  SubjectContext,
+  ResponseRate,
+  ReviewerBreakdownItem,
+  SelfVsOthersItem,
 } from "@/types/report";
 
 // ─── Types ───
@@ -457,6 +461,65 @@ export function buildWeightedCategoryScores(
     });
 }
 
+// ─── Self vs Others ───
+
+/**
+ * Build per-category self vs others comparison.
+ * This is the core unique value of 360 feedback.
+ */
+export function buildSelfVsOthers(
+  responses: DecryptedResponse[],
+  sections: TemplateSection[]
+): SelfVsOthersItem[] {
+  const GAP_THRESHOLD = 0.75;
+
+  return sections
+    .filter((section) => section.questions.some((q) => q.type === "rating_scale"))
+    .map((section) => {
+      const ratingQuestions = section.questions.filter((q) => q.type === "rating_scale");
+
+      const selfScores: number[] = [];
+      const othersScores: number[] = [];
+
+      for (const resp of responses) {
+        let total = 0;
+        let count = 0;
+        for (const q of ratingQuestions) {
+          const v = resp.answers[q.id];
+          if (typeof v === "number") { total += v; count++; }
+        }
+        if (count > 0) {
+          const avg = total / count;
+          if (resp.relationship === "self") {
+            selfScores.push(avg);
+          } else {
+            othersScores.push(avg);
+          }
+        }
+      }
+
+      const selfScore = selfScores.length > 0
+        ? parseFloat((selfScores.reduce((a, b) => a + b, 0) / selfScores.length).toFixed(2))
+        : null;
+      const othersScore = othersScores.length > 0
+        ? parseFloat((othersScores.reduce((a, b) => a + b, 0) / othersScores.length).toFixed(2))
+        : null;
+
+      const gap = selfScore !== null && othersScore !== null
+        ? parseFloat((selfScore - othersScore).toFixed(2))
+        : null;
+
+      let insight: SelfVsOthersItem["insight"] = null;
+      if (gap !== null) {
+        if (gap > GAP_THRESHOLD) insight = "blind_spot";
+        else if (gap < -GAP_THRESHOLD) insight = "hidden_strength";
+        else insight = "aligned";
+      }
+
+      return { category: section.title, selfScore, othersScore, gap, insight };
+    });
+}
+
 // ─── Full Report Builders ───
 
 /**
@@ -475,7 +538,16 @@ export async function buildIndividualReport(
     }),
     prisma.user.findUnique({
       where: { id: subjectId },
-      select: { name: true },
+      select: {
+        name: true,
+        role: true,
+        teamMemberships: {
+          include: {
+            team: { select: { id: true, name: true } },
+            level: { select: { name: true } },
+          },
+        },
+      },
     }),
   ]);
 
@@ -483,12 +555,45 @@ export async function buildIndividualReport(
     throw new Error("Cycle or subject not found");
   }
 
-  // Get templates from the subject's assignments in this cycle
-  const subjectAssignments = await prisma.evaluationAssignment.findMany({
+  // Build subject context (role, level, teams)
+  const subjectContext: SubjectContext = {
+    role: subject.role,
+    level: subject.teamMemberships[0]?.level?.name ?? null,
+    teams: subject.teamMemberships.map((tm) => ({
+      id: tm.team.id,
+      name: tm.team.name,
+      level: tm.level?.name ?? null,
+    })),
+  };
+
+  // Get all assignments for this subject in this cycle (for response rate + reviewer breakdown)
+  const allSubjectAssignments = await prisma.evaluationAssignment.findMany({
     where: { cycleId, subjectId },
-    select: { templateId: true },
+    select: { templateId: true, relationship: true, status: true },
   });
-  const templateIds = Array.from(new Set(subjectAssignments.map((a) => a.templateId)));
+
+  // Response rate
+  const totalAssigned = allSubjectAssignments.length;
+  const totalCompleted = allSubjectAssignments.filter((a) => a.status === "SUBMITTED").length;
+  const responseRate: ResponseRate = {
+    total: totalAssigned,
+    completed: totalCompleted,
+    rate: totalAssigned > 0 ? parseFloat(((totalCompleted / totalAssigned) * 100).toFixed(1)) : 0,
+  };
+
+  // Reviewer breakdown by relationship
+  const relBreakdownMap = new Map<string, { total: number; completed: number }>();
+  for (const a of allSubjectAssignments) {
+    const existing = relBreakdownMap.get(a.relationship) ?? { total: 0, completed: 0 };
+    existing.total++;
+    if (a.status === "SUBMITTED") existing.completed++;
+    relBreakdownMap.set(a.relationship, existing);
+  }
+  const reviewerBreakdown: ReviewerBreakdownItem[] = Array.from(relBreakdownMap.entries()).map(
+    ([relationship, counts]) => ({ relationship, ...counts })
+  );
+
+  const templateIds = Array.from(new Set(allSubjectAssignments.map((a) => a.templateId)));
 
   const [templates, cycleTeams] = await Promise.all([
     prisma.evaluationTemplate.findMany({
@@ -562,7 +667,7 @@ export async function buildIndividualReport(
     // Find which templateId this team uses in this cycle
     const teamCycleTeam = cycleTeams.find((ct) => ct.team.id === teamId);
     const teamSections = teamCycleTeam
-      ? (templateSectionsMap.get(teamCycleTeam.templateId) ?? sections)
+      ? (teamCycleTeam.templateId ? (templateSectionsMap.get(teamCycleTeam.templateId) ?? sections) : sections)
       : sections;
 
     const teamWeights = teamWeightMap.get(teamId) ?? null;
@@ -638,6 +743,10 @@ export async function buildIndividualReport(
     calibratedScore,
     calibrationJustification: latestCalib?.justification ?? null,
     calibrationAdjustedBy: latestCalib?.adjuster.name ?? null,
+    subjectContext,
+    responseRate,
+    reviewerBreakdown,
+    selfVsOthers: buildSelfVsOthers(responses, sections),
   };
 }
 
@@ -767,7 +876,7 @@ export async function buildCycleReport(
         weightExternal: true,
       },
     });
-    const templateIds = Array.from(new Set(cycleTeams.map((ct) => ct.templateId)));
+    const templateIds = Array.from(new Set(cycleTeams.map((ct) => ct.templateId).filter((id): id is string => id !== null)));
 
     const templates = await prisma.evaluationTemplate.findMany({
       where: { id: { in: templateIds } },

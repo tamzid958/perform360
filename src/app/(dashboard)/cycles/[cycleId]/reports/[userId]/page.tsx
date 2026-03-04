@@ -5,20 +5,21 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { PageHeader } from "@/components/layout/page-header";
 import { CompetencyRadarChart } from "@/components/reports/radar-chart";
 import { ScoreBreakdown } from "@/components/reports/score-breakdown";
 import { ScoreGauge } from "@/components/reports/score-gauge";
+import { ScoreLabel } from "@/components/reports/score-label";
 import { RelationshipScoreChart } from "@/components/reports/relationship-score-chart";
 import { KeyInsights } from "@/components/reports/key-insights";
 import { QuestionInsights } from "@/components/reports/question-insights";
+import { ProfileBanner } from "@/components/reports/profile-banner";
+import { SelfVsOthersChart } from "@/components/reports/self-vs-others-chart";
 import { UnlockGate, useEncryptionUnlock } from "@/components/encryption/unlock-gate";
-import { Download, ArrowLeft } from "lucide-react";
+import { Download, ArrowLeft, Users } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { RELATIONSHIP_LABELS } from "@/lib/constants";
 import type { IndividualReport, TeamBreakdown } from "@/types/report";
-import { Users } from "lucide-react";
 
 export default function IndividualReportPage() {
   const { cycleId, userId } = useParams<{ cycleId: string; userId: string }>();
@@ -58,15 +59,7 @@ export default function IndividualReportPage() {
   if (locked || reset) {
     return (
       <div>
-        <div className="mb-6">
-          <Link
-            href={`/cycles/${cycleId}`}
-            className="inline-flex items-center gap-1.5 text-[14px] text-gray-500 hover:text-gray-700 transition-colors mb-4"
-          >
-            <ArrowLeft size={14} strokeWidth={1.5} />
-            Back to Cycle
-          </Link>
-        </div>
+        <BackLink cycleId={cycleId} />
         <UnlockGate locked={locked} reset={reset} onUnlocked={() => { handleUnlocked(); fetchReport(); }}>
           <div />
         </UnlockGate>
@@ -79,15 +72,7 @@ export default function IndividualReportPage() {
   if (error || !report) {
     return (
       <div>
-        <div className="mb-6">
-          <Link
-            href={`/cycles/${cycleId}`}
-            className="inline-flex items-center gap-1.5 text-[14px] text-gray-500 hover:text-gray-700 transition-colors mb-4"
-          >
-            <ArrowLeft size={14} strokeWidth={1.5} />
-            Back to Cycle
-          </Link>
-        </div>
+        <BackLink cycleId={cycleId} />
         <Card className="text-center py-12">
           <p className="text-body text-gray-500">{error ?? "Report not found"}</p>
           <Button variant="secondary" onClick={fetchReport} className="mt-4">
@@ -167,19 +152,12 @@ function ReportContent({
     [scoredQuestions]
   );
 
+  const effectiveScore = displayData.calibratedScore ?? displayData.weightedOverallScore ?? displayData.overallScore;
+
   return (
     <div>
-      <div className="mb-6">
-        <Link
-          href={`/cycles/${cycleId}`}
-          className="inline-flex items-center gap-1.5 text-[14px] text-gray-500 hover:text-gray-700 transition-colors mb-4"
-        >
-          <ArrowLeft size={14} strokeWidth={1.5} />
-          Back to Cycle
-        </Link>
-      </div>
-
-      <PageHeader title={report.subjectName} description={report.cycleName}>
+      <div className="flex items-center justify-between mb-4">
+        <BackLink cycleId={cycleId} />
         <div className="flex items-center gap-2">
           {report.calibratedScore != null && (
             <Badge variant="info">Calibrated</Badge>
@@ -189,7 +167,16 @@ function ReportContent({
             Export PDF
           </Button>
         </div>
-      </PageHeader>
+      </div>
+
+      {/* ─── Section 1: Profile Banner (Who + Data Confidence) ─── */}
+      <ProfileBanner
+        subjectName={report.subjectName}
+        cycleName={report.cycleName}
+        context={report.subjectContext}
+        responseRate={report.responseRate}
+        reviewerBreakdown={report.reviewerBreakdown}
+      />
 
       {/* ─── Team Selector ─── */}
       {showTeamSelector && (
@@ -223,22 +210,23 @@ function ReportContent({
         </div>
       )}
 
-      {/* ─── Hero: Score Gauge + Relationship Bars ─── */}
+      {/* ─── Section 2: Score Overview (The Number + Context) ─── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <Card padding="md">
           <CardHeader>
             <CardTitle>Overall Score</CardTitle>
           </CardHeader>
-          <ScoreGauge
-            score={displayData.calibratedScore ?? displayData.weightedOverallScore ?? displayData.overallScore}
-          />
-          <div className="flex items-center justify-center gap-4 mt-1">
-            <span className="text-[12px] text-gray-400">
-              {totalResponses} reviewer{totalResponses !== 1 ? "s" : ""}
-            </span>
-            <span className="text-[12px] text-gray-400">
-              {displayData.categoryScores.length} competencies
-            </span>
+          <ScoreGauge score={effectiveScore} />
+          <div className="flex flex-col items-center gap-1.5 mt-1">
+            <ScoreLabel score={effectiveScore} />
+            <div className="flex items-center gap-4">
+              <span className="text-[12px] text-gray-400">
+                {totalResponses} reviewer{totalResponses !== 1 ? "s" : ""}
+              </span>
+              <span className="text-[12px] text-gray-400">
+                {displayData.categoryScores.length} competencies
+              </span>
+            </div>
           </div>
           {displayData.calibratedScore != null && (
             <p className="text-center text-[11px] text-brand-500 font-medium mt-1">
@@ -282,13 +270,19 @@ function ReportContent({
         </Card>
       </div>
 
-      {/* ─── Key Insights ─── */}
+      {/* ─── Section 3: Key Insights (5 tiles: gap, consensus, pattern, top, growth) ─── */}
       <KeyInsights
         scoresByRelationship={displayData.scoresByRelationship}
         questionDetails={displayData.questionDetails}
+        categoryScores={displayData.weightedCategoryScores ?? displayData.categoryScores}
       />
 
-      {/* ─── Competency Radar + Bar Breakdown ─── */}
+      {/* ─── Section 4: Self-Awareness (THE 360 unique value) ─── */}
+      {selectedTeam === "all" && (
+        <SelfVsOthersChart data={report.selfVsOthers} />
+      )}
+
+      {/* ─── Section 5: Competency Deep Dive ─── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <Card>
           <CardHeader>
@@ -308,10 +302,10 @@ function ReportContent({
         </Card>
       </div>
 
-      {/* ─── Question Insights ─── */}
+      {/* ─── Section 6: Question Insights ─── */}
       <QuestionInsights questions={displayData.questionDetails} />
 
-      {/* ─── Open Feedback ─── */}
+      {/* ─── Section 7: Open Feedback (Qualitative) ─── */}
       <Card>
         <CardHeader>
           <CardTitle>
@@ -354,21 +348,41 @@ function ReportContent({
 
 // ─── Sub-components ───
 
+function BackLink({ cycleId }: { cycleId: string }) {
+  return (
+    <Link
+      href={`/cycles/${cycleId}`}
+      className="inline-flex items-center gap-1.5 text-[14px] text-gray-500 hover:text-gray-700 transition-colors"
+    >
+      <ArrowLeft size={14} strokeWidth={1.5} />
+      Back to Cycle
+    </Link>
+  );
+}
+
 function ReportSkeleton() {
   return (
     <div>
       <Skeleton className="h-4 w-24 mb-6" />
-      <Skeleton className="h-8 w-48 mb-2" />
-      <Skeleton className="h-4 w-64 mb-8" />
+      {/* Profile banner skeleton */}
+      <Skeleton className="h-28 rounded-2xl mb-6" />
+      {/* Score overview row */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <Skeleton className="h-56 rounded-2xl" />
         <Skeleton className="h-56 rounded-2xl" />
       </div>
+      {/* Key insights skeleton */}
+      <Skeleton className="h-24 rounded-2xl mb-6" />
+      {/* Self-awareness skeleton */}
+      <Skeleton className="h-48 rounded-2xl mb-6" />
+      {/* Competency row */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <Skeleton className="h-64 rounded-2xl" />
         <Skeleton className="h-64 rounded-2xl" />
       </div>
+      {/* Question insights */}
       <Skeleton className="h-80 rounded-2xl mb-6" />
+      {/* Open feedback */}
       <Skeleton className="h-48 rounded-2xl" />
     </div>
   );

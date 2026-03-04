@@ -80,6 +80,12 @@ export async function GET(
         include: {
           team: { select: { id: true, name: true } },
           template: { select: { id: true, name: true } },
+          levelTemplates: {
+            include: {
+              level: { select: { id: true, name: true } },
+              template: { select: { id: true, name: true } },
+            },
+          },
         },
       },
     },
@@ -102,9 +108,20 @@ export async function GET(
     // If multiple teams share the same template, fetch membership to disambiguate
     const templateToTeams = new Map<string, { teamId: string; teamName: string }[]>();
     for (const ct of cycle.cycleTeams) {
-      const arr = templateToTeams.get(ct.template.id) ?? [];
-      arr.push({ teamId: ct.team.id, teamName: ct.team.name });
-      templateToTeams.set(ct.template.id, arr);
+      // Default template (may be null if using only level templates)
+      if (ct.template) {
+        const arr = templateToTeams.get(ct.template.id) ?? [];
+        arr.push({ teamId: ct.team.id, teamName: ct.team.name });
+        templateToTeams.set(ct.template.id, arr);
+      }
+      // Level-specific templates
+      for (const lt of (ct as any).levelTemplates ?? []) {
+        const arr = templateToTeams.get(lt.template.id) ?? [];
+        if (!arr.some((t) => t.teamId === ct.team.id)) {
+          arr.push({ teamId: ct.team.id, teamName: ct.team.name });
+        }
+        templateToTeams.set(lt.template.id, arr);
+      }
     }
 
     // Fetch team memberships only if disambiguation needed
@@ -168,8 +185,8 @@ export async function GET(
   const teamTemplates = cycle.cycleTeams.map((ct) => ({
     teamId: ct.team.id,
     teamName: ct.team.name,
-    templateId: ct.template.id,
-    templateName: ct.template.name,
+    templateId: ct.template?.id ?? null,
+    templateName: ct.template?.name ?? null,
     weights: ct.weightManager !== null
       ? {
           manager: Math.round(ct.weightManager * 100),
@@ -179,6 +196,13 @@ export async function GET(
           external: Math.round(ct.weightExternal! * 100),
         }
       : null,
+    levelTemplates: ((ct as any).levelTemplates ?? []).map((lt: any) => ({
+      levelId: lt.level.id,
+      levelName: lt.level.name,
+      relationship: lt.relationship,
+      templateId: lt.template.id,
+      templateName: lt.template.name,
+    })),
   }));
 
   return NextResponse.json({
@@ -342,6 +366,12 @@ export async function PATCH(
           include: {
             team: { select: { id: true, name: true } },
             template: { select: { id: true, name: true } },
+            levelTemplates: {
+              include: {
+                level: { select: { id: true, name: true } },
+                template: { select: { id: true, name: true } },
+              },
+            },
           },
         },
       },

@@ -1,100 +1,63 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/layout/page-header";
-import { DatePicker } from "@/components/ui/date-picker";
-import { Combobox } from "@/components/ui/combobox";
-import type { ComboboxOption } from "@/components/ui/combobox";
-import { Plus, X, ChevronDown, ChevronUp } from "lucide-react";
+import { Check } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useDebouncedSearch } from "./_components/use-debounced-search";
+import { StepBasics } from "./_components/step-basics";
+import { StepTeams } from "./_components/step-teams";
+import { StepCustomize } from "./_components/step-customize";
+import type {
+  TeamOption,
+  TemplateOption,
+  AssignmentGroup,
+  GroupAdvancedConfig,
+} from "./_components/types";
+import { getWeightSum } from "./_components/types";
 
-interface TeamOption {
-  id: string;
-  name: string;
-}
-
-interface TemplateOption {
-  id: string;
-  name: string;
-  isGlobal: boolean;
-}
-
-interface RelationshipWeightsInput {
-  manager: number;
-  peer: number;
-  directReport: number;
-  self: number;
-  external: number;
-}
-
-interface TeamTemplatePair {
-  teamId: string;
-  templateId: string;
-  weights: RelationshipWeightsInput | null;
-}
-
-function useDebouncedSearch<T extends { id: string }>(
-  endpoint: string,
-  initialData: T[],
-  delay = 300
-) {
-  const [searchResults, setSearchResults] = useState<T[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [query, setQuery] = useState("");
-  const timerRef = useRef<ReturnType<typeof setTimeout>>();
-
-  const merged = useMemo(() => {
-    if (!query.trim()) return initialData;
-    const initialIds = new Set(initialData.map((d) => d.id));
-    const extras = searchResults.filter((r) => !initialIds.has(r.id));
-    return [...initialData, ...extras];
-  }, [initialData, searchResults, query]);
-
-  const handleSearch = useCallback(
-    (q: string) => {
-      setQuery(q);
-      if (timerRef.current) clearTimeout(timerRef.current);
-
-      if (!q.trim()) {
-        setSearchResults([]);
-        setIsSearching(false);
-        return;
-      }
-
-      setIsSearching(true);
-      timerRef.current = setTimeout(async () => {
-        try {
-          const res = await fetch(
-            `${endpoint}?search=${encodeURIComponent(q)}&limit=20`
-          );
-          const data = await res.json();
-          if (data.success) setSearchResults(data.data);
-        } catch {
-          /* keep existing results */
-        } finally {
-          setIsSearching(false);
-        }
-      }, delay);
-    },
-    [endpoint, delay]
-  );
-
-  return { data: merged, isSearching, handleSearch };
-}
+const STEPS = [
+  { label: "Basics", description: "Name & dates" },
+  { label: "Teams", description: "Assign templates" },
+  { label: "Customize", description: "Weights & overrides" },
+] as const;
 
 export default function NewCyclePage() {
   const router = useRouter();
+  const [step, setStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Step 1 state
   const [name, setName] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [teamTemplates, setTeamTemplates] = useState<TeamTemplatePair[]>([
-    { teamId: "", templateId: "", weights: null },
+
+  // Step 2 state
+  const [groups, setGroups] = useState<AssignmentGroup[]>([
+    { teamIds: [], templateId: "" },
   ]);
 
+  // Step 3 state
+  const [configs, setConfigs] = useState<GroupAdvancedConfig[]>([
+    { weights: null, teamLevelTemplates: {}, relationshipTemplates: [] },
+  ]);
+
+  // Keep configs array in sync with groups array length
+  useEffect(() => {
+    setConfigs((prev) => {
+      if (prev.length === groups.length) return prev;
+      const next = [...prev];
+      while (next.length < groups.length) {
+        next.push({ weights: null, teamLevelTemplates: {}, relationshipTemplates: [] });
+      }
+      return next.slice(0, groups.length);
+    });
+  }, [groups.length]);
+
+  // Data loading
   const [initialTeams, setInitialTeams] = useState<TeamOption[]>([]);
   const [initialTemplates, setInitialTemplates] = useState<TemplateOption[]>([]);
   const [fetchError, setFetchError] = useState("");
@@ -108,7 +71,6 @@ export default function NewCyclePage() {
         ]);
         const teamsData = await teamsRes.json();
         const templatesData = await templatesRes.json();
-
         if (teamsData.success) setInitialTeams(teamsData.data);
         if (templatesData.success) setInitialTemplates(templatesData.data);
       } catch {
@@ -130,100 +92,64 @@ export default function NewCyclePage() {
     handleSearch: handleTemplateSearch,
   } = useDebouncedSearch<TemplateOption>("/api/templates", initialTemplates);
 
-  const DEFAULT_WEIGHTS: RelationshipWeightsInput = {
-    manager: 30, peer: 30, directReport: 20, self: 10, external: 10,
-  };
+  // Validation per step
+  const isStep1Valid = !!(name.trim() && startDate && endDate);
 
-  function addRow() {
-    setTeamTemplates((prev) => [...prev, { teamId: "", templateId: "", weights: null }]);
-  }
-
-  function removeRow(index: number) {
-    setTeamTemplates((prev) => prev.filter((_, i) => i !== index));
-  }
-
-  function updateRow(index: number, field: "teamId" | "templateId", value: string | null) {
-    setTeamTemplates((prev) =>
-      prev.map((row, i) => (i === index ? { ...row, [field]: value ?? "" } : row))
-    );
-  }
-
-  function toggleWeights(index: number) {
-    setTeamTemplates((prev) =>
-      prev.map((row, i) => {
-        if (i !== index) return row;
-        return { ...row, weights: row.weights ? null : { ...DEFAULT_WEIGHTS } };
-      })
-    );
-  }
-
-  function updateWeight(index: number, field: keyof RelationshipWeightsInput, value: number) {
-    setTeamTemplates((prev) =>
-      prev.map((row, i) => {
-        if (i !== index || !row.weights) return row;
-        return { ...row, weights: { ...row.weights, [field]: value } };
-      })
-    );
-  }
-
-  function getWeightSum(weights: RelationshipWeightsInput): number {
-    return weights.manager + weights.peer + weights.directReport + weights.self + weights.external;
-  }
-
-  const selectedTeamIds = new Set(teamTemplates.map((tt) => tt.teamId).filter(Boolean));
-
-  const teamOptions: ComboboxOption[] = useMemo(
+  const isStep2Valid = useMemo(
     () =>
-      teams.map((t) => ({
-        value: t.id,
-        label: t.name,
-        disabled: selectedTeamIds.has(t.id),
-        disabledReason: "Already assigned",
-      })),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [teams, selectedTeamIds.size]
+      groups.length > 0 &&
+      groups.every((g) => g.teamIds.length > 0 && g.templateId),
+    [groups]
   );
 
-  const templateOptions: ComboboxOption[] = useMemo(
+  const isStep3Valid = useMemo(
     () =>
-      templates.map((t) => ({
-        value: t.id,
-        label: t.name,
-        sublabel: t.isGlobal ? "Global template" : undefined,
-      })),
-    [templates]
+      configs.every((c) => {
+        if (c.weights && Math.abs(getWeightSum(c.weights) - 100) >= 0.01) return false;
+        return true;
+      }),
+    [configs]
   );
 
-  const isValid =
-    name.trim() &&
-    startDate &&
-    endDate &&
-    teamTemplates.length > 0 &&
-    teamTemplates.every(
-      (tt) =>
-        tt.teamId &&
-        tt.templateId &&
-        (!tt.weights || Math.abs(getWeightSum(tt.weights) - 100) < 0.01)
-    );
+  // A group without a default template is still valid if it has relationship templates
+  const isStep2OrStep3Valid = useMemo(
+    () =>
+      groups.every((g, gIdx) => {
+        if (g.teamIds.length === 0) return false;
+        if (g.templateId) return true;
+        // No default template — check if step 3 has relationship templates
+        return configs[gIdx]?.relationshipTemplates?.length > 0;
+      }),
+    [groups, configs]
+  );
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!isValid) return;
+  const canProceed = [isStep1Valid, isStep2Valid, isStep3Valid][step];
+
+  async function handleSubmit() {
+    if (!isStep1Valid || !isStep2OrStep3Valid || !isStep3Valid) return;
     setIsLoading(true);
     try {
+      // Flatten groups into per-team entries for the API
+      const teamTemplates = groups.flatMap((group, gIdx) => {
+        const config = configs[gIdx];
+        return group.teamIds.map((teamId) => {
+          const levelTemplates = config.teamLevelTemplates[teamId] ?? [];
+          return {
+            teamId,
+            templateId: group.templateId || undefined,
+            ...(config.weights ? { weights: config.weights } : {}),
+            ...(levelTemplates.length > 0 ? { levelTemplates } : {}),
+            ...(config.relationshipTemplates.length > 0
+              ? { relationshipTemplates: config.relationshipTemplates }
+              : {}),
+          };
+        });
+      });
+
       const res = await fetch("/api/cycles", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name,
-          startDate,
-          endDate,
-          teamTemplates: teamTemplates.map((tt) => ({
-            teamId: tt.teamId,
-            templateId: tt.templateId,
-            ...(tt.weights ? { weights: tt.weights } : {}),
-          })),
-        }),
+        body: JSON.stringify({ name, startDate, endDate, teamTemplates }),
       });
       if (res.ok) {
         const data = await res.json();
@@ -236,194 +162,158 @@ export default function NewCyclePage() {
 
   return (
     <div>
-      <PageHeader title="Create Evaluation Cycle" description="Set up a new 360° evaluation cycle" />
+      <PageHeader
+        title="Create Evaluation Cycle"
+        description="Set up a new 360° evaluation cycle"
+      />
 
       <Card className="max-w-3xl">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <Input
-            id="name"
-            label="Cycle Name"
-            placeholder="e.g. Q1 2026 Performance Review"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            autoFocus
-          />
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <DatePicker
-              id="startDate"
-              label="Start Date"
-              value={startDate}
-              onChange={setStartDate}
-              placeholder="Pick start date"
-              required
-            />
-            <DatePicker
-              id="endDate"
-              label="End Date"
-              value={endDate}
-              onChange={setEndDate}
-              placeholder="Pick end date"
-              minDate={startDate ? new Date(startDate) : undefined}
-              required
-            />
-          </div>
-
-          {/* Team-Template Pairs */}
-          <div className="space-y-3">
-            <label className="block text-[13px] font-medium text-gray-700">
-              Team &amp; Template Assignments
-            </label>
-            <p className="text-[12px] text-gray-500">
-              Assign a template to each team participating in this cycle.
-            </p>
-
-            {fetchError && (
-              <p className="text-[13px] text-red-500">{fetchError}</p>
-            )}
-
-            {/* Column headers */}
-            <div className="hidden sm:flex items-center gap-3">
-              <span className="flex-1 text-[12px] font-medium text-gray-500 uppercase tracking-wide">Team</span>
-              <span className="flex-1 text-[12px] font-medium text-gray-500 uppercase tracking-wide">Template</span>
-              <span className="shrink-0 w-8" />
-            </div>
-
-            <div className="space-y-2">
-              {teamTemplates.map((row, index) => (
-                <div key={index} className="rounded-xl bg-gray-50/60 p-2">
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-                    <div className="flex-1 min-w-0">
-                      <label className="block text-[11px] font-medium text-gray-500 mb-1 sm:hidden">Team</label>
-                      <Combobox
-                        placeholder="Select team"
-                        emptyMessage="No teams found"
-                        value={row.teamId || null}
-                        onChange={(v) => updateRow(index, "teamId", v)}
-                        onSearchChange={handleTeamSearch}
-                        loading={isSearchingTeams}
-                        options={teamOptions.map((o) => ({
-                          ...o,
-                          disabled: o.disabled && o.value !== row.teamId,
-                        }))}
-                      />
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <label className="block text-[11px] font-medium text-gray-500 mb-1 sm:hidden">Template</label>
-                      <Combobox
-                        placeholder="Select template"
-                        emptyMessage="No templates found"
-                        value={row.templateId || null}
-                        onChange={(v) => updateRow(index, "templateId", v)}
-                        onSearchChange={handleTemplateSearch}
-                        loading={isSearchingTemplates}
-                        options={templateOptions}
-                      />
-                    </div>
-
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeRow(index)}
-                      disabled={teamTemplates.length === 1}
-                      className="shrink-0 w-8 px-0 self-end sm:self-auto"
-                    >
-                      <X size={16} strokeWidth={1.5} />
-                    </Button>
-                  </div>
-
-                  {/* Weight configuration toggle */}
-                  <div className="mt-2 ml-1">
-                    <button
-                      type="button"
-                      onClick={() => toggleWeights(index)}
-                      className="flex items-center gap-1 text-[12px] text-gray-500 hover:text-gray-700 transition-colors"
-                    >
-                      {row.weights ? (
-                        <ChevronUp size={14} strokeWidth={1.5} />
-                      ) : (
-                        <ChevronDown size={14} strokeWidth={1.5} />
-                      )}
-                      {row.weights ? "Remove custom weights" : "Set custom weights"}
-                    </button>
-
-                    {row.weights && (
-                      <div className="mt-2 space-y-2">
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
-                          {(
-                            [
-                              ["manager", "Manager"],
-                              ["peer", "Peer"],
-                              ["directReport", "Direct Report"],
-                              ["self", "Self"],
-                              ["external", "External"],
-                            ] as [keyof RelationshipWeightsInput, string][]
-                          ).map(([field, label]) => (
-                            <div key={field}>
-                              <label className="block text-[11px] font-medium text-gray-500 mb-1">
-                                {label}
-                              </label>
-                              <div className="relative">
-                                <input
-                                  type="number"
-                                  min={0}
-                                  max={100}
-                                  step={1}
-                                  value={row.weights![field]}
-                                  onChange={(e) =>
-                                    updateWeight(index, field, Math.max(0, Math.min(100, Number(e.target.value) || 0)))
-                                  }
-                                  className="w-full rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-[13px] text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 pr-6"
-                                />
-                                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] text-gray-400">%</span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`text-[12px] font-medium ${
-                              Math.abs(getWeightSum(row.weights) - 100) < 0.01
-                                ? "text-green-600"
-                                : "text-red-500"
-                            }`}
-                          >
-                            Total: {getWeightSum(row.weights)}%
-                          </span>
-                          {Math.abs(getWeightSum(row.weights) - 100) >= 0.01 && (
-                            <span className="text-[11px] text-red-400">Must equal 100%</span>
-                          )}
-                        </div>
-                      </div>
+        {/* Stepper */}
+        <nav className="flex items-center gap-2 mb-8">
+          {STEPS.map((s, i) => {
+            const isCompleted = i < step;
+            const isActive = i === step;
+            return (
+              <div key={s.label} className="flex items-center gap-2 flex-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (i < step) setStep(i);
+                  }}
+                  disabled={i > step}
+                  className="flex items-center gap-2.5 group"
+                >
+                  <span
+                    className={cn(
+                      "flex items-center justify-center w-8 h-8 rounded-full text-[13px] font-semibold transition-all shrink-0",
+                      isCompleted &&
+                        "bg-brand-500 text-white",
+                      isActive &&
+                        "bg-brand-500 text-white ring-4 ring-brand-100",
+                      !isCompleted &&
+                        !isActive &&
+                        "bg-gray-100 text-gray-400"
                     )}
+                  >
+                    {isCompleted ? (
+                      <Check size={14} strokeWidth={3} />
+                    ) : (
+                      i + 1
+                    )}
+                  </span>
+                  <div className="hidden sm:block text-left">
+                    <p
+                      className={cn(
+                        "text-[13px] font-medium leading-tight",
+                        isActive || isCompleted
+                          ? "text-gray-900"
+                          : "text-gray-400"
+                      )}
+                    >
+                      {s.label}
+                    </p>
+                    <p className="text-[11px] text-gray-400 leading-tight">
+                      {s.description}
+                    </p>
                   </div>
-                </div>
-              ))}
-            </div>
+                </button>
+                {i < STEPS.length - 1 && (
+                  <div
+                    className={cn(
+                      "flex-1 h-px mx-2",
+                      i < step ? "bg-brand-500" : "bg-gray-200"
+                    )}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </nav>
 
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={addRow}
-            >
-              <Plus size={14} strokeWidth={1.5} className="mr-1.5" />
-              Add Team
-            </Button>
+        {/* Step content */}
+        <div className="min-h-[280px]">
+          {step === 0 && (
+            <StepBasics
+              name={name}
+              onNameChange={setName}
+              startDate={startDate}
+              onStartDateChange={setStartDate}
+              endDate={endDate}
+              onEndDateChange={setEndDate}
+            />
+          )}
+
+          {step === 1 && (
+            <StepTeams
+              groups={groups}
+              onGroupsChange={setGroups}
+              teams={teams}
+              templates={templates}
+              isSearchingTeams={isSearchingTeams}
+              isSearchingTemplates={isSearchingTemplates}
+              onTeamSearch={handleTeamSearch}
+              onTemplateSearch={handleTemplateSearch}
+              fetchError={fetchError}
+            />
+          )}
+
+          {step === 2 && (
+            <StepCustomize
+              groups={groups}
+              configs={configs}
+              onConfigsChange={setConfigs}
+              teams={teams}
+              templates={templates}
+              isSearchingTemplates={isSearchingTemplates}
+              onTemplateSearch={handleTemplateSearch}
+            />
+          )}
+        </div>
+
+        {/* Navigation */}
+        <div className="flex items-center justify-between pt-6 mt-6 border-t border-gray-100">
+          <div>
+            {step > 0 && (
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setStep(step - 1)}
+              >
+                Back
+              </Button>
+            )}
+            {step === 0 && (
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => router.back()}
+              >
+                Cancel
+              </Button>
+            )}
           </div>
 
-          <div className="flex items-center gap-3 pt-2">
-            <Button type="submit" disabled={isLoading || !isValid}>
-              {isLoading ? "Creating..." : "Create Cycle"}
-            </Button>
-            <Button type="button" variant="ghost" onClick={() => router.back()}>
-              Cancel
-            </Button>
+          <div className="flex items-center gap-3">
+            {step < STEPS.length - 1 && (
+              <Button
+                type="button"
+                disabled={!canProceed}
+                onClick={() => setStep(step + 1)}
+              >
+                Continue
+              </Button>
+            )}
+            {step === STEPS.length - 1 && (
+              <Button
+                type="button"
+                disabled={isLoading || !canProceed}
+                onClick={handleSubmit}
+              >
+                {isLoading ? "Creating..." : "Create Cycle"}
+              </Button>
+            )}
           </div>
-        </form>
+        </div>
       </Card>
     </div>
   );

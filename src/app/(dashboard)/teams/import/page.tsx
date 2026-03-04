@@ -86,6 +86,7 @@ function parseCsv(text: string): { rows: ParsedRow[]; error?: string } {
   const teamIdx = header.indexOf("team");
   const managerIdx = header.indexOf("manager");
   const emailIdx = header.indexOf("email");
+  const levelIdx = header.indexOf("level");
 
   if (
     nameIdx === -1 ||
@@ -105,12 +106,16 @@ function parseCsv(text: string): { rows: ParsedRow[]; error?: string } {
     if (!line) continue;
     const cols = line.split(",").map((c) => c.trim());
     if (!cols[nameIdx]) continue;
-    rawRows.push({
+    const row: CsvRow = {
       name: cols[nameIdx],
       team: cols[teamIdx] ?? "",
       manager: cols[managerIdx] ?? "",
       email: cols[emailIdx] ?? "",
-    });
+    };
+    if (levelIdx !== -1 && cols[levelIdx]) {
+      row.level = cols[levelIdx];
+    }
+    rawRows.push(row);
   }
 
   if (rawRows.length === 0) {
@@ -308,6 +313,7 @@ export default function TeamsImportPage() {
         team: r.team,
         manager: r.manager,
         email: r.email,
+        ...(r.level ? { level: r.level } : {}),
       }));
 
       const res = await fetch("/api/import/teams", {
@@ -380,7 +386,7 @@ export default function TeamsImportPage() {
               or click to browse
             </p>
             <p className="text-caption">
-              Expected columns: Name, Team, Manager, Email
+              Expected columns: Name, Team, Manager, Email (optional: Level)
             </p>
             <input
               ref={fileInputRef}
@@ -512,6 +518,9 @@ export default function TeamsImportPage() {
                       Email
                     </th>
                     <th className="text-left py-2.5 px-3 text-gray-500 font-medium">
+                      Level
+                    </th>
+                    <th className="text-left py-2.5 px-3 text-gray-500 font-medium">
                       Role
                     </th>
                     <th className="text-left py-2.5 px-3 text-gray-500 font-medium">
@@ -545,6 +554,11 @@ export default function TeamsImportPage() {
                       </td>
                       <td className="py-2 px-3 text-gray-600">
                         {row.email || (
+                          <span className="text-gray-300">—</span>
+                        )}
+                      </td>
+                      <td className="py-2 px-3 text-gray-600">
+                        {row.level || (
                           <span className="text-gray-300">—</span>
                         )}
                       </td>

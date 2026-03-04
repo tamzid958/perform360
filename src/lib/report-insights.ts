@@ -1,4 +1,4 @@
-import type { RelationshipScores, QuestionDetail } from "@/types/report";
+import type { RelationshipScores, QuestionDetail, CategoryScore } from "@/types/report";
 
 // ─── Variance ───
 
@@ -24,7 +24,7 @@ export interface InsightTileData {
   value: string;
   description: string;
   color: string;
-  iconName: "minus" | "trending-up" | "trending-down" | "message-circle" | "users";
+  iconName: "minus" | "trending-up" | "trending-down" | "message-circle" | "users" | "star" | "target";
 }
 
 export function deriveSelfOtherGap(
@@ -234,5 +234,43 @@ export function deriveQuestionHighlights(
     splitOpinions: splits,
     remaining: rest,
     allSorted: byScore,
+  };
+}
+
+// ─── Competency Insights ───
+
+export function deriveStrongestCompetency(
+  categories: CategoryScore[]
+): InsightTileData | null {
+  const scored = categories.filter((c) => c.score > 0);
+  if (scored.length < 2) return null;
+
+  const sorted = [...scored].sort((a, b) => b.score - a.score);
+  const best = sorted[0];
+
+  return {
+    label: "Top Competency",
+    value: best.score.toFixed(1),
+    description: best.category,
+    color: "#34c759",
+    iconName: "star",
+  };
+}
+
+export function deriveBiggestGrowthArea(
+  categories: CategoryScore[]
+): InsightTileData | null {
+  const scored = categories.filter((c) => c.score > 0);
+  if (scored.length < 2) return null;
+
+  const sorted = [...scored].sort((a, b) => a.score - b.score);
+  const weakest = sorted[0];
+
+  return {
+    label: "Growth Area",
+    value: weakest.score.toFixed(1),
+    description: weakest.category,
+    color: "#ff9f0a",
+    iconName: "target",
   };
 }

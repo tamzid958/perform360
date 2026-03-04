@@ -15,6 +15,8 @@ export interface TeamMemberWithUser {
   userId: string;
   teamId: string;
   role: "MANAGER" | "MEMBER" | "EXTERNAL";
+  levelId: string | null;
+  level: { id: string; name: string } | null;
   user: {
     id: string;
     email: string;

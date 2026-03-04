@@ -18,11 +18,30 @@ const relationshipWeightsSchema = z.object({
   { message: "Weights must sum to 100%" }
 );
 
+const levelTemplateSchema = z.object({
+  levelId: z.string().min(1, "Level ID is required"),
+  relationship: z.enum(["manager", "direct_report", "peer", "self", "external"]),
+  templateId: z.string().min(1, "Template ID is required"),
+});
+
+const relationshipTemplateSchema = z.object({
+  relationship: z.enum(["manager", "direct_report", "peer", "self", "external"]),
+  templateId: z.string().min(1, "Template ID is required"),
+});
+
 const teamTemplateSchema = z.object({
   teamId: z.string().min(1, "Team ID is required"),
-  templateId: z.string().min(1, "Template ID is required"),
+  templateId: z.string().optional(), // optional when using per-level or relationship templates
   weights: relationshipWeightsSchema.optional(),
-});
+  levelTemplates: z.array(levelTemplateSchema).optional(),
+  relationshipTemplates: z.array(relationshipTemplateSchema).optional(),
+}).refine(
+  (tt) =>
+    tt.templateId ||
+    (tt.levelTemplates && tt.levelTemplates.length > 0) ||
+    (tt.relationshipTemplates && tt.relationshipTemplates.length > 0),
+  { message: "Either templateId, levelTemplates, or relationshipTemplates must be provided" }
+);
 
 const createCycleSchema = z.object({
   name: z.string().min(1, "Cycle name is required"),
@@ -136,27 +155,62 @@ export async function POST(request: NextRequest) {
       }, { status: 404 });
     }
 
-    // Verify all templates belong to company or are global
-    const templateIds = Array.from(new Set(validated.teamTemplates.map((tt) => tt.templateId)));
-    const templates = await prisma.evaluationTemplate.findMany({
-      where: {
-        id: { in: templateIds },
-        OR: [
-          { companyId: authResult.companyId },
-          { isGlobal: true },
-        ],
-      },
-      select: { id: true },
-    });
-    if (templates.length !== templateIds.length) {
-      return NextResponse.json({
-        success: false,
-        error: "One or more templates not found",
-        code: "NOT_FOUND",
-      }, { status: 404 });
+    // Collect all template IDs (default + level-specific + relationship-only)
+    const allTemplateIds = new Set<string>();
+    for (const tt of validated.teamTemplates) {
+      if (tt.templateId) allTemplateIds.add(tt.templateId);
+      if (tt.levelTemplates) {
+        for (const lt of tt.levelTemplates) allTemplateIds.add(lt.templateId);
+      }
+      if (tt.relationshipTemplates) {
+        for (const rt of tt.relationshipTemplates) allTemplateIds.add(rt.templateId);
+      }
     }
 
-    // Create cycle and CycleTeam rows in a transaction
+    // Verify all templates belong to company or are global
+    const templateIds = Array.from(allTemplateIds);
+    if (templateIds.length > 0) {
+      const templates = await prisma.evaluationTemplate.findMany({
+        where: {
+          id: { in: templateIds },
+          OR: [
+            { companyId: authResult.companyId },
+            { isGlobal: true },
+          ],
+        },
+        select: { id: true },
+      });
+      if (templates.length !== templateIds.length) {
+        return NextResponse.json({
+          success: false,
+          error: "One or more templates not found",
+          code: "NOT_FOUND",
+        }, { status: 404 });
+      }
+    }
+
+    // Verify all level IDs (if any) belong to company
+    const allLevelIds = new Set<string>();
+    for (const tt of validated.teamTemplates) {
+      if (tt.levelTemplates) {
+        for (const lt of tt.levelTemplates) allLevelIds.add(lt.levelId);
+      }
+    }
+    if (allLevelIds.size > 0) {
+      const levels = await prisma.level.findMany({
+        where: { id: { in: Array.from(allLevelIds) }, companyId: authResult.companyId },
+        select: { id: true },
+      });
+      if (levels.length !== allLevelIds.size) {
+        return NextResponse.json({
+          success: false,
+          error: "One or more levels not found",
+          code: "NOT_FOUND",
+        }, { status: 404 });
+      }
+    }
+
+    // Create cycle, CycleTeam rows, and level template overrides in a transaction
     const cycle = await prisma.$transaction(async (tx) => {
       const created = await tx.evaluationCycle.create({
         data: {
@@ -168,18 +222,45 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      await tx.cycleTeam.createMany({
-        data: validated.teamTemplates.map((tt) => ({
-          cycleId: created.id,
-          teamId: tt.teamId,
-          templateId: tt.templateId,
-          weightManager: tt.weights ? tt.weights.manager / 100 : null,
-          weightPeer: tt.weights ? tt.weights.peer / 100 : null,
-          weightDirectReport: tt.weights ? tt.weights.directReport / 100 : null,
-          weightSelf: tt.weights ? tt.weights.self / 100 : null,
-          weightExternal: tt.weights ? tt.weights.external / 100 : null,
-        })),
-      });
+      // Create CycleTeam records
+      for (const tt of validated.teamTemplates) {
+        const cycleTeam = await tx.cycleTeam.create({
+          data: {
+            cycleId: created.id,
+            teamId: tt.teamId,
+            templateId: tt.templateId ?? null,
+            weightManager: tt.weights ? tt.weights.manager / 100 : null,
+            weightPeer: tt.weights ? tt.weights.peer / 100 : null,
+            weightDirectReport: tt.weights ? tt.weights.directReport / 100 : null,
+            weightSelf: tt.weights ? tt.weights.self / 100 : null,
+            weightExternal: tt.weights ? tt.weights.external / 100 : null,
+          },
+        });
+
+        // Create per-level template overrides if provided
+        if (tt.levelTemplates && tt.levelTemplates.length > 0) {
+          await tx.cycleTeamLevelTemplate.createMany({
+            data: tt.levelTemplates.map((lt) => ({
+              cycleTeamId: cycleTeam.id,
+              levelId: lt.levelId,
+              relationship: lt.relationship,
+              templateId: lt.templateId,
+            })),
+          });
+        }
+
+        // Create relationship-only template overrides (no level) if provided
+        if (tt.relationshipTemplates && tt.relationshipTemplates.length > 0) {
+          await tx.cycleTeamLevelTemplate.createMany({
+            data: tt.relationshipTemplates.map((rt) => ({
+              cycleTeamId: cycleTeam.id,
+              levelId: null,
+              relationship: rt.relationship,
+              templateId: rt.templateId,
+            })),
+          });
+        }
+      }
 
       return created;
     });

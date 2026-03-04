@@ -22,6 +22,32 @@ export interface TeamBreakdown {
   calibrationJustification: string | null;
 }
 
+export interface SubjectContext {
+  role: string;
+  level: string | null;
+  teams: { id: string; name: string; level: string | null }[];
+}
+
+export interface ResponseRate {
+  total: number;
+  completed: number;
+  rate: number;
+}
+
+export interface ReviewerBreakdownItem {
+  relationship: string;
+  total: number;
+  completed: number;
+}
+
+export interface SelfVsOthersItem {
+  category: string;
+  selfScore: number | null;
+  othersScore: number | null;
+  gap: number | null;
+  insight: "blind_spot" | "hidden_strength" | "aligned" | null;
+}
+
 export interface IndividualReport {
   subjectId: string;
   subjectName: string;
@@ -37,6 +63,10 @@ export interface IndividualReport {
   calibratedScore: number | null;
   calibrationJustification: string | null;
   calibrationAdjustedBy: string | null;
+  subjectContext: SubjectContext;
+  responseRate: ResponseRate;
+  reviewerBreakdown: ReviewerBreakdownItem[];
+  selfVsOthers: SelfVsOthersItem[];
 }
 
 export interface CategoryScore {

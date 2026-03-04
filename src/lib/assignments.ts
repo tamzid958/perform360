@@ -10,12 +10,53 @@ interface GeneratedAssignment {
   token: string;
 }
 
+// levelId → relationship → templateId
+type LevelRelationshipTemplateMap = Map<string, Map<string, string>>;
+// teamId → LevelRelationshipTemplateMap
+type TeamLevelTemplateMap = Map<string, LevelRelationshipTemplateMap>;
+// teamId → relationship → templateId (no level dimension)
+type TeamRelationshipTemplateMap = Map<string, Map<string, string>>;
+
+/**
+ * Resolve template for an assignment.
+ * Priority: level+relationship > relationship-only > team default > null (skip).
+ */
+function resolveTemplate(
+  teamId: string,
+  subjectLevelId: string | null,
+  relationship: string,
+  teamTemplateMap: Map<string, string | null>,
+  teamLevelTemplateMap: TeamLevelTemplateMap,
+  teamRelationshipTemplateMap: TeamRelationshipTemplateMap = new Map()
+): string | null {
+  // 1. Try level-specific template first
+  if (subjectLevelId) {
+    const levelMap = teamLevelTemplateMap.get(teamId);
+    if (levelMap) {
+      const relMap = levelMap.get(subjectLevelId);
+      if (relMap) {
+        const templateId = relMap.get(relationship);
+        if (templateId) return templateId;
+      }
+    }
+  }
+
+  // 2. Try relationship-only template (no level required)
+  const relMap = teamRelationshipTemplateMap.get(teamId);
+  if (relMap) {
+    const templateId = relMap.get(relationship);
+    if (templateId) return templateId;
+  }
+
+  // 3. Fallback to team default template
+  return teamTemplateMap.get(teamId) ?? null;
+}
+
 /**
  * Generate evaluation assignments from team structure for a cycle.
  *
- * Each team has its own templateId. Assignments inherit the template
- * from their team. Same reviewer+subject pair can appear multiple times
- * if they share teams with different templates.
+ * Each team has a default templateId (optional). Level-specific templates
+ * override the default per (levelId, relationship) pair.
  *
  * Rules:
  *  - Manager evaluates each Member (relationship: "manager")
@@ -28,9 +69,10 @@ interface GeneratedAssignment {
 export function generateAssignmentsFromTeams(
   cycleId: string,
   teams: TeamWithMembers[],
-  teamTemplateMap: Map<string, string>
+  teamTemplateMap: Map<string, string | null>,
+  teamLevelTemplateMap: TeamLevelTemplateMap = new Map(),
+  teamRelationshipTemplateMap: TeamRelationshipTemplateMap = new Map()
 ): GeneratedAssignment[] {
-  // Deduplicate by "subjectId:reviewerId:templateId" key
   const seen = new Set<string>();
   const assignments: GeneratedAssignment[] = [];
 
@@ -54,58 +96,60 @@ export function generateAssignmentsFromTeams(
     });
   }
 
-  // Track unique (userId, templateId) pairs for self-evaluations
+  // Track self-evaluations: (userId, templateId) pairs
   const selfEvalPairs = new Set<string>();
 
   for (const team of teams) {
-    const templateId = teamTemplateMap.get(team.id);
-    if (!templateId) continue;
-
     const managers = team.members.filter((m) => m.role === "MANAGER");
     const members = team.members.filter((m) => m.role === "MEMBER");
     const externals = team.members.filter((m) => m.role === "EXTERNAL");
 
-    // Track non-external users for self-evaluations (externals don't self-evaluate)
+    // Track non-external users for self-evaluations
     for (const m of team.members) {
-      if (m.role !== "EXTERNAL") {
-        selfEvalPairs.add(`${m.userId}:${templateId}`);
-      }
+      if (m.role === "EXTERNAL") continue;
+      const tpl = resolveTemplate(team.id, m.levelId, "self", teamTemplateMap, teamLevelTemplateMap, teamRelationshipTemplateMap);
+      if (tpl) selfEvalPairs.add(`${m.userId}:${tpl}`);
     }
 
-    // Manager evaluates each Member (downward)
+    // Manager evaluates each Member (downward) — template based on subject's level
     for (const mgr of managers) {
       for (const member of members) {
-        addAssignment(member.userId, mgr.userId, "manager", templateId);
+        const tpl = resolveTemplate(team.id, member.levelId, "manager", teamTemplateMap, teamLevelTemplateMap, teamRelationshipTemplateMap);
+        if (tpl) addAssignment(member.userId, mgr.userId, "manager", tpl);
       }
     }
 
-    // Member evaluates each Manager (upward)
+    // Member evaluates each Manager (upward) — template based on subject's (manager's) level
     for (const member of members) {
       for (const mgr of managers) {
-        addAssignment(mgr.userId, member.userId, "direct_report", templateId);
+        const tpl = resolveTemplate(team.id, mgr.levelId, "direct_report", teamTemplateMap, teamLevelTemplateMap, teamRelationshipTemplateMap);
+        if (tpl) addAssignment(mgr.userId, member.userId, "direct_report", tpl);
       }
     }
 
-    // Peer evaluations: Members evaluate each other
+    // Peer evaluations — template based on subject's level
     for (const reviewer of members) {
       for (const subject of members) {
         if (reviewer.userId === subject.userId) continue;
-        addAssignment(subject.userId, reviewer.userId, "peer", templateId);
+        const tpl = resolveTemplate(team.id, subject.levelId, "peer", teamTemplateMap, teamLevelTemplateMap, teamRelationshipTemplateMap);
+        if (tpl) addAssignment(subject.userId, reviewer.userId, "peer", tpl);
       }
     }
 
-    // External evaluates each Member and Manager (one-way, no incoming evaluations)
+    // External evaluates Members and Managers — template based on subject's level
     for (const ext of externals) {
       for (const member of members) {
-        addAssignment(member.userId, ext.userId, "external", templateId);
+        const tpl = resolveTemplate(team.id, member.levelId, "external", teamTemplateMap, teamLevelTemplateMap, teamRelationshipTemplateMap);
+        if (tpl) addAssignment(member.userId, ext.userId, "external", tpl);
       }
       for (const mgr of managers) {
-        addAssignment(mgr.userId, ext.userId, "external", templateId);
+        const tpl = resolveTemplate(team.id, mgr.levelId, "external", teamTemplateMap, teamLevelTemplateMap, teamRelationshipTemplateMap);
+        if (tpl) addAssignment(mgr.userId, ext.userId, "external", tpl);
       }
     }
   }
 
-  // Self-evaluations for every unique (user, template) pair
+  // Self-evaluations
   selfEvalPairs.forEach((pair) => {
     const [userId, templateId] = pair.split(":");
     addAssignment(userId, userId, "self", templateId);
@@ -117,6 +161,7 @@ export function generateAssignmentsFromTeams(
 interface TeamMemberData {
   userId: string;
   role: "MANAGER" | "MEMBER" | "EXTERNAL";
+  levelId: string | null;
 }
 
 interface TeamWithMembers {
@@ -126,14 +171,21 @@ interface TeamWithMembers {
 
 export interface TeamTemplatePair {
   teamId: string;
-  templateId: string;
+  templateId?: string | null;
+  levelTemplates?: {
+    levelId: string;
+    relationship: string;
+    templateId: string;
+  }[];
+  relationshipTemplates?: {
+    relationship: string;
+    templateId: string;
+  }[];
 }
 
 /**
  * Fetch selected teams with members, then generate
  * and persist assignments in a transaction.
- *
- * Returns the count of created assignments.
  */
 export async function createAssignmentsForCycle(
   cycleId: string,
@@ -142,7 +194,7 @@ export async function createAssignmentsForCycle(
 ): Promise<{ count: number; reviewerEmails: ReviewerInfo[] }> {
   const teamIds = teamTemplatePairs.map((p) => p.teamId);
 
-  // Fetch only the selected teams with members
+  // Fetch teams with members (now including levelId)
   const teams = await prisma.team.findMany({
     where: { id: { in: teamIds }, companyId },
     include: {
@@ -150,6 +202,7 @@ export async function createAssignmentsForCycle(
         select: {
           userId: true,
           role: true,
+          levelId: true,
         },
       },
     },
@@ -159,18 +212,81 @@ export async function createAssignmentsForCycle(
     return { count: 0, reviewerEmails: [] };
   }
 
-  // Build teamId → templateId map
-  const teamTemplateMap = new Map(
-    teamTemplatePairs.map((p) => [p.teamId, p.templateId])
+  // Build teamId → default templateId map
+  const teamTemplateMap = new Map<string, string | null>(
+    teamTemplatePairs.map((p) => [p.teamId, p.templateId ?? null])
   );
 
-  const assignments = generateAssignmentsFromTeams(cycleId, teams, teamTemplateMap);
+  // Build teamId → levelId → relationship → templateId map
+  const teamLevelTemplateMap: TeamLevelTemplateMap = new Map();
+  for (const pair of teamTemplatePairs) {
+    if (!pair.levelTemplates?.length) continue;
+    const levelMap: LevelRelationshipTemplateMap = new Map();
+    for (const lt of pair.levelTemplates) {
+      if (!levelMap.has(lt.levelId)) {
+        levelMap.set(lt.levelId, new Map());
+      }
+      levelMap.get(lt.levelId)!.set(lt.relationship, lt.templateId);
+    }
+    teamLevelTemplateMap.set(pair.teamId, levelMap);
+  }
+
+  // Build teamId → relationship → templateId map (no level dimension)
+  const teamRelationshipTemplateMap: TeamRelationshipTemplateMap = new Map();
+  for (const pair of teamTemplatePairs) {
+    if (!pair.relationshipTemplates?.length) continue;
+    const relMap = new Map<string, string>();
+    for (const rt of pair.relationshipTemplates) {
+      relMap.set(rt.relationship, rt.templateId);
+    }
+    teamRelationshipTemplateMap.set(pair.teamId, relMap);
+  }
+
+  // Also load persisted CycleTeamLevelTemplate records (for existing cycles)
+  const cycleTeams = await prisma.cycleTeam.findMany({
+    where: { cycleId, teamId: { in: teamIds } },
+    include: { levelTemplates: true },
+  });
+
+  for (const ct of cycleTeams) {
+    if (ct.levelTemplates.length === 0) continue;
+
+    // Separate level-specific vs relationship-only entries
+    const levelEntries = ct.levelTemplates.filter((lt) => lt.levelId !== null);
+    const relEntries = ct.levelTemplates.filter((lt) => lt.levelId === null);
+
+    if (levelEntries.length > 0 && !teamLevelTemplateMap.has(ct.teamId)) {
+      const levelMap: LevelRelationshipTemplateMap = new Map();
+      for (const lt of levelEntries) {
+        if (!levelMap.has(lt.levelId!)) {
+          levelMap.set(lt.levelId!, new Map());
+        }
+        levelMap.get(lt.levelId!)!.set(lt.relationship, lt.templateId);
+      }
+      teamLevelTemplateMap.set(ct.teamId, levelMap);
+    }
+
+    if (relEntries.length > 0 && !teamRelationshipTemplateMap.has(ct.teamId)) {
+      const relMap = new Map<string, string>();
+      for (const rt of relEntries) {
+        relMap.set(rt.relationship, rt.templateId);
+      }
+      teamRelationshipTemplateMap.set(ct.teamId, relMap);
+    }
+  }
+
+  const assignments = generateAssignmentsFromTeams(
+    cycleId,
+    teams,
+    teamTemplateMap,
+    teamLevelTemplateMap,
+    teamRelationshipTemplateMap
+  );
 
   if (assignments.length === 0) {
     return { count: 0, reviewerEmails: [] };
   }
 
-  // Bulk insert assignments
   const created = await prisma.evaluationAssignment.createMany({
     data: assignments,
     skipDuplicates: true,
@@ -184,8 +300,6 @@ export async function createAssignmentsForCycle(
   });
 
   const userMap = new Map(users.map((u) => [u.id, u]));
-
-  // Build reviewer info with their assignments
   const reviewerInfoMap = new Map<string, ReviewerInfo>();
 
   for (const assignment of assignments) {

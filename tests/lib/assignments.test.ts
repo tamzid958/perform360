@@ -17,9 +17,9 @@ describe("assignments", () => {
       const teams = [{
         id: "team-1",
         members: [
-          { userId: "mgr-1", role: "MANAGER" as const },
-          { userId: "mem-1", role: "MEMBER" as const },
-          { userId: "mem-2", role: "MEMBER" as const },
+          { userId: "mgr-1", role: "MANAGER" as const, levelId: null },
+          { userId: "mem-1", role: "MEMBER" as const, levelId: null },
+          { userId: "mem-2", role: "MEMBER" as const, levelId: null },
         ],
       }];
       const templateMap = new Map([["team-1", "tpl-1"]]);
@@ -35,8 +35,8 @@ describe("assignments", () => {
       const teams = [{
         id: "team-1",
         members: [
-          { userId: "mgr-1", role: "MANAGER" as const },
-          { userId: "mem-1", role: "MEMBER" as const },
+          { userId: "mgr-1", role: "MANAGER" as const, levelId: null },
+          { userId: "mem-1", role: "MEMBER" as const, levelId: null },
         ],
       }];
       const templateMap = new Map([["team-1", "tpl-1"]]);
@@ -52,10 +52,10 @@ describe("assignments", () => {
       const teams = [{
         id: "team-1",
         members: [
-          { userId: "mgr-1", role: "MANAGER" as const },
-          { userId: "mem-1", role: "MEMBER" as const },
-          { userId: "mem-2", role: "MEMBER" as const },
-          { userId: "mem-3", role: "MEMBER" as const },
+          { userId: "mgr-1", role: "MANAGER" as const, levelId: null },
+          { userId: "mem-1", role: "MEMBER" as const, levelId: null },
+          { userId: "mem-2", role: "MEMBER" as const, levelId: null },
+          { userId: "mem-3", role: "MEMBER" as const, levelId: null },
         ],
       }];
       const templateMap = new Map([["team-1", "tpl-1"]]);
@@ -70,9 +70,9 @@ describe("assignments", () => {
       const teams = [{
         id: "team-1",
         members: [
-          { userId: "mgr-1", role: "MANAGER" as const },
-          { userId: "mem-1", role: "MEMBER" as const },
-          { userId: "mem-2", role: "MEMBER" as const },
+          { userId: "mgr-1", role: "MANAGER" as const, levelId: null },
+          { userId: "mem-1", role: "MEMBER" as const, levelId: null },
+          { userId: "mem-2", role: "MEMBER" as const, levelId: null },
         ],
       }];
       const templateMap = new Map([["team-1", "tpl-1"]]);
@@ -90,15 +90,15 @@ describe("assignments", () => {
         {
           id: "team-1",
           members: [
-            { userId: "user-1", role: "MEMBER" as const },
-            { userId: "user-2", role: "MEMBER" as const },
+            { userId: "user-1", role: "MEMBER" as const, levelId: null },
+            { userId: "user-2", role: "MEMBER" as const, levelId: null },
           ],
         },
         {
           id: "team-2",
           members: [
-            { userId: "user-1", role: "MEMBER" as const },
-            { userId: "user-2", role: "MEMBER" as const },
+            { userId: "user-1", role: "MEMBER" as const, levelId: null },
+            { userId: "user-2", role: "MEMBER" as const, levelId: null },
           ],
         },
       ];
@@ -121,15 +121,15 @@ describe("assignments", () => {
         {
           id: "team-1",
           members: [
-            { userId: "user-1", role: "MEMBER" as const },
-            { userId: "user-2", role: "MEMBER" as const },
+            { userId: "user-1", role: "MEMBER" as const, levelId: null },
+            { userId: "user-2", role: "MEMBER" as const, levelId: null },
           ],
         },
         {
           id: "team-2",
           members: [
-            { userId: "user-1", role: "MEMBER" as const },
-            { userId: "user-2", role: "MEMBER" as const },
+            { userId: "user-1", role: "MEMBER" as const, levelId: null },
+            { userId: "user-2", role: "MEMBER" as const, levelId: null },
           ],
         },
       ];
@@ -148,8 +148,8 @@ describe("assignments", () => {
       const teams = [{
         id: "team-no-template",
         members: [
-          { userId: "user-1", role: "MEMBER" as const },
-          { userId: "user-2", role: "MEMBER" as const },
+          { userId: "user-1", role: "MEMBER" as const, levelId: null },
+          { userId: "user-2", role: "MEMBER" as const, levelId: null },
         ],
       }];
       const templateMap = new Map<string, string>();
@@ -167,9 +167,9 @@ describe("assignments", () => {
       const teams = [{
         id: "team-1",
         members: [
-          { userId: "mgr-1", role: "MANAGER" as const },
-          { userId: "mem-1", role: "MEMBER" as const },
-          { userId: "mem-2", role: "MEMBER" as const },
+          { userId: "mgr-1", role: "MANAGER" as const, levelId: null },
+          { userId: "mem-1", role: "MEMBER" as const, levelId: null },
+          { userId: "mem-2", role: "MEMBER" as const, levelId: null },
         ],
       }];
       const templateMap = new Map([["team-1", "tpl-1"]]);
@@ -183,8 +183,8 @@ describe("assignments", () => {
       const teams = [{
         id: "team-1",
         members: [
-          { userId: "user-1", role: "MEMBER" as const },
-          { userId: "user-2", role: "MEMBER" as const },
+          { userId: "user-1", role: "MEMBER" as const, levelId: null },
+          { userId: "user-2", role: "MEMBER" as const, levelId: null },
         ],
       }];
       const templateMap = new Map([["team-1", "tpl-1"]]);
@@ -198,10 +198,10 @@ describe("assignments", () => {
       const teams = [{
         id: "team-1",
         members: [
-          { userId: "mgr-1", role: "MANAGER" as const },
-          { userId: "mem-1", role: "MEMBER" as const },
-          { userId: "mem-2", role: "MEMBER" as const },
-          { userId: "ext-1", role: "EXTERNAL" as const },
+          { userId: "mgr-1", role: "MANAGER" as const, levelId: null },
+          { userId: "mem-1", role: "MEMBER" as const, levelId: null },
+          { userId: "mem-2", role: "MEMBER" as const, levelId: null },
+          { userId: "ext-1", role: "EXTERNAL" as const, levelId: null },
         ],
       }];
       const templateMap = new Map([["team-1", "tpl-1"]]);
@@ -217,9 +217,9 @@ describe("assignments", () => {
       const teams = [{
         id: "team-1",
         members: [
-          { userId: "mgr-1", role: "MANAGER" as const },
-          { userId: "mem-1", role: "MEMBER" as const },
-          { userId: "ext-1", role: "EXTERNAL" as const },
+          { userId: "mgr-1", role: "MANAGER" as const, levelId: null },
+          { userId: "mem-1", role: "MEMBER" as const, levelId: null },
+          { userId: "ext-1", role: "EXTERNAL" as const, levelId: null },
         ],
       }];
       const templateMap = new Map([["team-1", "tpl-1"]]);
@@ -235,9 +235,9 @@ describe("assignments", () => {
       const teams = [{
         id: "team-1",
         members: [
-          { userId: "mgr-1", role: "MANAGER" as const },
-          { userId: "mem-1", role: "MEMBER" as const },
-          { userId: "ext-1", role: "EXTERNAL" as const },
+          { userId: "mgr-1", role: "MANAGER" as const, levelId: null },
+          { userId: "mem-1", role: "MEMBER" as const, levelId: null },
+          { userId: "ext-1", role: "EXTERNAL" as const, levelId: null },
         ],
       }];
       const templateMap = new Map([["team-1", "tpl-1"]]);
@@ -251,9 +251,9 @@ describe("assignments", () => {
       const teams = [{
         id: "team-1",
         members: [
-          { userId: "mgr-1", role: "MANAGER" as const },
-          { userId: "ext-1", role: "EXTERNAL" as const },
-          { userId: "ext-2", role: "EXTERNAL" as const },
+          { userId: "mgr-1", role: "MANAGER" as const, levelId: null },
+          { userId: "ext-1", role: "EXTERNAL" as const, levelId: null },
+          { userId: "ext-2", role: "EXTERNAL" as const, levelId: null },
         ],
       }];
       const templateMap = new Map([["team-1", "tpl-1"]]);
@@ -269,9 +269,9 @@ describe("assignments", () => {
       const teams = [{
         id: "team-1",
         members: [
-          { userId: "mgr-1", role: "MANAGER" as const },
-          { userId: "mem-1", role: "MEMBER" as const },
-          { userId: "ext-1", role: "EXTERNAL" as const },
+          { userId: "mgr-1", role: "MANAGER" as const, levelId: null },
+          { userId: "mem-1", role: "MEMBER" as const, levelId: null },
+          { userId: "ext-1", role: "EXTERNAL" as const, levelId: null },
         ],
       }];
       const templateMap = new Map([["team-1", "tpl-1"]]);
@@ -287,11 +287,11 @@ describe("assignments", () => {
       const teams = [{
         id: "team-1",
         members: [
-          { userId: "mgr-1", role: "MANAGER" as const },
-          { userId: "mgr-2", role: "MANAGER" as const },
-          { userId: "mem-1", role: "MEMBER" as const },
-          { userId: "mem-2", role: "MEMBER" as const },
-          { userId: "ext-1", role: "EXTERNAL" as const },
+          { userId: "mgr-1", role: "MANAGER" as const, levelId: null },
+          { userId: "mgr-2", role: "MANAGER" as const, levelId: null },
+          { userId: "mem-1", role: "MEMBER" as const, levelId: null },
+          { userId: "mem-2", role: "MEMBER" as const, levelId: null },
+          { userId: "ext-1", role: "EXTERNAL" as const, levelId: null },
         ],
       }];
       const templateMap = new Map([["team-1", "tpl-1"]]);

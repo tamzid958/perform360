@@ -27,6 +27,7 @@ import {
   Shield,
   RefreshCcw,
   Radar,
+  Layers,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -49,6 +50,7 @@ type SectionId = (typeof sections)[number]["id"];
 interface OrgNode {
   title: string;
   role?: string;
+  level?: string;
   badge?: { label: string; variant: "success" | "warning" | "info" | "default" | "outline" };
   children?: OrgNode[];
 }
@@ -96,6 +98,12 @@ function OrgNodeItem({ node, depth }: { node: OrgNode; depth: number }) {
         </span>
         {node.role && (
           <span className="text-[12px] text-gray-400">{node.role}</span>
+        )}
+        {node.level && (
+          <span className="inline-flex items-center gap-1 text-[11px] text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded-md font-medium">
+            <Layers size={10} strokeWidth={1.5} />
+            {node.level}
+          </span>
         )}
         {node.badge && (
           <Badge variant={node.badge.variant}>{node.badge.label}</Badge>
@@ -191,9 +199,9 @@ const techCompanyHierarchy: OrgNode[] = [
             badge: { label: "Team", variant: "success" },
             children: [
               { title: "Sarah Chen", role: "Engineering Manager", badge: { label: "Manager", variant: "warning" } },
-              { title: "Alex Rivera", role: "Solution Architect — Platform", badge: { label: "Member", variant: "info" } },
-              { title: "Priya Sharma", role: "Solution Architect — Frontend", badge: { label: "Member", variant: "info" } },
-              { title: "Dan Kim", role: "Solution Architect - DevOps", badge: { label: "Member", variant: "info" } },
+              { title: "Alex Rivera", role: "Solution Architect — Platform", level: "SA L-3", badge: { label: "Member", variant: "info" } },
+              { title: "Priya Sharma", role: "Solution Architect — Frontend", level: "SA L-3", badge: { label: "Member", variant: "info" } },
+              { title: "Dan Kim", role: "Solution Architect - DevOps", level: "SA L-2", badge: { label: "Member", variant: "info" } },
             ],
           },
           {
@@ -201,10 +209,10 @@ const techCompanyHierarchy: OrgNode[] = [
             role: "Lead: Alex Rivera",
             badge: { label: "Team", variant: "success" },
             children: [
-              { title: "Alex Rivera", role: "Solution Architect", badge: { label: "Manager", variant: "warning" } },
-              { title: "Jordan Lee", role: "Senior Engineer", badge: { label: "Member", variant: "info" } },
-              { title: "Maya Patel", role: "Engineer", badge: { label: "Member", variant: "info" } },
-              { title: "Chris Wu", role: "Junior Engineer", badge: { label: "Member", variant: "info" } },
+              { title: "Alex Rivera", role: "Solution Architect", level: "SA L-3", badge: { label: "Manager", variant: "warning" } },
+              { title: "Jordan Lee", role: "Senior Engineer", level: "SE L-2", badge: { label: "Member", variant: "info" } },
+              { title: "Maya Patel", role: "Engineer", level: "SE L-1", badge: { label: "Member", variant: "info" } },
+              { title: "Chris Wu", role: "Junior Engineer", level: "SE L-1", badge: { label: "Member", variant: "info" } },
               { title: "Lisa Park", role: "Client Stakeholder", badge: { label: "External", variant: "outline" } },
             ],
           },
@@ -213,9 +221,9 @@ const techCompanyHierarchy: OrgNode[] = [
             role: "Lead: Priya Sharma",
             badge: { label: "Team", variant: "success" },
             children: [
-              { title: "Priya Sharma", role: "Solution Architect", badge: { label: "Manager", variant: "warning" } },
-              { title: "Tom Zhang", role: "Senior Engineer", badge: { label: "Member", variant: "info" } },
-              { title: "Nina Costa", role: "Engineer", badge: { label: "Member", variant: "info" } },
+              { title: "Priya Sharma", role: "Solution Architect", level: "SA L-3", badge: { label: "Manager", variant: "warning" } },
+              { title: "Tom Zhang", role: "Senior Engineer", level: "SE L-2", badge: { label: "Member", variant: "info" } },
+              { title: "Nina Costa", role: "Engineer", level: "SE L-1", badge: { label: "Member", variant: "info" } },
             ],
           },
           {
@@ -223,8 +231,8 @@ const techCompanyHierarchy: OrgNode[] = [
             role: "Lead: Dan Kim",
             badge: { label: "Team", variant: "success" },
             children: [
-              { title: "Dan Kim", role: "Solution Architect", badge: { label: "Manager", variant: "warning" } },
-              { title: "Sam Ali", role: "DevOps Engineer", badge: { label: "Member", variant: "info" } },
+              { title: "Dan Kim", role: "Solution Architect", level: "SA L-2", badge: { label: "Manager", variant: "warning" } },
+              { title: "Sam Ali", role: "DevOps Engineer", level: "SE L-1", badge: { label: "Member", variant: "info" } },
             ],
           },
         ],
@@ -407,18 +415,26 @@ function How360WorksSection() {
           <p className="text-callout text-gray-500 mb-3 font-medium">Team members:</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {[
-              { name: "Alex Rivera", title: "Solution Architect", role: "Manager" as const },
-              { name: "Jordan Lee", title: "Senior Engineer", role: "Member" as const },
-              { name: "Maya Patel", title: "Engineer", role: "Member" as const },
-              { name: "Chris Wu", title: "Junior Engineer", role: "Member" as const },
-              { name: "Lisa Park", title: "Client Stakeholder", role: "External" as const },
+              { name: "Alex Rivera", title: "Solution Architect", role: "Manager" as const, level: "SA L-3" },
+              { name: "Jordan Lee", title: "Senior Engineer", role: "Member" as const, level: "SE L-2" },
+              { name: "Maya Patel", title: "Engineer", role: "Member" as const, level: "SE L-1" },
+              { name: "Chris Wu", title: "Junior Engineer", role: "Member" as const, level: "SE L-1" },
+              { name: "Lisa Park", title: "Client Stakeholder", role: "External" as const, level: null },
             ].map((m) => (
               <div key={m.name} className="py-2.5 px-3 bg-gray-50 rounded-xl text-center">
                 <p className="text-[13px] font-medium text-gray-900">{m.name}</p>
                 <p className="text-[11px] text-gray-400 mt-0.5">{m.title}</p>
-                <Badge variant={m.role === "Manager" ? "warning" : m.role === "External" ? "outline" : "info"} className="mt-1.5">
-                  {m.role}
-                </Badge>
+                <div className="flex items-center justify-center gap-1.5 mt-1.5">
+                  <Badge variant={m.role === "Manager" ? "warning" : m.role === "External" ? "outline" : "info"}>
+                    {m.role}
+                  </Badge>
+                  {m.level && (
+                    <span className="inline-flex items-center gap-0.5 text-[10px] text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded-md font-medium">
+                      <Layers size={9} strokeWidth={1.5} />
+                      {m.level}
+                    </span>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -732,6 +748,38 @@ function RolesSection() {
         Three roles to pick from when adding someone to a team: <strong>Manager</strong>, <strong>Member</strong>, or <strong>External</strong>.
         The system automatically generates all feedback directions (downward, upward, lateral, self, and external) from these roles.
       </InfoBox>
+
+      {/* Levels */}
+      <Card>
+        <div className="flex gap-4">
+          <div className="p-3 rounded-xl bg-violet-50 h-fit">
+            <Layers size={24} strokeWidth={1.5} className="text-violet-500" />
+          </div>
+          <div>
+            <h2 className="text-title-small text-gray-900">Seniority Levels (Optional)</h2>
+            <p className="text-body text-gray-500 mt-2 leading-relaxed">
+              In addition to roles, you can assign <strong>seniority levels</strong> to team members &mdash;
+              for example, &ldquo;SE L-1&rdquo;, &ldquo;SE L-2&rdquo;, &ldquo;Designer D-1&rdquo;. Levels are
+              defined globally per company and can be assigned to any team member regardless of role.
+            </p>
+            <p className="text-body text-gray-500 mt-2 leading-relaxed">
+              Levels are <strong>completely optional</strong>. The default flow works without them. When levels are assigned,
+              admins can enable <strong>advanced mode</strong> during cycle creation to assign different evaluation
+              templates per level and relationship type &mdash; so a junior engineer might get a different evaluation
+              form than a senior architect.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {["SE L-1", "SE L-2", "SA L-2", "SA L-3"].map((lvl) => (
+            <div key={lvl} className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-violet-50/50 border border-violet-100 rounded-xl">
+              <Layers size={12} strokeWidth={1.5} className="text-violet-500" />
+              <span className="text-[13px] font-medium text-violet-700">{lvl}</span>
+            </div>
+          ))}
+        </div>
+      </Card>
     </div>
   );
 }
@@ -819,19 +867,39 @@ function CreatingTeamsSection() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between py-1.5 px-3 bg-white rounded-lg">
                   <span>Alex Rivera (Solution Architect)</span>
-                  <Badge variant="warning">Manager</Badge>
+                  <div className="flex items-center gap-1.5">
+                    <span className="inline-flex items-center gap-0.5 text-[10px] text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded-md font-medium">
+                      <Layers size={9} strokeWidth={1.5} />SA L-3
+                    </span>
+                    <Badge variant="warning">Manager</Badge>
+                  </div>
                 </div>
                 <div className="flex items-center justify-between py-1.5 px-3 bg-white rounded-lg">
                   <span>Jordan Lee (Senior Engineer)</span>
-                  <Badge variant="info">Member</Badge>
+                  <div className="flex items-center gap-1.5">
+                    <span className="inline-flex items-center gap-0.5 text-[10px] text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded-md font-medium">
+                      <Layers size={9} strokeWidth={1.5} />SE L-2
+                    </span>
+                    <Badge variant="info">Member</Badge>
+                  </div>
                 </div>
                 <div className="flex items-center justify-between py-1.5 px-3 bg-white rounded-lg">
                   <span>Maya Patel (Engineer)</span>
-                  <Badge variant="info">Member</Badge>
+                  <div className="flex items-center gap-1.5">
+                    <span className="inline-flex items-center gap-0.5 text-[10px] text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded-md font-medium">
+                      <Layers size={9} strokeWidth={1.5} />SE L-1
+                    </span>
+                    <Badge variant="info">Member</Badge>
+                  </div>
                 </div>
                 <div className="flex items-center justify-between py-1.5 px-3 bg-white rounded-lg">
                   <span>Chris Wu (Junior Engineer)</span>
-                  <Badge variant="info">Member</Badge>
+                  <div className="flex items-center gap-1.5">
+                    <span className="inline-flex items-center gap-0.5 text-[10px] text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded-md font-medium">
+                      <Layers size={9} strokeWidth={1.5} />SE L-1
+                    </span>
+                    <Badge variant="info">Member</Badge>
+                  </div>
                 </div>
               </div>
             </div>
@@ -842,6 +910,36 @@ function CreatingTeamsSection() {
               another. For example, Sarah Chen is a Member in the Leadership Team (evaluated by the CTO),
               while Alex Rivera is a Manager of the Platform Team. This is how directors evaluate their department heads.
             </TipBox>
+          </div>
+        </StepCard>
+
+        <StepCard
+          step={3}
+          title="Assign Seniority Levels (Optional)"
+          description="If your company uses seniority levels, go to Levels in the sidebar to create them, then assign a level to each team member."
+        >
+          <Card padding="sm" className="bg-gray-50/50 border-gray-100">
+            <div className="text-[14px] text-gray-600">
+              <p className="font-medium text-gray-900 mb-3">How levels work:</p>
+              <div className="space-y-2">
+                {[
+                  { step: "1", text: "Admin/HR creates levels globally (e.g., SE L-1, SE L-2, SA L-3) from the Levels page in the sidebar" },
+                  { step: "2", text: "When adding or editing team members, optionally pick a level for each person" },
+                  { step: "3", text: "During cycle creation, toggle Advanced Mode to assign different evaluation templates per level" },
+                ].map((s) => (
+                  <div key={s.step} className="flex items-start gap-3 py-2 px-3 bg-white rounded-lg">
+                    <span className="w-5 h-5 rounded-full bg-violet-100 text-violet-700 text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5">{s.step}</span>
+                    <span className="text-gray-600 text-[13px]">{s.text}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Card>
+          <div className="mt-3">
+            <InfoBox>
+              Levels are <strong>optional</strong> and don&apos;t change the default flow. If you don&apos;t assign levels,
+              all team members use the same evaluation template per team &mdash; exactly like before.
+            </InfoBox>
           </div>
         </StepCard>
       </div>
@@ -868,7 +966,7 @@ function RunningCyclesSection() {
 
       <div className="mt-4">
         <StepCard
-          step={3}
+          step={4}
           title="Create an Evaluation Cycle"
           description="Once your teams are set up, create a cycle and select which teams to include. Assignments are generated automatically."
         >
@@ -899,10 +997,30 @@ function RunningCyclesSection() {
               </p>
             </div>
           </Card>
+          {/* Advanced mode tip */}
+          <div className="mt-3">
+            <Card padding="sm" className="border-violet-100 bg-violet-50/30">
+              <div className="flex items-start gap-3">
+                <div className="p-1.5 rounded-lg bg-violet-100 shrink-0 mt-0.5">
+                  <Layers size={14} strokeWidth={1.5} className="text-violet-600" />
+                </div>
+                <div>
+                  <p className="text-[13px] font-medium text-violet-900">Advanced Mode: Per-Level Templates</p>
+                  <p className="text-[12px] text-violet-700/80 mt-1 leading-relaxed">
+                    If your team members have seniority levels assigned, toggle <strong>&ldquo;Use per-level templates&rdquo;</strong> when
+                    creating a cycle. This lets you assign different evaluation templates based on a member&apos;s level and
+                    relationship type. For example, SE L-1 members might use a &ldquo;Junior Engineer Review&rdquo; template
+                    while SA L-3 architects use a &ldquo;Senior Technical Review&rdquo; template. Members without a level
+                    fall back to the team&apos;s default template.
+                  </p>
+                </div>
+              </div>
+            </Card>
+          </div>
         </StepCard>
 
         <StepCard
-          step={4}
+          step={5}
           title="Activate & Send Invitations"
           description="When you activate the cycle, each reviewer receives a unique evaluation link via email. No accounts needed — they verify via OTP."
         >
@@ -914,7 +1032,7 @@ function RunningCyclesSection() {
         </StepCard>
 
         <StepCard
-          step={5}
+          step={6}
           title="Each Reviewer Completes Their Evaluations"
           description="Every team member receives email invitations for each person they need to evaluate. Here's what it looks like for the Platform Team:"
         >
@@ -1003,7 +1121,7 @@ function ReportsSection() {
 
       <div className="mt-4">
         <StepCard
-          step={6}
+          step={7}
           title="Responses Collected from All Directions"
           description="As reviewers submit their forms, the system collects feedback from every direction — manager, peers, and members. Here's what this looks like for one employee:"
         >
@@ -1137,7 +1255,7 @@ function ReportsSection() {
         </StepCard>
 
         <StepCard
-          step={7}
+          step={8}
           title="Admin / HR Reviews & Shares Reports"
           description="Once the cycle closes, Admin or HR can view individual reports for every employee, export them as PDFs, and share findings."
         >
@@ -1266,13 +1384,15 @@ function OrgPatternsSection() {
           <div className="font-mono text-[13px] text-gray-600 bg-gray-50 rounded-lg p-4 leading-relaxed whitespace-pre">{`Team: "Design Studio"
 ├── Creative Director   (Manager)
 ├── Art Director        (Manager)
-├── Senior Designer 1   (Member)
-├── Senior Designer 2   (Member)
-├── Junior Designer 1   (Member)
-└── Junior Designer 2   (Member)`}</div>
+├── Senior Designer 1   (Member)  [D-2]
+├── Senior Designer 2   (Member)  [D-2]
+├── Junior Designer 1   (Member)  [D-1]
+└── Junior Designer 2   (Member)  [D-1]`}</div>
           <p className="text-caption mt-3">
             Performs360 supports multiple managers per team. Both managers evaluate all members,
-            and reports show aggregated scores from each manager.
+            and reports show aggregated scores from each manager. With <strong>levels</strong> assigned
+            (D-1, D-2), admins can use advanced mode to give junior and senior designers different
+            evaluation templates.
           </p>
         </div>
 
@@ -1300,10 +1420,10 @@ function OrgPatternsSection() {
             Clients, board members, or consultants who provide one-way feedback on team members without being evaluated back.
           </p>
           <div className="font-mono text-[13px] text-gray-600 bg-gray-50 rounded-lg p-4 leading-relaxed whitespace-pre">{`Team: "Platform Team"
-├── Tech Lead          (Manager)
-├── Senior Engineer    (Member)
-├── Engineer           (Member)
-├── Junior Engineer    (Member)
+├── Tech Lead          (Manager)  [SA L-3]
+├── Senior Engineer    (Member)   [SE L-2]
+├── Engineer           (Member)   [SE L-1]
+├── Junior Engineer    (Member)   [SE L-1]
 └── Client Stakeholder (External)`}</div>
           <p className="text-caption mt-3">
             The External evaluator provides feedback on all Managers and Members. Nobody evaluates

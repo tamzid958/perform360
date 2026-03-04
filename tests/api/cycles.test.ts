@@ -172,7 +172,8 @@ describe("API /api/cycles", () => {
         if (typeof cb === "function") {
           return cb({
             evaluationCycle: { create: vi.fn().mockResolvedValue(mockCycle) },
-            cycleTeam: { createMany: vi.fn() },
+            cycleTeam: { create: vi.fn().mockResolvedValue({ id: "ct-1" }), createMany: vi.fn() },
+            cycleTeamLevelTemplate: { createMany: vi.fn() },
           });
         }
         return mockCycle;

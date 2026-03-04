@@ -113,7 +113,8 @@ describe("POST /api/cycles — weight validation edge cases", () => {
       if (typeof cb === "function") {
         return cb({
           evaluationCycle: { create: vi.fn().mockResolvedValue({ id: "c1", name: "Q1" }) },
-          cycleTeam: { createMany: vi.fn() },
+          cycleTeam: { create: vi.fn().mockResolvedValue({ id: "ct-1" }), createMany: vi.fn() },
+          cycleTeamLevelTemplate: { createMany: vi.fn() },
         });
       }
       return {};

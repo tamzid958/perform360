@@ -67,14 +67,23 @@ import { useToast } from "@/components/ui/toast";
 import type { CycleReport } from "@/types/report";
 import { CalibrationPanel } from "@/components/cycles/calibration-panel";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
+import { Pagination } from "@/components/ui/pagination";
 
 // ─── Types ───
+
+interface LevelTemplateEntry {
+  levelId: string;
+  levelName: string;
+  relationship: string;
+  templateId: string;
+  templateName: string;
+}
 
 interface TeamTemplate {
   teamId: string;
   teamName: string;
-  templateId: string;
-  templateName: string;
+  templateId: string | null;
+  templateName: string | null;
   weights: {
     manager: number;
     peer: number;
@@ -82,6 +91,7 @@ interface TeamTemplate {
     self: number;
     external: number;
   } | null;
+  levelTemplates: LevelTemplateEntry[];
 }
 
 interface CycleApiData {
@@ -123,6 +133,9 @@ type RelationshipFilterValue =
   | "peer"
   | "self"
   | "external";
+
+const ASSIGNMENTS_PER_PAGE = 20;
+const REPORTS_PER_PAGE = 20;
 
 const statusIcon: Record<string, React.ReactNode> = {
   SUBMITTED: (
@@ -184,6 +197,8 @@ export default function CycleDetailPage() {
   const [teamFilter, setTeamFilter] = useState("all");
   const [reportTeamFilter, setReportTeamFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [assignmentPage, setAssignmentPage] = useState(1);
+  const [reportPage, setReportPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [reportLoading, setReportLoading] = useState(false);
   const [reminding, setReminding] = useState(false);
@@ -282,10 +297,21 @@ export default function CycleDetailPage() {
     });
   }, [assignments, statusFilter, relationshipFilter, teamFilter, searchQuery]);
 
-  // Group filtered assignments by team
+  // Reset assignment page when filters change
+  useEffect(() => {
+    setAssignmentPage(1);
+  }, [statusFilter, relationshipFilter, teamFilter, searchQuery]);
+
+  const assignmentTotalPages = Math.ceil(filteredAssignments.length / ASSIGNMENTS_PER_PAGE);
+  const paginatedAssignments = useMemo(() => {
+    const start = (assignmentPage - 1) * ASSIGNMENTS_PER_PAGE;
+    return filteredAssignments.slice(start, start + ASSIGNMENTS_PER_PAGE);
+  }, [filteredAssignments, assignmentPage]);
+
+  // Group paginated assignments by team
   const groupedByTeam = useMemo(() => {
     const groups = new Map<string, { teamName: string; items: AssignmentWithNames[] }>();
-    for (const a of filteredAssignments) {
+    for (const a of paginatedAssignments) {
       const group = groups.get(a.teamId) ?? { teamName: a.teamName, items: [] };
       group.items.push(a);
       groups.set(a.teamId, group);
@@ -295,7 +321,7 @@ export default function CycleDetailPage() {
       teamName: g.teamName,
       items: g.items,
     }));
-  }, [filteredAssignments]);
+  }, [paginatedAssignments]);
 
   const activeFilterCount = [
     statusFilter !== "all",
@@ -351,6 +377,17 @@ export default function CycleDetailPage() {
       (s) => subjectTeamMap.get(s.subjectId)?.has(reportTeamFilter)
     );
   }, [cycleReport, reportTeamFilter, subjectTeamMap]);
+
+  // Reset report page when team filter changes
+  useEffect(() => {
+    setReportPage(1);
+  }, [reportTeamFilter]);
+
+  const reportTotalPages = Math.ceil(filteredReportSummaries.length / REPORTS_PER_PAGE);
+  const paginatedReportSummaries = useMemo(() => {
+    const start = (reportPage - 1) * REPORTS_PER_PAGE;
+    return filteredReportSummaries.slice(start, start + REPORTS_PER_PAGE);
+  }, [filteredReportSummaries, reportPage]);
 
   const getDisplayScore = useCallback(
     (s: { overallScore: number; weightedOverallScore?: number | null; calibratedScore?: number | null }) =>
@@ -736,7 +773,11 @@ export default function CycleDetailPage() {
                       <span className="text-[14px] font-medium text-gray-900 truncate">
                         {tt.teamName}
                       </span>
-                      <Badge variant="outline" className="shrink-0">{tt.templateName}</Badge>
+                      {tt.templateName ? (
+                        <Badge variant="outline" className="shrink-0">{tt.templateName}</Badge>
+                      ) : tt.levelTemplates.length > 0 ? (
+                        <Badge variant="info" className="shrink-0">Per-Level Templates</Badge>
+                      ) : null}
                     </div>
                     {tt.weights && (
                       <div className="mt-1.5 flex items-center gap-3 text-[11px] text-gray-400 flex-wrap">
@@ -746,6 +787,28 @@ export default function CycleDetailPage() {
                         <span>DR {tt.weights.directReport}%</span>
                         <span>Self {tt.weights.self}%</span>
                         <span>Ext {tt.weights.external}%</span>
+                      </div>
+                    )}
+                    {tt.levelTemplates.length > 0 && (
+                      <div className="mt-2 rounded-lg border border-gray-100 overflow-hidden">
+                        <table className="w-full text-[12px]">
+                          <thead>
+                            <tr className="bg-gray-50 border-b border-gray-100">
+                              <th className="text-left py-1.5 px-2.5 text-gray-500 font-medium">Level</th>
+                              <th className="text-left py-1.5 px-2.5 text-gray-500 font-medium">Relationship</th>
+                              <th className="text-left py-1.5 px-2.5 text-gray-500 font-medium">Template</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {tt.levelTemplates.map((lt) => (
+                              <tr key={`${lt.levelId}-${lt.relationship}`} className="border-b border-gray-50 last:border-0">
+                                <td className="py-1 px-2.5 text-gray-900 font-medium">{lt.levelName}</td>
+                                <td className="py-1 px-2.5 text-gray-600 capitalize">{lt.relationship.replace("_", " ")}</td>
+                                <td className="py-1 px-2.5 text-gray-600">{lt.templateName}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
                       </div>
                     )}
                   </div>
@@ -986,6 +1049,14 @@ export default function CycleDetailPage() {
                   </div>
                 </Card>
               ))}
+              <Pagination
+                page={assignmentPage}
+                totalPages={assignmentTotalPages}
+                total={filteredAssignments.length}
+                showing={paginatedAssignments.length}
+                noun="assignments"
+                onPageChange={setAssignmentPage}
+              />
             </div>
           )}
         </TabsContent>
@@ -1233,7 +1304,7 @@ export default function CycleDetailPage() {
                       {reportTeamFilter !== "all" && " for this team"}
                     </p>
                   ) : (
-                    filteredReportSummaries.map((person) => (
+                    paginatedReportSummaries.map((person) => (
                       <Link
                         key={person.subjectId}
                         href={`/cycles/${cycleId}/reports/${person.subjectId}`}
@@ -1273,6 +1344,15 @@ export default function CycleDetailPage() {
                     ))
                   )}
                 </div>
+                <Pagination
+                  page={reportPage}
+                  totalPages={reportTotalPages}
+                  total={filteredReportSummaries.length}
+                  showing={paginatedReportSummaries.length}
+                  noun="reports"
+                  onPageChange={setReportPage}
+                  className="px-4 pb-4"
+                />
               </Card>
             </>
           ) : (

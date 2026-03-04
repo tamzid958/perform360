@@ -11,3 +11,4 @@ pnpm-debug.log*
 coverage
 .vscode
 .DS_Store
+*.tar

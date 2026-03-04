@@ -30,14 +30,21 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
-import { UserPlus, MoreHorizontal, Mail, Trash2, AlertCircle, ArrowDown, ArrowUp, ArrowLeftRight, RotateCcw, ArrowRight, Archive, ArchiveRestore } from "lucide-react";
+import { UserPlus, MoreHorizontal, Mail, Trash2, AlertCircle, ArrowDown, ArrowUp, ArrowLeftRight, RotateCcw, ArrowRight, Archive, ArchiveRestore, Layers } from "lucide-react";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
+
+interface LevelOption {
+  id: string;
+  name: string;
+}
 
 interface TeamMember {
   id: string;
   userId: string;
   teamId: string;
   role: string;
+  levelId: string | null;
+  level: LevelOption | null;
   user: { id: string; name: string; email: string; avatar: string | null; role: string };
 }
 
@@ -72,7 +79,9 @@ export default function TeamDetailPage() {
   const [userOptions, setUserOptions] = useState<ComboboxOption[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [addRole, setAddRole] = useState("MEMBER");
+  const [addLevelId, setAddLevelId] = useState<string>("");
   const [addLoading, setAddLoading] = useState(false);
+  const [levels, setLevels] = useState<LevelOption[]>([]);
   const { addToast } = useToast();
 
   const fetchTeam = useCallback(async () => {
@@ -94,6 +103,14 @@ export default function TeamDetailPage() {
   useEffect(() => {
     fetchTeam();
   }, [fetchTeam]);
+
+  // Fetch company levels
+  useEffect(() => {
+    fetch("/api/levels")
+      .then((r) => r.json())
+      .then((json) => { if (json.success) setLevels(json.data); })
+      .catch(() => {});
+  }, []);
 
   // Fetch users for combobox when dialog is open
   useEffect(() => {
@@ -142,7 +159,7 @@ export default function TeamDetailPage() {
       const res = await fetch(`/api/teams/${params.teamId}/members`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: selectedUserId, role: addRole }),
+        body: JSON.stringify({ userId: selectedUserId, role: addRole, levelId: addLevelId && addLevelId !== "none" ? addLevelId : null }),
       });
       const json = await res.json();
       if (!json.success) throw new Error(json.error || "Failed to add member");
@@ -152,6 +169,7 @@ export default function TeamDetailPage() {
       setSelectedUserId(null);
       setUserSearchQuery("");
       setAddRole("MEMBER");
+      setAddLevelId("");
       fetchTeam();
     } catch (err) {
       addToast(err instanceof Error ? err.message : "Failed to add member", "error");
@@ -174,6 +192,22 @@ export default function TeamDetailPage() {
       fetchTeam();
     } catch (err) {
       addToast(err instanceof Error ? err.message : "Failed to update team", "error");
+    }
+  };
+
+  const handleChangeLevel = async (userId: string, levelId: string | null) => {
+    try {
+      const res = await fetch(`/api/teams/${params.teamId}/members/${userId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ levelId }),
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || "Failed to update level");
+      addToast("Level updated", "success");
+      fetchTeam();
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : "Failed to update level", "error");
     }
   };
 
@@ -349,6 +383,11 @@ export default function TeamDetailPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
+                  {member.level && (
+                    <Badge variant="default">
+                      {member.level.name}
+                    </Badge>
+                  )}
                   {roleLabels[member.role] && (
                     <Badge variant={roleBadgeVariant[member.role]}>
                       {roleLabels[member.role]}
@@ -361,6 +400,26 @@ export default function TeamDetailPage() {
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      {levels.length > 0 && (
+                        <>
+                          {levels.map((lvl) => (
+                            <DropdownMenuItem
+                              key={lvl.id}
+                              disabled={member.levelId === lvl.id}
+                              onClick={() => handleChangeLevel(member.user.id, lvl.id)}
+                            >
+                              <Layers size={14} strokeWidth={1.5} className="mr-2" />
+                              {member.levelId === lvl.id ? `${lvl.name} (current)` : lvl.name}
+                            </DropdownMenuItem>
+                          ))}
+                          {member.levelId && (
+                            <DropdownMenuItem onClick={() => handleChangeLevel(member.user.id, null)}>
+                              <Layers size={14} strokeWidth={1.5} className="mr-2 text-gray-400" />
+                              Remove level
+                            </DropdownMenuItem>
+                          )}
+                        </>
+                      )}
                       <DropdownMenuItem
                         className="text-red-600"
                         onClick={() => handleRemoveMember(member.user.id, member.user.name)}
@@ -386,6 +445,7 @@ export default function TeamDetailPage() {
             setSelectedUserId(null);
             setUserSearchQuery("");
             setAddRole("MEMBER");
+            setAddLevelId("");
           }
         }}
       >
@@ -419,6 +479,22 @@ export default function TeamDetailPage() {
                 </SelectContent>
               </Select>
             </div>
+            {levels.length > 0 && (
+              <div className="space-y-1.5">
+                <label className="block text-[13px] font-medium text-gray-700">Level (optional)</label>
+                <Select value={addLevelId} onValueChange={setAddLevelId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="No level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No level</SelectItem>
+                    {levels.map((lvl) => (
+                      <SelectItem key={lvl.id} value={lvl.id}>{lvl.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="flex gap-3 pt-2">
               <Button disabled={addLoading || !selectedUserId} onClick={handleAddMember}>
                 {addLoading ? "Adding..." : "Add Member"}

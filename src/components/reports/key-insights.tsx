@@ -2,18 +2,21 @@
 
 import { useMemo } from "react";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, Minus, Users, MessageCircle } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Users, MessageCircle, Star, Target } from "lucide-react";
 import {
   deriveSelfOtherGap,
   deriveRaterConsensus,
   deriveRelationshipPattern,
+  deriveStrongestCompetency,
+  deriveBiggestGrowthArea,
 } from "@/lib/report-insights";
 import type { InsightTileData } from "@/lib/report-insights";
-import type { RelationshipScores, QuestionDetail } from "@/types/report";
+import type { RelationshipScores, QuestionDetail, CategoryScore } from "@/types/report";
 
 interface KeyInsightsProps {
   scoresByRelationship: RelationshipScores;
   questionDetails: QuestionDetail[];
+  categoryScores: CategoryScore[];
 }
 
 const ICON_MAP: Record<InsightTileData["iconName"], React.ReactNode> = {
@@ -22,11 +25,23 @@ const ICON_MAP: Record<InsightTileData["iconName"], React.ReactNode> = {
   "trending-down": <TrendingDown size={16} strokeWidth={2} />,
   "message-circle": <MessageCircle size={16} strokeWidth={2} />,
   users: <Users size={16} strokeWidth={2} />,
+  star: <Star size={16} strokeWidth={2} />,
+  target: <Target size={16} strokeWidth={2} />,
+};
+
+// Grid cols that adapts to tile count — never more than 3 per row
+const GRID_COLS: Record<number, string> = {
+  1: "grid-cols-1",
+  2: "grid-cols-2",
+  3: "grid-cols-3",
+  4: "grid-cols-2 lg:grid-cols-4",
+  5: "grid-cols-2 lg:grid-cols-3",
 };
 
 export function KeyInsights({
   scoresByRelationship,
   questionDetails,
+  categoryScores,
 }: KeyInsightsProps) {
   const tiles = useMemo(() => {
     const result: InsightTileData[] = [];
@@ -40,17 +55,25 @@ export function KeyInsights({
     const pattern = deriveRelationshipPattern(scoresByRelationship);
     if (pattern) result.push(pattern);
 
+    const strongest = deriveStrongestCompetency(categoryScores);
+    if (strongest) result.push(strongest);
+
+    const growth = deriveBiggestGrowthArea(categoryScores);
+    if (growth) result.push(growth);
+
     return result;
-  }, [scoresByRelationship, questionDetails]);
+  }, [scoresByRelationship, questionDetails, categoryScores]);
 
   if (tiles.length === 0) return null;
+
+  const gridClass = GRID_COLS[tiles.length] ?? "grid-cols-2 lg:grid-cols-3";
 
   return (
     <Card padding="md" className="mb-6">
       <CardHeader>
         <CardTitle>Key Insights</CardTitle>
       </CardHeader>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div className={`grid ${gridClass} gap-3`}>
         {tiles.map((tile) => (
           <div
             key={tile.label}
@@ -58,7 +81,7 @@ export function KeyInsights({
           >
             <div className="flex items-center gap-2 mb-2">
               <div
-                className="w-7 h-7 rounded-lg flex items-center justify-center"
+                className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
                 style={{ backgroundColor: `${tile.color}15`, color: tile.color }}
               >
                 {ICON_MAP[tile.iconName]}
@@ -73,7 +96,7 @@ export function KeyInsights({
             >
               {tile.value}
             </p>
-            <p className="text-[12px] text-gray-500 mt-0.5">
+            <p className="text-[13px] text-gray-500 mt-0.5 leading-snug">
               {tile.description}
             </p>
           </div>

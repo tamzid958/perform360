@@ -11,6 +11,7 @@ const csvRowSchema = z.object({
   team: z.string().min(1),
   manager: z.string(),
   email: z.string(),
+  level: z.string().optional(),
 });
 
 const importSchema = z.object({
@@ -150,11 +151,31 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        // 4. Create team memberships for CSV rows
+        // 4. Find-or-create levels from CSV
+        const levelMap = new Map<string, string>(); // levelName -> levelId
+        const uniqueLevelNames = Array.from(
+          new Set(validRows.map((r) => r.level?.trim()).filter((l): l is string => !!l))
+        );
+        for (const levelName of uniqueLevelNames) {
+          const existing = await tx.level.findUnique({
+            where: { companyId_name: { companyId, name: levelName } },
+          });
+          if (existing) {
+            levelMap.set(levelName, existing.id);
+          } else {
+            const created = await tx.level.create({
+              data: { name: levelName, companyId },
+            });
+            levelMap.set(levelName, created.id);
+          }
+        }
+
+        // 5. Create team memberships for CSV rows
         for (const row of validRows) {
           const email = row.email.trim().toLowerCase();
           const teamName = row.team.trim();
           const personName = row.name.trim();
+          const levelName = row.level?.trim();
           const userId = userMap.get(email);
           const teamId = teamMap.get(teamName);
 
@@ -163,19 +184,27 @@ export async function POST(request: NextRequest) {
           const isManager =
             managerNamesPerTeam.get(teamName)?.has(personName) ?? false;
           const role = isManager ? "MANAGER" : "MEMBER";
+          const levelId = levelName ? (levelMap.get(levelName) ?? null) : null;
 
           const existingMembership = await tx.teamMember.findUnique({
             where: { userId_teamId: { userId, teamId } },
           });
           if (existingMembership) {
+            // Update level if provided and different
+            if (levelId && existingMembership.levelId !== levelId) {
+              await tx.teamMember.update({
+                where: { id: existingMembership.id },
+                data: { levelId },
+              });
+            }
             stats.membershipsExisted++;
           } else {
-            await tx.teamMember.create({ data: { userId, teamId, role } });
+            await tx.teamMember.create({ data: { userId, teamId, role, levelId } });
             stats.membershipsCreated++;
           }
         }
 
-        // 5. Create team memberships for external managers found in DB
+        // 6. Create team memberships for external managers found in DB
         for (const [mgrName, mgrUserId] of Array.from(externalManagerUserIds.entries())) {
           for (const [teamName, managers] of Array.from(managerNamesPerTeam.entries())) {
             if (managers.has(mgrName)) {

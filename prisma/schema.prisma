@@ -88,8 +88,10 @@ model EvaluationTemplate {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  cycleTeams CycleTeam[]
+  cycleTeams              CycleTeam[]
+  cycleTeamLevelTemplates CycleTeamLevelTemplate[]
 }
+
 
 // ─────────────────────────────────────────────────────────
 // COMPANY / TENANT
@@ -119,6 +121,7 @@ model Company {
   templates     EvaluationTemplate[]
   recoveryCodes RecoveryCode[]
   auditLogs     AuditLog[]
+  levels        Level[]
 }
 
 enum UserRole {
@@ -178,15 +181,30 @@ enum TeamMemberRole {
 }
 
 model TeamMember {
-  id     String         @id @default(cuid())
-  userId String
-  teamId String
-  role   TeamMemberRole
+  id      String         @id @default(cuid())
+  userId  String
+  teamId  String
+  role    TeamMemberRole
+  levelId String?
 
-  user User @relation(fields: [userId], references: [id])
-  team Team @relation(fields: [teamId], references: [id])
+  user  User   @relation(fields: [userId], references: [id])
+  team  Team   @relation(fields: [teamId], references: [id])
+  level Level? @relation(fields: [levelId], references: [id], onUpdate: Cascade, onDelete: SetNull)
 
   @@unique([userId, teamId])
+}
+
+model Level {
+  id        String   @id @default(cuid())
+  name      String
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id])
+  createdAt DateTime @default(now())
+
+  teamMembers             TeamMember[]
+  cycleTeamLevelTemplates CycleTeamLevelTemplate[]
+
+  @@unique([companyId, name])
 }
 
 // ─────────────────────────────────────────────────────────
@@ -222,14 +240,14 @@ model EvaluationCycle {
 }
 
 model CycleTeam {
-  id         String             @id @default(cuid())
+  id         String              @id @default(cuid())
   cycleId    String
-  cycle      EvaluationCycle    @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  cycle      EvaluationCycle     @relation(fields: [cycleId], references: [id], onDelete: Cascade)
   teamId     String
-  team       Team               @relation(fields: [teamId], references: [id])
-  templateId String
-  template   EvaluationTemplate @relation(fields: [templateId], references: [id])
-  createdAt  DateTime           @default(now())
+  team       Team                @relation(fields: [teamId], references: [id])
+  templateId String?
+  template   EvaluationTemplate? @relation(fields: [templateId], references: [id])
+  createdAt  DateTime            @default(now())
 
   // Relationship weights (decimals 0.0–1.0, must sum to 1.0 when set)
   // null = equal weighting (backward-compatible default)
@@ -245,7 +263,24 @@ model CycleTeam {
   calibrationJustification String? @db.Text
   calibrationAdjustedBy    String?
 
+  // Per-level template overrides (advanced mode)
+  levelTemplates CycleTeamLevelTemplate[]
+
   @@unique([cycleId, teamId])
+}
+
+model CycleTeamLevelTemplate {
+  id           String             @id @default(cuid())
+  cycleTeamId  String
+  cycleTeam    CycleTeam          @relation(fields: [cycleTeamId], references: [id], onDelete: Cascade)
+  levelId      String?
+  level        Level?             @relation(fields: [levelId], references: [id])
+  relationship String             // "manager" | "peer" | "direct_report" | "self" | "external"
+  templateId   String
+  template     EvaluationTemplate @relation(fields: [templateId], references: [id])
+
+  // Level-specific overrides: unique per (cycleTeam, level, relationship)
+  @@unique([cycleTeamId, levelId, relationship])
 }
 
 enum AssignmentStatus {

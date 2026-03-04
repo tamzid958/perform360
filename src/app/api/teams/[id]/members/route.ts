@@ -8,6 +8,7 @@ import { validateCuidParam } from "@/lib/validation";
 const addMemberSchema = z.object({
   userId: z.string().min(1, "User ID is required"),
   role: z.enum(["MANAGER", "MEMBER", "EXTERNAL"]),
+  levelId: z.string().optional().nullable(),
 });
 
 export async function POST(
@@ -77,16 +78,32 @@ export async function POST(
       }, { status: 409 });
     }
 
+    // Validate levelId belongs to company if provided
+    if (validated.levelId) {
+      const level = await prisma.level.findFirst({
+        where: { id: validated.levelId, companyId: authResult.companyId },
+      });
+      if (!level) {
+        return NextResponse.json({
+          success: false,
+          error: "Level not found",
+          code: "NOT_FOUND",
+        }, { status: 404 });
+      }
+    }
+
     const member = await prisma.teamMember.create({
       data: {
         userId: validated.userId,
         teamId: id,
         role: validated.role,
+        levelId: validated.levelId ?? null,
       },
       include: {
         user: {
           select: { id: true, name: true, email: true, avatar: true, role: true },
         },
+        level: { select: { id: true, name: true } },
       },
     });
 
