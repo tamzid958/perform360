@@ -39,6 +39,10 @@ describe("GET /api/cycles/[id]", () => {
       { id: "s2", name: "Subject 2" },
       { id: "r2", name: "Reviewer 2" },
     ] as any);
+    vi.mocked(prisma.teamMember.findMany).mockResolvedValue([
+      { userId: "s1", teamId: "tm1", role: "MEMBER" },
+      { userId: "r1", teamId: "tm1", role: "MEMBER" },
+    ] as any);
 
     const req = createMockRequest(`http://localhost:3000/api/cycles/${validCuid}`);
     const res = await callWith(GET, req, validCuid);
