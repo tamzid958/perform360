@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useState, useCallback } from "react";
 import {
   DndContext,
   closestCenter,
@@ -16,7 +16,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
-import { Plus, Eye } from "lucide-react";
+import { Plus, Pencil, Eye } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useTemplateBuilder } from "@/store/template-builder";
 import { SectionEditor } from "./section-editor";
@@ -39,6 +39,8 @@ export function TemplateBuilder() {
     moveQuestion,
     moveQuestionBetweenSections,
   } = useTemplateBuilder();
+
+  const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -94,79 +96,97 @@ export function TemplateBuilder() {
   const sectionIds = sections.map((s) => s.id);
 
   return (
-    <div className="flex flex-col xl:flex-row gap-6 items-start">
-      {/* Builder panel */}
-      <div className="flex-1 min-w-0 space-y-4">
-        {/* Template info */}
-        <div className="bg-white rounded-2xl shadow-card border border-gray-100/50 p-6 space-y-4">
-          <Input
-            id="template-name"
-            label="Template Name"
-            placeholder="e.g. Standard 360° Review"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-          />
-          <div className="space-y-1.5">
-            <label htmlFor="template-desc" className="block text-[13px] font-medium text-gray-700">
-              Description
-            </label>
-            <textarea
-              id="template-desc"
-              placeholder="Brief description of this template..."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={2}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-body placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500 transition-all duration-200 resize-none"
-            />
-          </div>
-        </div>
-
-        {/* Sections with DnD */}
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-          modifiers={[restrictToVerticalAxis]}
-        >
-          <SortableContext items={sectionIds} strategy={verticalListSortingStrategy}>
-            {sections.map((section) => (
-              <SectionEditor
-                key={section.id}
-                section={section}
-                onUpdateSection={(data) => updateSection(section.id, data)}
-                onRemoveSection={() => removeSection(section.id)}
-                onAddQuestion={() => addQuestion(section.id)}
-                onUpdateQuestion={(qId, data) => updateQuestion(section.id, qId, data)}
-                onRemoveQuestion={(qId) => removeQuestion(section.id, qId)}
-              />
-            ))}
-          </SortableContext>
-        </DndContext>
-
-        {/* Add section button */}
+    <div>
+      {/* Tab switcher */}
+      <div className="inline-flex items-center gap-0.5 rounded-xl bg-gray-100 p-1 mb-4">
         <button
           type="button"
-          onClick={addSection}
-          className="w-full py-4 border-2 border-dashed border-gray-200 rounded-2xl text-[14px] font-medium text-gray-400 hover:text-gray-600 hover:border-gray-300 transition-colors flex items-center justify-center gap-1.5"
+          onClick={() => setActiveTab("edit")}
+          className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[13px] font-medium transition-all duration-200 ${
+            activeTab === "edit"
+              ? "bg-white text-gray-900 shadow-sm"
+              : "text-gray-500 hover:text-gray-700"
+          }`}
         >
-          <Plus size={16} strokeWidth={2} />
-          Add Section
+          <Pencil size={13} strokeWidth={2} />
+          Edit
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("preview")}
+          className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[13px] font-medium transition-all duration-200 ${
+            activeTab === "preview"
+              ? "bg-white text-gray-900 shadow-sm"
+              : "text-gray-500 hover:text-gray-700"
+          }`}
+        >
+          <Eye size={13} strokeWidth={2} />
+          Preview
         </button>
       </div>
 
-      {/* Preview panel */}
-      <div className="w-[380px] shrink-0 sticky top-6 hidden xl:block">
-        <div className="bg-white rounded-2xl shadow-card border border-gray-100/50 overflow-hidden">
-          <div className="px-5 py-3 border-b border-gray-100 flex items-center gap-2">
-            <Eye size={14} strokeWidth={1.5} className="text-gray-400" />
-            <span className="text-[13px] font-medium text-gray-500">Live Preview</span>
+      {activeTab === "edit" ? (
+        <div className="space-y-4">
+          {/* Template info */}
+          <div className="bg-white rounded-2xl shadow-card border border-gray-100/50 p-6 space-y-4">
+            <Input
+              id="template-name"
+              label="Template Name"
+              placeholder="e.g. Standard 360° Review"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
+            <div className="space-y-1.5">
+              <label htmlFor="template-desc" className="block text-[13px] font-medium text-gray-700">
+                Description
+              </label>
+              <textarea
+                id="template-desc"
+                placeholder="Brief description of this template..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={2}
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-body placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500 transition-all duration-200 resize-none"
+              />
+            </div>
           </div>
-          <div className="p-5 max-h-[calc(100vh-10rem)] overflow-y-auto">
-            <TemplatePreview name={name} description={description} sections={sections} />
-          </div>
+
+          {/* Sections with DnD */}
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+            modifiers={[restrictToVerticalAxis]}
+          >
+            <SortableContext items={sectionIds} strategy={verticalListSortingStrategy}>
+              {sections.map((section) => (
+                <SectionEditor
+                  key={section.id}
+                  section={section}
+                  onUpdateSection={(data) => updateSection(section.id, data)}
+                  onRemoveSection={() => removeSection(section.id)}
+                  onAddQuestion={() => addQuestion(section.id)}
+                  onUpdateQuestion={(qId, data) => updateQuestion(section.id, qId, data)}
+                  onRemoveQuestion={(qId) => removeQuestion(section.id, qId)}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
+
+          {/* Add section button */}
+          <button
+            type="button"
+            onClick={addSection}
+            className="w-full py-4 border-2 border-dashed border-gray-200 rounded-2xl text-[14px] font-medium text-gray-400 hover:text-gray-600 hover:border-gray-300 transition-colors flex items-center justify-center gap-1.5"
+          >
+            <Plus size={16} strokeWidth={2} />
+            Add Section
+          </button>
         </div>
-      </div>
+      ) : (
+        <TemplatePreview name={name} description={description} sections={sections} />
+      )}
     </div>
   );
 }

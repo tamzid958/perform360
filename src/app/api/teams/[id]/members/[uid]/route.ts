@@ -5,10 +5,18 @@ import { prisma } from "@/lib/prisma";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { validateCuidParam } from "@/lib/validation";
 
+const VALID_IMPERSONATOR_RELATIONSHIPS = ["peer", "self", "manager", "direct_report", "external"] as const;
+
 const updateMemberSchema = z.object({
   levelId: z.string().nullable().optional(),
-  role: z.enum(["MANAGER", "MEMBER", "EXTERNAL"]).optional(),
-});
+  role: z.enum(["MANAGER", "MEMBER", "EXTERNAL", "IMPERSONATOR"]).optional(),
+  impersonatorRelationships: z
+    .array(z.enum(VALID_IMPERSONATOR_RELATIONSHIPS))
+    .optional(),
+}).refine(
+  (data) => data.role !== "IMPERSONATOR" || (data.impersonatorRelationships && data.impersonatorRelationships.length > 0),
+  { message: "Impersonator must handle at least one relationship type", path: ["impersonatorRelationships"] }
+);
 
 export async function DELETE(
   request: NextRequest,
@@ -109,7 +117,7 @@ export async function PATCH(
     const body = await request.json();
     const validated = updateMemberSchema.parse(body);
 
-    const updateData: { levelId?: string | null; role?: "MANAGER" | "MEMBER" | "EXTERNAL" } = {};
+    const updateData: { levelId?: string | null; role?: "MANAGER" | "MEMBER" | "EXTERNAL" | "IMPERSONATOR"; impersonatorRelationships?: string[] } = {};
 
     if (validated.levelId !== undefined) {
       if (validated.levelId) {
@@ -128,6 +136,14 @@ export async function PATCH(
 
     if (validated.role) {
       updateData.role = validated.role;
+      // Clear impersonator relationships when switching away from IMPERSONATOR
+      if (validated.role !== "IMPERSONATOR") {
+        updateData.impersonatorRelationships = [];
+      }
+    }
+
+    if (validated.impersonatorRelationships !== undefined) {
+      updateData.impersonatorRelationships = validated.impersonatorRelationships;
     }
 
     const updated = await prisma.teamMember.update({

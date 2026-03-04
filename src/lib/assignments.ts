@@ -103,48 +103,101 @@ export function generateAssignmentsFromTeams(
     const managers = team.members.filter((m) => m.role === "MANAGER");
     const members = team.members.filter((m) => m.role === "MEMBER");
     const externals = team.members.filter((m) => m.role === "EXTERNAL");
+    const impersonators = team.members.filter((m) => m.role === "IMPERSONATOR");
 
-    // Track non-external users for self-evaluations
-    for (const m of team.members) {
-      if (m.role === "EXTERNAL") continue;
-      const tpl = resolveTemplate(team.id, m.levelId, "self", teamTemplateMap, teamLevelTemplateMap, teamRelationshipTemplateMap);
-      if (tpl) selfEvalPairs.add(`${m.userId}:${tpl}`);
+    // Collect all relationships handled by impersonators in this team
+    const handledRelationships = new Set<string>();
+    for (const imp of impersonators) {
+      for (const rel of imp.impersonatorRelationships ?? []) {
+        handledRelationships.add(rel);
+      }
+    }
+
+    // All evaluable subjects: managers + members (impersonators are NOT subjects)
+    const evaluableSubjects = [...managers, ...members];
+
+    // ── Impersonator assignments ──
+    // Each relationship type targets specific subjects:
+    //   manager → members (downward review)
+    //   direct_report → managers (upward review)
+    //   peer → members (lateral review)
+    //   self → all managers + members
+    //   external → all managers + members
+    for (const imp of impersonators) {
+      for (const rel of imp.impersonatorRelationships ?? []) {
+        let subjects: typeof evaluableSubjects;
+        switch (rel) {
+          case "manager":
+          case "peer":
+            subjects = members;
+            break;
+          case "direct_report":
+            subjects = managers;
+            break;
+          default: // "self", "external"
+            subjects = evaluableSubjects;
+            break;
+        }
+        for (const subject of subjects) {
+          const tpl = resolveTemplate(team.id, subject.levelId, rel, teamTemplateMap, teamLevelTemplateMap, teamRelationshipTemplateMap);
+          if (tpl) addAssignment(subject.userId, imp.userId, rel as GeneratedAssignment["relationship"], tpl);
+        }
+      }
+    }
+
+    // ── Normal assignments (skip relationships handled by impersonators) ──
+
+    // Track non-external, non-impersonator users for self-evaluations
+    if (!handledRelationships.has("self")) {
+      for (const m of team.members) {
+        if (m.role === "EXTERNAL" || m.role === "IMPERSONATOR") continue;
+        const tpl = resolveTemplate(team.id, m.levelId, "self", teamTemplateMap, teamLevelTemplateMap, teamRelationshipTemplateMap);
+        if (tpl) selfEvalPairs.add(`${m.userId}:${tpl}`);
+      }
     }
 
     // Manager evaluates each Member (downward) — template based on subject's level
-    for (const mgr of managers) {
-      for (const member of members) {
-        const tpl = resolveTemplate(team.id, member.levelId, "manager", teamTemplateMap, teamLevelTemplateMap, teamRelationshipTemplateMap);
-        if (tpl) addAssignment(member.userId, mgr.userId, "manager", tpl);
+    if (!handledRelationships.has("manager")) {
+      for (const mgr of managers) {
+        for (const member of members) {
+          const tpl = resolveTemplate(team.id, member.levelId, "manager", teamTemplateMap, teamLevelTemplateMap, teamRelationshipTemplateMap);
+          if (tpl) addAssignment(member.userId, mgr.userId, "manager", tpl);
+        }
       }
     }
 
     // Member evaluates each Manager (upward) — template based on subject's (manager's) level
-    for (const member of members) {
-      for (const mgr of managers) {
-        const tpl = resolveTemplate(team.id, mgr.levelId, "direct_report", teamTemplateMap, teamLevelTemplateMap, teamRelationshipTemplateMap);
-        if (tpl) addAssignment(mgr.userId, member.userId, "direct_report", tpl);
+    if (!handledRelationships.has("direct_report")) {
+      for (const member of members) {
+        for (const mgr of managers) {
+          const tpl = resolveTemplate(team.id, mgr.levelId, "direct_report", teamTemplateMap, teamLevelTemplateMap, teamRelationshipTemplateMap);
+          if (tpl) addAssignment(mgr.userId, member.userId, "direct_report", tpl);
+        }
       }
     }
 
     // Peer evaluations — template based on subject's level
-    for (const reviewer of members) {
-      for (const subject of members) {
-        if (reviewer.userId === subject.userId) continue;
-        const tpl = resolveTemplate(team.id, subject.levelId, "peer", teamTemplateMap, teamLevelTemplateMap, teamRelationshipTemplateMap);
-        if (tpl) addAssignment(subject.userId, reviewer.userId, "peer", tpl);
+    if (!handledRelationships.has("peer")) {
+      for (const reviewer of members) {
+        for (const subject of members) {
+          if (reviewer.userId === subject.userId) continue;
+          const tpl = resolveTemplate(team.id, subject.levelId, "peer", teamTemplateMap, teamLevelTemplateMap, teamRelationshipTemplateMap);
+          if (tpl) addAssignment(subject.userId, reviewer.userId, "peer", tpl);
+        }
       }
     }
 
     // External evaluates Members and Managers — template based on subject's level
-    for (const ext of externals) {
-      for (const member of members) {
-        const tpl = resolveTemplate(team.id, member.levelId, "external", teamTemplateMap, teamLevelTemplateMap, teamRelationshipTemplateMap);
-        if (tpl) addAssignment(member.userId, ext.userId, "external", tpl);
-      }
-      for (const mgr of managers) {
-        const tpl = resolveTemplate(team.id, mgr.levelId, "external", teamTemplateMap, teamLevelTemplateMap, teamRelationshipTemplateMap);
-        if (tpl) addAssignment(mgr.userId, ext.userId, "external", tpl);
+    if (!handledRelationships.has("external")) {
+      for (const ext of externals) {
+        for (const member of members) {
+          const tpl = resolveTemplate(team.id, member.levelId, "external", teamTemplateMap, teamLevelTemplateMap, teamRelationshipTemplateMap);
+          if (tpl) addAssignment(member.userId, ext.userId, "external", tpl);
+        }
+        for (const mgr of managers) {
+          const tpl = resolveTemplate(team.id, mgr.levelId, "external", teamTemplateMap, teamLevelTemplateMap, teamRelationshipTemplateMap);
+          if (tpl) addAssignment(mgr.userId, ext.userId, "external", tpl);
+        }
       }
     }
   }
@@ -160,8 +213,9 @@ export function generateAssignmentsFromTeams(
 
 interface TeamMemberData {
   userId: string;
-  role: "MANAGER" | "MEMBER" | "EXTERNAL";
+  role: "MANAGER" | "MEMBER" | "EXTERNAL" | "IMPERSONATOR";
   levelId: string | null;
+  impersonatorRelationships?: string[];
 }
 
 interface TeamWithMembers {
@@ -203,6 +257,7 @@ export async function createAssignmentsForCycle(
           userId: true,
           role: true,
           levelId: true,
+          impersonatorRelationships: true,
         },
       },
     },

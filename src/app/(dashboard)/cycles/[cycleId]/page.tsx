@@ -121,6 +121,7 @@ interface AssignmentWithNames {
   status: "SUBMITTED" | "IN_PROGRESS" | "PENDING";
   teamId: string;
   teamName: string;
+  isImpersonator: boolean;
 }
 
 // ─── Constants ───
@@ -1001,6 +1002,11 @@ export default function CycleDetailPage() {
                                 <span className="text-[13px] text-gray-700">
                                   {a.reviewerName}
                                 </span>
+                                {a.isImpersonator && (
+                                  <Badge variant="error" className="text-[10px] px-1.5 py-0">
+                                    Impersonator
+                                  </Badge>
+                                )}
                               </div>
                             </td>
                             <td className="px-4 py-2.5">

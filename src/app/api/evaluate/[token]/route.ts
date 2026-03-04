@@ -56,9 +56,13 @@ export async function GET(
       );
     }
 
-    const [subject, reviewer] = await Promise.all([
+    const [subject, reviewer, impersonatorMember] = await Promise.all([
       prisma.user.findFirst({ where: { id: assignment.subjectId }, select: { name: true } }),
       prisma.user.findFirst({ where: { id: assignment.reviewerId }, select: { name: true, email: true } }),
+      prisma.teamMember.findFirst({
+        where: { userId: assignment.reviewerId, role: "IMPERSONATOR" },
+        select: { id: true },
+      }),
     ]);
 
     // Mask reviewer email for display (show first 2 chars + domain)
@@ -74,6 +78,7 @@ export async function GET(
       reviewerEmailMasked: string;
       cycleName: string;
       relationship: string;
+      isImpersonator: boolean;
     }>>({
       success: true,
       data: {
@@ -82,6 +87,7 @@ export async function GET(
         reviewerEmailMasked: maskedEmail,
         cycleName: assignment.cycle.name,
         relationship: assignment.relationship,
+        isImpersonator: !!impersonatorMember,
       },
     });
   } catch (error) {

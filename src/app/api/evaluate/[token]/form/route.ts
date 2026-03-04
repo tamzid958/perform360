@@ -78,8 +78,8 @@ export async function GET(
       );
     }
 
-    // Fetch subject name and cycle name
-    const [subject, cycle] = await Promise.all([
+    // Fetch subject name, cycle name, and impersonator status
+    const [subject, cycle, impersonatorMember] = await Promise.all([
       prisma.user.findFirst({
         where: { id: assignment.subjectId },
         select: { name: true },
@@ -88,6 +88,10 @@ export async function GET(
         where: { id: assignment.cycleId },
         select: { name: true },
       }),
+      prisma.teamMember.findFirst({
+        where: { userId: assignment.reviewerId, role: "IMPERSONATOR" },
+        select: { id: true },
+      }),
     ]);
 
     return NextResponse.json<ApiResponse<{
@@ -95,6 +99,7 @@ export async function GET(
       cycleName: string;
       relationship: string;
       sections: TemplateSection[];
+      isImpersonator: boolean;
     }>>({
       success: true,
       data: {
@@ -102,6 +107,7 @@ export async function GET(
         cycleName: cycle?.name ?? "Unknown",
         relationship: assignment.relationship,
         sections: template.sections as unknown as TemplateSection[],
+        isImpersonator: !!impersonatorMember,
       },
     });
   } catch (error) {

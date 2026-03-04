@@ -305,5 +305,209 @@ describe("assignments", () => {
       const subjects = extAssignments.map((a) => a.subjectId).sort();
       expect(subjects).toEqual(["mem-1", "mem-2", "mgr-1", "mgr-2"]);
     });
+    // ── Impersonator role tests ──
+
+    it("impersonator handles peer: no member↔member peer, impersonator reviews each member as peer", () => {
+      const teams = [{
+        id: "team-1",
+        members: [
+          { userId: "mgr-1", role: "MANAGER" as const, levelId: null },
+          { userId: "mem-1", role: "MEMBER" as const, levelId: null },
+          { userId: "mem-2", role: "MEMBER" as const, levelId: null },
+          { userId: "imp-1", role: "IMPERSONATOR" as const, levelId: null, impersonatorRelationships: ["peer"] },
+        ],
+      }];
+      const templateMap = new Map([["team-1", "tpl-1"]]);
+      const assignments = generateAssignmentsFromTeams(cycleId, teams, templateMap);
+
+      // No normal peer assignments
+      const normalPeer = assignments.filter(
+        (a) => a.relationship === "peer" && a.reviewerId !== "imp-1"
+      );
+      expect(normalPeer).toHaveLength(0);
+
+      // Impersonator reviews each member as peer (not managers)
+      const impPeer = assignments.filter(
+        (a) => a.relationship === "peer" && a.reviewerId === "imp-1"
+      );
+      expect(impPeer).toHaveLength(2);
+      expect(impPeer.map((a) => a.subjectId).sort()).toEqual(["mem-1", "mem-2"]);
+    });
+
+    it("impersonator handles manager+direct_report: no normal downward/upward", () => {
+      const teams = [{
+        id: "team-1",
+        members: [
+          { userId: "mgr-1", role: "MANAGER" as const, levelId: null },
+          { userId: "mem-1", role: "MEMBER" as const, levelId: null },
+          { userId: "imp-1", role: "IMPERSONATOR" as const, levelId: null, impersonatorRelationships: ["manager", "direct_report"] },
+        ],
+      }];
+      const templateMap = new Map([["team-1", "tpl-1"]]);
+      const assignments = generateAssignmentsFromTeams(cycleId, teams, templateMap);
+
+      // No normal manager or direct_report assignments
+      const normalMgr = assignments.filter(
+        (a) => a.relationship === "manager" && a.reviewerId !== "imp-1"
+      );
+      const normalDr = assignments.filter(
+        (a) => a.relationship === "direct_report" && a.reviewerId !== "imp-1"
+      );
+      expect(normalMgr).toHaveLength(0);
+      expect(normalDr).toHaveLength(0);
+
+      // Impersonator handles manager → reviews members as subjects
+      const impMgr = assignments.filter(
+        (a) => a.relationship === "manager" && a.reviewerId === "imp-1"
+      );
+      expect(impMgr).toHaveLength(1); // mem-1
+      expect(impMgr[0].subjectId).toBe("mem-1");
+
+      // Impersonator handles direct_report → reviews managers as subjects
+      const impDr = assignments.filter(
+        (a) => a.relationship === "direct_report" && a.reviewerId === "imp-1"
+      );
+      expect(impDr).toHaveLength(1); // mgr-1
+      expect(impDr[0].subjectId).toBe("mgr-1");
+    });
+
+    it("impersonator handles self: no normal self-evaluations", () => {
+      const teams = [{
+        id: "team-1",
+        members: [
+          { userId: "mgr-1", role: "MANAGER" as const, levelId: null },
+          { userId: "mem-1", role: "MEMBER" as const, levelId: null },
+          { userId: "imp-1", role: "IMPERSONATOR" as const, levelId: null, impersonatorRelationships: ["self"] },
+        ],
+      }];
+      const templateMap = new Map([["team-1", "tpl-1"]]);
+      const assignments = generateAssignmentsFromTeams(cycleId, teams, templateMap);
+
+      // No normal self-evaluations
+      const normalSelf = assignments.filter(
+        (a) => a.relationship === "self" && a.reviewerId === a.subjectId
+      );
+      expect(normalSelf).toHaveLength(0);
+
+      // Impersonator reviews each evaluable as self
+      const impSelf = assignments.filter(
+        (a) => a.relationship === "self" && a.reviewerId === "imp-1"
+      );
+      expect(impSelf).toHaveLength(2); // mgr-1 + mem-1
+    });
+
+    it("impersonator handles external: no EXTERNAL member assignments, impersonator reviews as external", () => {
+      const teams = [{
+        id: "team-1",
+        members: [
+          { userId: "mgr-1", role: "MANAGER" as const, levelId: null },
+          { userId: "mem-1", role: "MEMBER" as const, levelId: null },
+          { userId: "ext-1", role: "EXTERNAL" as const, levelId: null },
+          { userId: "imp-1", role: "IMPERSONATOR" as const, levelId: null, impersonatorRelationships: ["external"] },
+        ],
+      }];
+      const templateMap = new Map([["team-1", "tpl-1"]]);
+      const assignments = generateAssignmentsFromTeams(cycleId, teams, templateMap);
+
+      // No normal external assignments
+      const normalExt = assignments.filter(
+        (a) => a.relationship === "external" && a.reviewerId === "ext-1"
+      );
+      expect(normalExt).toHaveLength(0);
+
+      // Impersonator reviews as external
+      const impExt = assignments.filter(
+        (a) => a.relationship === "external" && a.reviewerId === "imp-1"
+      );
+      expect(impExt).toHaveLength(2); // mgr-1 + mem-1
+    });
+
+    it("impersonator is never a subject (never evaluated)", () => {
+      const teams = [{
+        id: "team-1",
+        members: [
+          { userId: "mgr-1", role: "MANAGER" as const, levelId: null },
+          { userId: "mem-1", role: "MEMBER" as const, levelId: null },
+          { userId: "imp-1", role: "IMPERSONATOR" as const, levelId: null, impersonatorRelationships: ["peer", "self", "manager", "direct_report"] },
+        ],
+      }];
+      const templateMap = new Map([["team-1", "tpl-1"]]);
+      const assignments = generateAssignmentsFromTeams(cycleId, teams, templateMap);
+
+      const asSubject = assignments.filter((a) => a.subjectId === "imp-1");
+      expect(asSubject).toHaveLength(0);
+    });
+
+    it("multiple impersonators handling different relationships", () => {
+      const teams = [{
+        id: "team-1",
+        members: [
+          { userId: "mgr-1", role: "MANAGER" as const, levelId: null },
+          { userId: "mem-1", role: "MEMBER" as const, levelId: null },
+          { userId: "imp-1", role: "IMPERSONATOR" as const, levelId: null, impersonatorRelationships: ["peer"] },
+          { userId: "imp-2", role: "IMPERSONATOR" as const, levelId: null, impersonatorRelationships: ["self"] },
+        ],
+      }];
+      const templateMap = new Map([["team-1", "tpl-1"]]);
+      const assignments = generateAssignmentsFromTeams(cycleId, teams, templateMap);
+
+      // imp-1 handles peer for members only
+      const imp1Peer = assignments.filter(
+        (a) => a.relationship === "peer" && a.reviewerId === "imp-1"
+      );
+      expect(imp1Peer).toHaveLength(1); // mem-1 only (peer targets members)
+
+      // imp-2 handles self for each evaluable subject (managers + members)
+      const imp2Self = assignments.filter(
+        (a) => a.relationship === "self" && a.reviewerId === "imp-2"
+      );
+      expect(imp2Self).toHaveLength(2); // mgr-1 + mem-1
+
+      // No normal peer or self
+      const normalPeer = assignments.filter(
+        (a) => a.relationship === "peer" && a.reviewerId !== "imp-1"
+      );
+      const normalSelf = assignments.filter(
+        (a) => a.relationship === "self" && a.reviewerId === a.subjectId
+      );
+      expect(normalPeer).toHaveLength(0);
+      expect(normalSelf).toHaveLength(0);
+    });
+
+    it("team without impersonator: completely unchanged behavior", () => {
+      const teams = [{
+        id: "team-1",
+        members: [
+          { userId: "mgr-1", role: "MANAGER" as const, levelId: null },
+          { userId: "mem-1", role: "MEMBER" as const, levelId: null },
+          { userId: "mem-2", role: "MEMBER" as const, levelId: null },
+        ],
+      }];
+      const templateMap = new Map([["team-1", "tpl-1"]]);
+      const assignments = generateAssignmentsFromTeams(cycleId, teams, templateMap);
+
+      // Normal: 2 manager, 2 direct_report, 2 peer, 3 self = 9
+      expect(assignments).toHaveLength(9);
+    });
+
+    it("external still reviews when impersonator does NOT handle external", () => {
+      const teams = [{
+        id: "team-1",
+        members: [
+          { userId: "mgr-1", role: "MANAGER" as const, levelId: null },
+          { userId: "mem-1", role: "MEMBER" as const, levelId: null },
+          { userId: "ext-1", role: "EXTERNAL" as const, levelId: null },
+          { userId: "imp-1", role: "IMPERSONATOR" as const, levelId: null, impersonatorRelationships: ["peer"] },
+        ],
+      }];
+      const templateMap = new Map([["team-1", "tpl-1"]]);
+      const assignments = generateAssignmentsFromTeams(cycleId, teams, templateMap);
+
+      // External still reviews normally
+      const extAssignments = assignments.filter(
+        (a) => a.relationship === "external" && a.reviewerId === "ext-1"
+      );
+      expect(extAssignments).toHaveLength(2); // mgr-1 + mem-1
+    });
   });
 });

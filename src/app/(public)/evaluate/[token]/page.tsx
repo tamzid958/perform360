@@ -14,6 +14,7 @@ interface TokenData {
   reviewerEmailMasked: string;
   cycleName: string;
   relationship: string;
+  isImpersonator: boolean;
 }
 
 export default function EvaluateOTPPage({ params: paramsPromise }: { params: Promise<{ token: string }> }) {
@@ -232,6 +233,15 @@ export default function EvaluateOTPPage({ params: paramsPromise }: { params: Pro
           <div className="text-center text-[13px] text-gray-500">
             <p>Evaluation for <span className="font-medium text-gray-700">{tokenData.subjectName}</span></p>
             <p>{tokenData.cycleName} &middot; {tokenData.relationship}</p>
+          </div>
+        )}
+
+        {tokenData?.isImpersonator && (
+          <div className="flex items-center gap-2.5 px-4 py-3 bg-red-50 border border-red-200 rounded-xl">
+            <AlertCircle size={16} strokeWidth={1.5} className="text-red-500 flex-shrink-0" />
+            <p className="text-[13px] text-red-600">
+              You are submitting this review on behalf of <span className="font-medium">{tokenData.subjectName}</span> as an impersonator.
+            </p>
           </div>
         )}
 

@@ -44,6 +44,7 @@ interface TeamMember {
   teamId: string;
   role: string;
   levelId: string | null;
+  impersonatorRelationships: string[];
   level: LevelOption | null;
   user: { id: string; name: string; email: string; avatar: string | null; role: string };
 }
@@ -56,17 +57,27 @@ interface Team {
   members: TeamMember[];
 }
 
-const roleBadgeVariant: Record<string, "info" | "success" | "warning"> = {
+const roleBadgeVariant: Record<string, "info" | "success" | "warning" | "default" | "error"> = {
   MANAGER: "info",
   MEMBER: "success",
   EXTERNAL: "warning",
+  IMPERSONATOR: "error",
 };
 
 const roleLabels: Record<string, string> = {
   MANAGER: "Manager",
   MEMBER: "Member",
   EXTERNAL: "External",
+  IMPERSONATOR: "Impersonator",
 };
+
+const RELATIONSHIP_OPTIONS = [
+  { value: "peer", label: "Peer" },
+  { value: "self", label: "Self" },
+  { value: "manager", label: "Manager" },
+  { value: "direct_report", label: "Direct Report" },
+  { value: "external", label: "External" },
+] as const;
 
 export default function TeamDetailPage() {
   const params = useParams<{ teamId: string }>();
@@ -80,6 +91,7 @@ export default function TeamDetailPage() {
   const [usersLoading, setUsersLoading] = useState(false);
   const [addRole, setAddRole] = useState("MEMBER");
   const [addLevelId, setAddLevelId] = useState<string>("");
+  const [addImpersonatorRels, setAddImpersonatorRels] = useState<string[]>([]);
   const [addLoading, setAddLoading] = useState(false);
   const [levels, setLevels] = useState<LevelOption[]>([]);
   const { addToast } = useToast();
@@ -159,7 +171,12 @@ export default function TeamDetailPage() {
       const res = await fetch(`/api/teams/${params.teamId}/members`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: selectedUserId, role: addRole, levelId: addLevelId && addLevelId !== "none" ? addLevelId : null }),
+        body: JSON.stringify({
+          userId: selectedUserId,
+          role: addRole,
+          levelId: addLevelId && addLevelId !== "none" ? addLevelId : null,
+          ...(addRole === "IMPERSONATOR" ? { impersonatorRelationships: addImpersonatorRels } : {}),
+        }),
       });
       const json = await res.json();
       if (!json.success) throw new Error(json.error || "Failed to add member");
@@ -170,6 +187,7 @@ export default function TeamDetailPage() {
       setUserSearchQuery("");
       setAddRole("MEMBER");
       setAddLevelId("");
+      setAddImpersonatorRels([]);
       fetchTeam();
     } catch (err) {
       addToast(err instanceof Error ? err.message : "Failed to add member", "error");
@@ -268,17 +286,38 @@ export default function TeamDetailPage() {
   const managers = team.members.filter((m) => m.role === "MANAGER");
   const members = team.members.filter((m) => m.role === "MEMBER");
   const externals = team.members.filter((m) => m.role === "EXTERNAL");
+  const impersonators = team.members.filter((m) => m.role === "IMPERSONATOR");
+
+  // Collect all impersonator-handled relationships
+  const handledRels = new Set<string>();
+  for (const imp of impersonators) {
+    for (const rel of imp.impersonatorRelationships ?? []) {
+      handledRels.add(rel);
+    }
+  }
+
+  const evaluableCount = managers.length + members.length;
 
   // Downward: Manager → Member (each manager evaluates each member)
-  const downwardCount = managers.length * members.length;
+  const downwardCount = handledRels.has("manager")
+    ? impersonators.filter((i) => i.impersonatorRelationships?.includes("manager")).length * members.length
+    : managers.length * members.length;
   // Upward: Member → Manager (each member evaluates each manager)
-  const upwardCount = members.length * managers.length;
+  const upwardCount = handledRels.has("direct_report")
+    ? impersonators.filter((i) => i.impersonatorRelationships?.includes("direct_report")).length * managers.length
+    : members.length * managers.length;
   // Lateral: Member → Member (each member evaluates every other member)
-  const lateralCount = members.length * (members.length - 1);
-  // Self: Everyone evaluates themselves (except External)
-  const selfCount = managers.length + members.length;
+  const lateralCount = handledRels.has("peer")
+    ? impersonators.filter((i) => i.impersonatorRelationships?.includes("peer")).length * members.length
+    : members.length * (members.length - 1);
+  // Self: Everyone evaluates themselves (except External & Impersonator)
+  const selfCount = handledRels.has("self")
+    ? impersonators.filter((i) => i.impersonatorRelationships?.includes("self")).length * evaluableCount
+    : managers.length + members.length;
   // External: Each external evaluates all managers + members
-  const externalCount = externals.length * (managers.length + members.length);
+  const externalCount = handledRels.has("external")
+    ? impersonators.filter((i) => i.impersonatorRelationships?.includes("external")).length * evaluableCount
+    : externals.length * (managers.length + members.length);
 
   return (
     <div>
@@ -311,7 +350,7 @@ export default function TeamDetailPage() {
       )}
 
       {/* Evaluation Direction Stats */}
-      <div className={`grid gap-3 mb-6 max-w-2xl grid-cols-2 ${externalCount > 0 ? "sm:grid-cols-3 lg:grid-cols-5" : "sm:grid-cols-4"}`}>
+      <div className={`grid gap-3 mb-6 max-w-2xl grid-cols-2 ${externalCount > 0 || impersonators.length > 0 ? "sm:grid-cols-3 lg:grid-cols-5" : "sm:grid-cols-4"}`}>
         <div className="flex items-center gap-3 rounded-2xl border border-emerald-100 bg-emerald-50/50 px-4 py-3">
           <div className="p-2 rounded-xl bg-emerald-100">
             <ArrowDown size={18} strokeWidth={1.5} className="text-emerald-600" />
@@ -393,6 +432,15 @@ export default function TeamDetailPage() {
                       {roleLabels[member.role]}
                     </Badge>
                   )}
+                  {member.role === "IMPERSONATOR" && member.impersonatorRelationships?.length > 0 && (
+                    <span className="flex gap-1">
+                      {member.impersonatorRelationships.map((rel) => (
+                        <Badge key={rel} variant="default" className="text-[10px] px-1.5 py-0">
+                          {rel.replace("_", " ")}
+                        </Badge>
+                      ))}
+                    </span>
+                  )}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors" aria-label="Member actions">
@@ -400,7 +448,7 @@ export default function TeamDetailPage() {
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      {levels.length > 0 && (
+                      {levels.length > 0 && member.role !== "IMPERSONATOR" && (
                         <>
                           {levels.map((lvl) => (
                             <DropdownMenuItem
@@ -446,6 +494,7 @@ export default function TeamDetailPage() {
             setUserSearchQuery("");
             setAddRole("MEMBER");
             setAddLevelId("");
+            setAddImpersonatorRels([]);
           }
         }}
       >
@@ -468,7 +517,7 @@ export default function TeamDetailPage() {
             />
             <div className="space-y-1.5">
               <label className="block text-[13px] font-medium text-gray-700">Team Role</label>
-              <Select value={addRole} onValueChange={setAddRole}>
+              <Select value={addRole} onValueChange={(v) => { setAddRole(v); if (v !== "IMPERSONATOR") setAddImpersonatorRels([]); if (v === "IMPERSONATOR") setAddLevelId(""); }}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
@@ -476,10 +525,36 @@ export default function TeamDetailPage() {
                   <SelectItem value="MANAGER">Manager</SelectItem>
                   <SelectItem value="MEMBER">Member</SelectItem>
                   <SelectItem value="EXTERNAL">External</SelectItem>
+                  <SelectItem value="IMPERSONATOR">Impersonator</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            {levels.length > 0 && (
+            {addRole === "IMPERSONATOR" && (
+              <div className="space-y-1.5">
+                <label className="block text-[13px] font-medium text-gray-700">Relationship Types</label>
+                <div className="flex flex-wrap gap-2">
+                  {RELATIONSHIP_OPTIONS.map((opt) => (
+                    <label key={opt.value} className="flex items-center gap-1.5 text-[13px] text-gray-700 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={addImpersonatorRels.includes(opt.value)}
+                        onChange={(e) => {
+                          setAddImpersonatorRels((prev) =>
+                            e.target.checked ? [...prev, opt.value] : prev.filter((r) => r !== opt.value)
+                          );
+                        }}
+                        className="rounded border-gray-300"
+                      />
+                      {opt.label}
+                    </label>
+                  ))}
+                </div>
+                {addImpersonatorRels.length === 0 && (
+                  <p className="text-[12px] text-red-500">Select at least one relationship type</p>
+                )}
+              </div>
+            )}
+            {levels.length > 0 && addRole !== "IMPERSONATOR" && (
               <div className="space-y-1.5">
                 <label className="block text-[13px] font-medium text-gray-700">Level (optional)</label>
                 <Select value={addLevelId} onValueChange={setAddLevelId}>
@@ -496,7 +571,7 @@ export default function TeamDetailPage() {
               </div>
             )}
             <div className="flex gap-3 pt-2">
-              <Button disabled={addLoading || !selectedUserId} onClick={handleAddMember}>
+              <Button disabled={addLoading || !selectedUserId || (addRole === "IMPERSONATOR" && addImpersonatorRels.length === 0)} onClick={handleAddMember}>
                 {addLoading ? "Adding..." : "Add Member"}
               </Button>
               <Button variant="ghost" onClick={() => setShowAddDialog(false)}>Cancel</Button>

@@ -15,7 +15,10 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { Pagination } from "@/components/ui/pagination";
 import { Plus, Layers, Pencil, Trash2, Users } from "lucide-react";
+
+const LEVELS_PER_PAGE = 10;
 
 interface Level {
   id: string;
@@ -43,6 +46,7 @@ export default function LevelsPage() {
   const [deleteLevel, setDeleteLevel] = useState<Level | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
+  const [page, setPage] = useState(1);
   const { addToast } = useToast();
 
   const fetchLevels = useCallback(async () => {
@@ -169,9 +173,12 @@ export default function LevelsPage() {
           </Button>
         </EmptyState>
       ) : (
-        <Card className="max-w-2xl divide-y divide-gray-100">
-          {levels.map((level) => (
-            <div key={level.id} className="flex items-center justify-between px-4 py-3 gap-3">
+        <>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {levels
+            .slice((page - 1) * LEVELS_PER_PAGE, page * LEVELS_PER_PAGE)
+            .map((level) => (
+            <Card key={level.id} className="flex items-center justify-between px-4 py-3 gap-3">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="p-2 rounded-lg bg-brand-50 shrink-0">
                   <Layers size={16} strokeWidth={1.5} className="text-brand-500" />
@@ -203,9 +210,22 @@ export default function LevelsPage() {
                   <Trash2 size={14} strokeWidth={1.5} className="text-gray-400 hover:text-red-500" />
                 </button>
               </div>
-            </div>
+            </Card>
           ))}
-        </Card>
+        </div>
+        {levels.length > LEVELS_PER_PAGE && (
+          <div className="mt-4">
+            <Pagination
+              page={page}
+              totalPages={Math.ceil(levels.length / LEVELS_PER_PAGE)}
+              total={levels.length}
+              showing={Math.min(LEVELS_PER_PAGE, levels.length - (page - 1) * LEVELS_PER_PAGE)}
+              noun="levels"
+              onPageChange={setPage}
+            />
+          </div>
+        )}
+        </>
       )}
 
       {/* Create Level Dialog */}

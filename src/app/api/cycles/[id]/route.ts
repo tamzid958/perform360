@@ -124,15 +124,17 @@ export async function GET(
       }
     }
 
-    // Fetch team memberships only if disambiguation needed
+    // Fetch team memberships (also used for impersonator detection)
+    const teamIds = cycle.cycleTeams.map((ct) => ct.team.id);
+    const memberships = await prisma.teamMember.findMany({
+      where: { teamId: { in: teamIds } },
+      select: { userId: true, teamId: true, role: true },
+    });
+
+    // Build user→teams map for disambiguation
     const needsDisambiguation = Array.from(templateToTeams.values()).some((t) => t.length > 1);
     let userTeamMap: Map<string, Set<string>> | null = null;
     if (needsDisambiguation) {
-      const teamIds = cycle.cycleTeams.map((ct) => ct.team.id);
-      const memberships = await prisma.teamMember.findMany({
-        where: { teamId: { in: teamIds } },
-        select: { userId: true, teamId: true },
-      });
       userTeamMap = new Map<string, Set<string>>();
       for (const m of memberships) {
         const set = userTeamMap.get(m.userId) ?? new Set<string>();
@@ -140,6 +142,11 @@ export async function GET(
         userTeamMap.set(m.userId, set);
       }
     }
+
+    // Build set of impersonator user IDs
+    const impersonatorUserIds = new Set(
+      memberships.filter((m) => m.role === "IMPERSONATOR").map((m) => m.userId)
+    );
 
     // Attach names + team to cycle object for response
     (cycle as Record<string, unknown>).assignmentsWithNames = cycle.assignments.map((a) => {
@@ -156,6 +163,7 @@ export async function GET(
         reviewerName: nameMap.get(a.reviewerId) ?? "Unknown",
         teamId: team.teamId,
         teamName: team.teamName,
+        isImpersonator: impersonatorUserIds.has(a.reviewerId),
       };
     });
   }

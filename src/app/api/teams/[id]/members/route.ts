@@ -5,11 +5,20 @@ import { prisma } from "@/lib/prisma";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { validateCuidParam } from "@/lib/validation";
 
+const VALID_IMPERSONATOR_RELATIONSHIPS = ["peer", "self", "manager", "direct_report", "external"] as const;
+
 const addMemberSchema = z.object({
   userId: z.string().min(1, "User ID is required"),
-  role: z.enum(["MANAGER", "MEMBER", "EXTERNAL"]),
+  role: z.enum(["MANAGER", "MEMBER", "EXTERNAL", "IMPERSONATOR"]),
   levelId: z.string().optional().nullable(),
-});
+  impersonatorRelationships: z
+    .array(z.enum(VALID_IMPERSONATOR_RELATIONSHIPS))
+    .optional()
+    .default([]),
+}).refine(
+  (data) => data.role !== "IMPERSONATOR" || (data.impersonatorRelationships && data.impersonatorRelationships.length > 0),
+  { message: "Impersonator must handle at least one relationship type", path: ["impersonatorRelationships"] }
+);
 
 export async function POST(
   request: NextRequest,
@@ -98,6 +107,7 @@ export async function POST(
         teamId: id,
         role: validated.role,
         levelId: validated.levelId ?? null,
+        impersonatorRelationships: validated.role === "IMPERSONATOR" ? validated.impersonatorRelationships : [],
       },
       include: {
         user: {
@@ -119,6 +129,7 @@ export async function POST(
         code: "VALIDATION_ERROR",
       }, { status: 400 });
     }
+    console.error("[POST /api/teams/[id]/members]", error);
     return NextResponse.json({
       success: false,
       error: "Internal server error",

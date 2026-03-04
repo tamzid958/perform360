@@ -30,6 +30,7 @@ interface FormData {
   cycleName: string;
   relationship: string;
   sections: TemplateSection[];
+  isImpersonator: boolean;
 }
 
 export default function EvaluationFormPage({ params: paramsPromise }: { params: Promise<{ token: string }> }) {
@@ -116,7 +117,7 @@ export default function EvaluationFormPage({ params: paramsPromise }: { params: 
 
   if (!formData) return null;
 
-  const { sections, subjectName, cycleName, relationship } = formData;
+  const { sections, subjectName, cycleName, relationship, isImpersonator } = formData;
   const section = sections[currentSection];
   const totalQuestions = sections.reduce((acc, s) => acc + s.questions.length, 0);
   const answeredQuestions = Object.keys(answers).length;
@@ -321,6 +322,17 @@ export default function EvaluationFormPage({ params: paramsPromise }: { params: 
           <Progress value={progressPercent} className="h-1" />
         </div>
       </header>
+
+      {isImpersonator && (
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 mt-4">
+          <div className="flex items-center gap-2.5 px-4 py-3 bg-red-50 border border-red-200 rounded-xl">
+            <AlertCircle size={16} strokeWidth={1.5} className="text-red-500 flex-shrink-0" />
+            <p className="text-[13px] text-red-600">
+              You are submitting this review on behalf of <span className="font-medium">{subjectName}</span> as an impersonator.
+            </p>
+          </div>
+        </div>
+      )}
 
       <main className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {/* Section Stepper */}
