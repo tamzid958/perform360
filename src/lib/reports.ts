@@ -21,7 +21,7 @@ import type {
 
 // ─── Types ───
 
-interface TemplateQuestion {
+export interface TemplateQuestion {
   id: string;
   text: string;
   type: "rating_scale" | "text" | "multiple_choice";
@@ -32,13 +32,13 @@ interface TemplateQuestion {
   scaleLabels?: string[];
 }
 
-interface TemplateSection {
+export interface TemplateSection {
   title: string;
   description?: string;
   questions: TemplateQuestion[];
 }
 
-type DecryptedAnswers = Record<string, string | number | boolean>;
+export type DecryptedAnswers = Record<string, string | number | boolean>;
 
 interface DecryptedResponse {
   reviewerId: string;
@@ -106,7 +106,7 @@ export async function getDecryptedResponsesForSubject(
 /**
  * Extract all rating-type scores from decrypted answers using the template.
  */
-function extractRatingScores(
+export function extractRatingScores(
   answers: DecryptedAnswers,
   questions: TemplateQuestion[]
 ): { questionId: string; score: number }[] {

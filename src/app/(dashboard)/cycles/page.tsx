@@ -24,7 +24,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Plus, Calendar, Search, MoreHorizontal, Eye, Trash2, Pencil } from "lucide-react";
+import { Plus, Calendar, Search, MoreHorizontal, Eye, Trash2, Pencil, TrendingUp } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorCard } from "@/components/ui/error-card";
 import Link from "next/link";
@@ -162,6 +162,9 @@ export default function CyclesPage() {
     return (
       <div>
         <PageHeader title="Evaluation Cycles" description="Create and manage 360° evaluation cycles">
+          <Link href="/cycles/trends">
+            <Button variant="secondary"><TrendingUp size={16} strokeWidth={2} className="mr-1.5" />Trends</Button>
+          </Link>
           <Link href="/cycles/new">
             <Button><Plus size={16} strokeWidth={2} className="mr-1.5" />New Cycle</Button>
           </Link>
@@ -174,6 +177,9 @@ export default function CyclesPage() {
   return (
     <div>
       <PageHeader title="Evaluation Cycles" description="Create and manage 360° evaluation cycles">
+        <Link href="/cycles/trends">
+          <Button variant="secondary"><TrendingUp size={16} strokeWidth={2} className="mr-1.5" />Trends</Button>
+        </Link>
         <Link href="/cycles/new">
           <Button><Plus size={16} strokeWidth={2} className="mr-1.5" />New Cycle</Button>
         </Link>
