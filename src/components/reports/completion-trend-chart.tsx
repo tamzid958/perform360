@@ -79,9 +79,8 @@ export function CompletionTrendChart({ data }: CompletionTrendChartProps) {
             boxShadow: "var(--shadow-md)",
             fontSize: 13,
           }}
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          formatter={(value: any, _name: any, entry: any) =>
-            entry?.payload?.isDraft
+          formatter={(value, _name, entry) =>
+            (entry as { payload: CompletionTrendDataPoint })?.payload?.isDraft
               ? ["Upcoming", "Draft"]
               : [`${Number(value)?.toFixed(1) ?? "–"}%`, "Completion"]
           }

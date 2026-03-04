@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
 import type { ComboboxOption } from "@/components/ui/combobox";
 import { Toggle } from "@/components/ui/toggle";
@@ -11,7 +10,6 @@ import type {
   GroupAdvancedConfig,
   LevelInfo,
   RelationshipWeightsInput,
-  RelationshipTemplateEntry,
   TemplateOption,
   TeamOption,
 } from "./types";
@@ -97,12 +95,13 @@ export function StepCustomize({
   );
 
   useEffect(() => {
-    for (const group of groups) {
-      for (const teamId of group.teamIds) {
-        fetchTeamLevels(teamId);
-      }
+    const teamIds = groups.flatMap((g) => g.teamIds);
+    for (const teamId of teamIds) {
+      // fetchTeamLevels is memoized and skips already-cached teams
+      void fetchTeamLevels(teamId);
     }
-  }, [groups, fetchTeamLevels]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groups]);
 
   function toggleGroup(index: number) {
     setExpandedGroups((prev) => {
