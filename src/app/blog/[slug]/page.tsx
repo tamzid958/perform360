@@ -13,6 +13,15 @@ interface BlogPostPageProps {
   params: Promise<{ slug: string }>;
 }
 
+// Pre-render all published blog posts at build time for SEO indexing
+export async function generateStaticParams() {
+  const posts = await prisma.blogPost.findMany({
+    where: { status: "PUBLISHED" },
+    select: { slug: true },
+  });
+  return posts.map((post) => ({ slug: post.slug }));
+}
+
 // Deduplicate DB query between generateMetadata and page render
 const getPost = cache(async (slug: string) => {
   return prisma.blogPost.findUnique({ where: { slug } });
@@ -52,6 +61,17 @@ export async function generateMetadata({
       card: "summary",
       title: post.metaTitle || post.title,
       description: post.metaDescription || post.excerpt,
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-video-preview": -1,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+      },
     },
   };
 }
