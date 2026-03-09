@@ -122,7 +122,7 @@ describe("Blog Prompt Builder", () => {
     });
 
     it("returns false when required field is missing", () => {
-      const { title, ...withoutTitle } = validArticle;
+      const { title: _title, ...withoutTitle } = validArticle;
       expect(validateArticleSchema(withoutTitle)).toBe(false);
     });
 
