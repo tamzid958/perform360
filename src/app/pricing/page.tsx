@@ -117,7 +117,7 @@ export default function PricingPage() {
           {/* Pricing cards */}
           <div className="mt-16 grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {/* Free plan */}
-            <div className="relative rounded-2xl border-2 border-brand-500 bg-white p-8 shadow-lg shadow-brand-500/10">
+            <div className="relative rounded-2xl border-2 border-brand-500 bg-white p-5 sm:p-8 shadow-lg shadow-brand-500/10">
               <div className="absolute -top-3 left-8">
                 <span className="bg-brand-500 text-white text-[12px] font-semibold uppercase tracking-wider px-3 py-1 rounded-full">
                   Current Plan
@@ -157,7 +157,7 @@ export default function PricingPage() {
             </div>
 
             {/* Enterprise plan */}
-            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-8">
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-5 sm:p-8">
               <div>
                 <h2 className="text-title text-gray-900">Enterprise</h2>
                 <div className="flex items-baseline gap-1 mt-3">
@@ -217,7 +217,7 @@ export default function PricingPage() {
               forever.
             </p>
 
-            <div className="mt-12 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6 max-w-4xl mx-auto">
+            <div className="mt-12 grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6 max-w-4xl mx-auto">
               {[
                 { icon: Users, label: "Unlimited Teams" },
                 { icon: Zap, label: "Unlimited Cycles" },

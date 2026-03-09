@@ -274,7 +274,7 @@ export default function PeoplePage() {
       ) : (
         <Card padding="sm">
           <div className="overflow-x-auto -mx-4 sm:mx-0">
-            <table className="w-full min-w-[480px] sm:min-w-0">
+            <table className="w-full min-w-[360px] sm:min-w-0">
               <thead>
                 <tr className="border-b border-gray-100">
                   <th className="text-left text-[12px] font-medium text-gray-400 tracking-wide px-4 py-3">User</th>

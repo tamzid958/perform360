@@ -350,7 +350,7 @@ export default function TeamDetailPage() {
       )}
 
       {/* Evaluation Direction Stats */}
-      <div className={`grid gap-3 mb-6 max-w-2xl grid-cols-2 ${externalCount > 0 || impersonators.length > 0 ? "sm:grid-cols-3 lg:grid-cols-5" : "sm:grid-cols-4"}`}>
+      <div className={`grid gap-3 mb-6 max-w-2xl grid-cols-1 xs:grid-cols-2 ${externalCount > 0 || impersonators.length > 0 ? "sm:grid-cols-3 lg:grid-cols-5" : "sm:grid-cols-2 md:grid-cols-4"}`}>
         <div className="flex items-center gap-3 rounded-2xl border border-emerald-100 bg-emerald-50/50 px-4 py-3">
           <div className="p-2 rounded-xl bg-emerald-100">
             <ArrowDown size={18} strokeWidth={1.5} className="text-emerald-600" />
@@ -410,7 +410,7 @@ export default function TeamDetailPage() {
         ) : (
           <div className="divide-y divide-gray-100">
             {team.members.map((member) => (
-              <div key={member.id} className="flex items-center justify-between py-3 px-1 gap-2">
+              <div key={member.id} className="flex flex-col sm:flex-row sm:items-center justify-between py-3 px-1 gap-2">
                 <div className="flex items-center gap-3 min-w-0">
                   <Avatar name={member.user.name} src={member.user.avatar} size="md" />
                   <div className="min-w-0">
@@ -421,7 +421,7 @@ export default function TeamDetailPage() {
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex flex-wrap items-center gap-2 shrink-0 pl-13 sm:pl-0">
                   {member.level && (
                     <Badge variant="default">
                       {member.level.name}

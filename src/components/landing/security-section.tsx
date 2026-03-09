@@ -59,7 +59,7 @@ export function SecuritySection() {
           </div>
 
           {/* Right column — key hierarchy diagram */}
-          <div className="bg-white rounded-2xl p-8 shadow-[0_2px_20px_rgba(0,0,0,0.04)] border border-gray-100 h-full flex flex-col justify-center">
+          <div className="bg-white rounded-2xl p-5 sm:p-8 shadow-[0_2px_20px_rgba(0,0,0,0.04)] border border-gray-100 h-full flex flex-col justify-center">
             {/* Card 1 — Company Passphrase */}
             <div className="bg-gradient-to-r from-brand-50 to-white rounded-xl p-5 border border-brand-500/10">
               <div className="flex items-center gap-4">

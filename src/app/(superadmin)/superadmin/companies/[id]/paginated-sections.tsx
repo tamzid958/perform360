@@ -88,7 +88,8 @@ export function PaginatedCycles({ cycles }: { cycles: Cycle[] }) {
     <div className="flex flex-col flex-1 min-h-0">
       <div className="overflow-x-auto flex-1">
         <table className="w-full">
-          <thead>
+          {/* Desktop table header */}
+          <thead className="hidden sm:table-header-group">
             <tr className="border-b border-gray-100">
               <th className="text-left text-[12px] font-medium text-gray-400 uppercase tracking-wider px-4 py-3">
                 Cycle
@@ -110,21 +111,26 @@ export function PaginatedCycles({ cycles }: { cycles: Cycle[] }) {
                 ? Math.round((cycle.submittedCount / cycle.assignmentCount) * 100)
                 : 0;
               return (
-                <tr key={cycle.id} className="hover:bg-gray-50/50 transition-colors">
-                  <td className="px-4 py-3">
+                <tr key={cycle.id} className="hover:bg-gray-50/50 transition-colors flex flex-col sm:table-row px-4 py-3 sm:p-0">
+                  <td className="sm:px-4 sm:py-3 flex items-center justify-between sm:table-cell">
                     <p className="text-[14px] font-medium text-gray-900">{cycle.name}</p>
+                    <span className="sm:hidden">
+                      <Badge variant={CYCLE_STATUS_VARIANT[cycle.status] ?? "default"}>
+                        {cycle.status}
+                      </Badge>
+                    </span>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="sm:px-4 sm:py-3 hidden sm:table-cell">
                     <Badge variant={CYCLE_STATUS_VARIANT[cycle.status] ?? "default"}>
                       {cycle.status}
                     </Badge>
                   </td>
-                  <td className="px-4 py-3 text-[13px] text-gray-500">
+                  <td className="sm:px-4 sm:py-3 text-[13px] text-gray-500">
                     {formatDate(cycle.startDate)} &mdash; {formatDate(cycle.endDate)}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="sm:px-4 sm:py-3">
                     <div className="flex items-center gap-2">
-                      <Progress value={pct} className="w-20" />
+                      <Progress value={pct} className="w-16 sm:w-20" />
                       <span className="text-[12px] text-gray-500">
                         {cycle.submittedCount}/{cycle.assignmentCount}
                       </span>

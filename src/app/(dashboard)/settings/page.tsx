@@ -324,7 +324,7 @@ export default function SettingsPage() {
                 </div>
                 <div className="space-y-1.5">
                   <label className="block text-[13px] font-medium text-gray-700">Logo</label>
-                  <div className="flex items-center gap-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                     {company?.logo ? (
                       <Image
                         src={company.logo}
@@ -338,7 +338,7 @@ export default function SettingsPage() {
                         {companyName.charAt(0).toUpperCase() || "?"}
                       </div>
                     )}
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <input
                         ref={fileInputRef}
                         type="file"
@@ -509,7 +509,7 @@ export default function SettingsPage() {
               value={exportPassphrase}
               onChange={(e) => setExportPassphrase(e.target.value)}
             />
-            <div className="flex gap-3">
+            <div className="flex flex-col-reverse sm:flex-row gap-3">
               <Button
                 type="button"
                 variant="secondary"
@@ -554,12 +554,12 @@ export default function SettingsPage() {
               </p>
             </div>
 
-            <div className="flex items-center gap-3 py-1">
+            <div className="flex items-start sm:items-center gap-3 py-1">
               <Toggle
                 checked={destroyExportFirst}
                 onChange={setDestroyExportFirst}
               />
-              <div>
+              <div className="min-w-0">
                 <p className="text-[14px] font-medium text-gray-700">
                   Export data before deletion
                 </p>
@@ -586,7 +586,7 @@ export default function SettingsPage() {
               onChange={(e) => setDestroyPassphrase(e.target.value)}
             />
 
-            <div className="flex gap-3">
+            <div className="flex flex-col-reverse sm:flex-row gap-3">
               <Button
                 type="button"
                 variant="secondary"

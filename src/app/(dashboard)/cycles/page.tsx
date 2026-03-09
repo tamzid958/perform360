@@ -207,7 +207,7 @@ export default function CyclesPage() {
       </Tabs>
 
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => <CycleCardSkeleton key={i} />)}
         </div>
       ) : cycles.length === 0 ? (
@@ -224,7 +224,7 @@ export default function CyclesPage() {
         </EmptyState>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 stagger-fade-in">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 stagger-fade-in">
             {cycles.map((cycle) => {
               const badge = statusBadge[cycle.status] ?? { variant: "default" as const, label: cycle.status };
               return (

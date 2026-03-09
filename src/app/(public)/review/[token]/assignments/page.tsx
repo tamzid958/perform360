@@ -174,7 +174,7 @@ export default function ReviewAssignmentsPage({ params: paramsPromise }: { param
 
                 return (
                   <Card key={assignment.token} padding="md">
-                    <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center justify-between gap-2 sm:gap-4">
                       <div className="min-w-0">
                         <p className={`text-body-emphasis truncate ${isSubmitted ? "text-gray-400" : "text-gray-900"}`}>
                           {assignment.subjectName}

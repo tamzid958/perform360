@@ -169,7 +169,7 @@ export default function NewCyclePage() {
 
       <Card className="max-w-3xl">
         {/* Stepper */}
-        <nav className="flex items-center gap-2 mb-8">
+        <nav className="flex items-center gap-1 sm:gap-2 mb-8">
           {STEPS.map((s, i) => {
             const isCompleted = i < step;
             const isActive = i === step;
@@ -271,7 +271,7 @@ export default function NewCyclePage() {
         </div>
 
         {/* Navigation */}
-        <div className="flex items-center justify-between pt-6 mt-6 border-t border-gray-100">
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-6 mt-6 border-t border-gray-100">
           <div>
             {step > 0 && (
               <Button

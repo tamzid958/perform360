@@ -83,7 +83,7 @@ export function FeaturesSection() {
             return (
               <div
                 key={feature.title}
-                className="group p-8 rounded-2xl bg-white border border-gray-100 hover:border-gray-200/80 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300"
+                className="group p-5 sm:p-8 rounded-2xl bg-white border border-gray-100 hover:border-gray-200/80 active:border-gray-200/80 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] active:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300"
               >
                 <div
                   className={`w-12 h-12 rounded-xl flex items-center justify-center mb-5 transition-transform duration-300 group-hover:scale-110 ${feature.bgClass}`}

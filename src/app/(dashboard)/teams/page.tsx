@@ -300,7 +300,7 @@ export default function TeamsPage() {
                     <CardDescription className="line-clamp-2">{team.description ?? "No description"}</CardDescription>
                     <div className="mt-auto pt-4 space-y-2">
                       <Badge variant="default">{team._count.members} members</Badge>
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex flex-wrap items-center gap-1.5">
                         {hasDownward && (
                           <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 bg-emerald-50 rounded-full px-2 py-0.5">
                             <ArrowDown size={11} strokeWidth={2} />

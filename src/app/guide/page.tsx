@@ -1218,7 +1218,7 @@ function ReportsSection() {
                   <BarChart3 size={14} strokeWidth={1.5} className="text-green-600" />
                   <span className="font-medium text-green-900 text-[13px]">Alex&apos;s Report Summary</span>
                 </div>
-                <div className="grid grid-cols-5 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
                   <div className="text-center py-2 px-2 bg-white rounded-lg">
                     <p className="text-[11px] text-gray-400 mb-0.5">Manager Avg</p>
                     <p className="text-[16px] font-semibold text-amber-600">4.5</p>
@@ -1460,8 +1460,8 @@ export default function GuidePage() {
       <LandingNavbar />
 
       {/* Mobile Tab Bar */}
-      <div className="md:hidden sticky top-16 z-40 bg-white/80 backdrop-blur-xl border-b border-gray-200/50 px-4 py-2">
-        <div className="flex gap-1 overflow-x-auto no-scrollbar">
+      <div className="md:hidden sticky top-16 z-40 bg-white/80 backdrop-blur-xl border-b border-gray-200/50 px-3 sm:px-4 py-2">
+        <div className="flex gap-1 overflow-x-auto no-scrollbar -mx-1 px-1 snap-x snap-mandatory">
           {sections.map((section) => {
             const Icon = section.icon;
             return (
@@ -1469,7 +1469,7 @@ export default function GuidePage() {
                 key={section.id}
                 onClick={() => setActiveSection(section.id)}
                 className={cn(
-                  "flex items-center gap-1.5 px-3 py-2 rounded-lg text-[13px] font-medium whitespace-nowrap transition-all duration-200",
+                  "flex items-center gap-1.5 px-3 py-2 rounded-lg text-[13px] font-medium whitespace-nowrap transition-all duration-200 snap-start",
                   activeSection === section.id
                     ? "bg-white text-gray-900 shadow-sm"
                     : "text-gray-500 hover:text-gray-700"
@@ -1484,7 +1484,7 @@ export default function GuidePage() {
       </div>
 
       {/* Main Layout */}
-      <div className="max-w-5xl mx-auto px-6 pb-20">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-20">
         <div className="flex gap-8 items-start">
           {/* Sidebar — desktop only */}
           <nav className="hidden md:block w-48 shrink-0 pt-28">

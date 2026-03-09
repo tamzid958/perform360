@@ -173,16 +173,16 @@ export default async function CompanyAnalyticsPage({
       </Link>
 
       {/* Company Header */}
-      <div className="flex items-start justify-between mb-8">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8">
+        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+          <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-2xl bg-gray-100 flex items-center justify-center shrink-0">
             <Building2 size={24} strokeWidth={1.5} className="text-gray-400" />
           </div>
-          <div>
-            <h1 className="text-title text-gray-900">{company.name}</h1>
-            <div className="flex items-center gap-3 mt-1">
-              <p className="text-body text-gray-500">{company.slug}</p>
-              <span className="text-gray-300">|</span>
+          <div className="min-w-0">
+            <h1 className="text-title-small sm:text-title text-gray-900 truncate">{company.name}</h1>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
+              <p className="text-callout sm:text-body text-gray-500">{company.slug}</p>
+              <span className="text-gray-300 hidden sm:inline">|</span>
               <div className="flex items-center gap-1.5 text-[13px] text-gray-400">
                 <Calendar size={13} strokeWidth={1.5} />
                 Created {formatDate(company.createdAt)}
@@ -190,7 +190,7 @@ export default async function CompanyAnalyticsPage({
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 ml-14 sm:ml-0 shrink-0">
           <Badge variant={company.encryptionConfigured ? "success" : "warning"}>
             <Shield size={12} strokeWidth={1.5} className="mr-1" />
             {company.encryptionConfigured ? "Encryption Configured" : "Encryption Pending"}

@@ -244,12 +244,12 @@ function TopPerformerCard({
 function TrendsSkeleton() {
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-4">
         {[1, 2, 3].map((i) => (
           <Skeleton key={i} className="h-28 w-full rounded-2xl" />
         ))}
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-8">
         {[4, 5, 6].map((i) => (
           <Skeleton key={i} className="h-28 w-full rounded-2xl" />
         ))}
@@ -399,7 +399,7 @@ export default function CycleTrendsPage() {
         ) : (
           <>
             {/* KPI Cards — Row 1 */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-4">
               <KpiCard
                 title="Avg Score"
                 value={kpi!.avgScore.current?.toFixed(2) ?? "–"}
@@ -429,7 +429,7 @@ export default function CycleTrendsPage() {
             </div>
 
             {/* KPI Cards — Row 2 */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-8">
               <KpiCard
                 title="Teams Evaluated"
                 value={kpi!.teamsEvaluated.current?.toString() ?? "–"}

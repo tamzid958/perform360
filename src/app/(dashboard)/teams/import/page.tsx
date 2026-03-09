@@ -499,7 +499,7 @@ export default function TeamsImportPage() {
 
           <Card padding="sm" className="overflow-hidden">
             <div className="overflow-x-auto -mx-4 sm:mx-0">
-              <table className="w-full min-w-[640px] text-[13px]">
+              <table className="w-full min-w-[540px] text-[13px]">
                 <thead>
                   <tr className="border-b border-gray-100">
                     <th className="text-left py-2.5 px-3 text-gray-500 font-medium">

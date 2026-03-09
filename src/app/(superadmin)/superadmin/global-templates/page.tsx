@@ -135,10 +135,10 @@ export default function GlobalTemplatesPage() {
 
   return (
     <div>
-      <div className="flex items-start justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 mb-6 sm:mb-8">
         <div>
-          <h1 className="text-title text-gray-900">Global Templates</h1>
-          <p className="text-body text-gray-500 mt-1">
+          <h1 className="text-title-small sm:text-title text-gray-900">Global Templates</h1>
+          <p className="text-callout sm:text-body text-gray-500 mt-1">
             Templates available to all tenant companies
           </p>
         </div>
@@ -149,12 +149,12 @@ export default function GlobalTemplatesPage() {
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <Card key={i}>
               <Skeleton className="w-11 h-11 rounded-xl mb-3" />
               <Skeleton className="h-5 w-40 mb-2" />
-              <Skeleton className="h-4 w-64" />
+              <Skeleton className="h-4 w-full max-w-[16rem]" />
               <div className="flex gap-3 mt-4">
                 <Skeleton className="h-4 w-20" />
                 <Skeleton className="h-4 w-20" />
@@ -174,7 +174,7 @@ export default function GlobalTemplatesPage() {
         </Card>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {templates.map((template) => {
               const sections = Array.isArray(template.sections)
                 ? (template.sections as Section[])
@@ -194,7 +194,7 @@ export default function GlobalTemplatesPage() {
                     </Link>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <button className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors opacity-0 group-hover:opacity-100">
+                        <button className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100">
                           <MoreHorizontal
                             size={16}
                             strokeWidth={1.5}
@@ -230,7 +230,7 @@ export default function GlobalTemplatesPage() {
                   {template.description && (
                     <CardDescription>{template.description}</CardDescription>
                   )}
-                  <div className="flex items-center gap-3 mt-4 text-[12px] text-gray-400">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-4 text-[12px] text-gray-400">
                     <span>{sections.length} sections</span>
                     <span>&middot;</span>
                     <span>{countQuestions(sections)} questions</span>

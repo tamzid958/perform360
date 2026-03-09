@@ -171,9 +171,9 @@ function CycleSkeleton() {
       </CardHeader>
       <div className="space-y-4">
         <Skeleton className="h-2 w-full rounded-full" />
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
           {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-[72px] rounded-xl" />
+            <Skeleton key={i} className="h-[60px] sm:h-[72px] rounded-xl" />
           ))}
         </div>
       </div>
@@ -346,20 +346,20 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Breakdown mini cards */}
-                <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                  <div className="text-center p-3 sm:p-4 rounded-xl bg-gray-50/80 border border-gray-100/50">
+                <div className="grid grid-cols-3 gap-1.5 sm:gap-3">
+                  <div className="text-center p-2 sm:p-4 rounded-xl bg-gray-50/80 border border-gray-100/50">
                     <p className="text-[20px] sm:text-[24px] font-bold text-gray-900 tracking-tight">
                       {activeCycle._count.assignments}
                     </p>
                     <p className="text-[11px] sm:text-[12px] font-medium text-gray-500 mt-0.5">Total</p>
                   </div>
-                  <div className="text-center p-3 sm:p-4 rounded-xl bg-green-50/60 border border-green-100/50">
+                  <div className="text-center p-2 sm:p-4 rounded-xl bg-green-50/60 border border-green-100/50">
                     <p className="text-[20px] sm:text-[24px] font-bold text-green-700 tracking-tight">
                       {completedCount}
                     </p>
                     <p className="text-[11px] sm:text-[12px] font-medium text-green-600 mt-0.5">Completed</p>
                   </div>
-                  <div className="text-center p-3 sm:p-4 rounded-xl bg-amber-50/60 border border-amber-100/50">
+                  <div className="text-center p-2 sm:p-4 rounded-xl bg-amber-50/60 border border-amber-100/50">
                     <p className="text-[20px] sm:text-[24px] font-bold text-amber-700 tracking-tight">
                       {pendingCount}
                     </p>

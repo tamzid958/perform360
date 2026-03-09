@@ -32,9 +32,9 @@ const ICON_MAP: Record<InsightTileData["iconName"], React.ReactNode> = {
 // Grid cols that adapts to tile count — never more than 3 per row
 const GRID_COLS: Record<number, string> = {
   1: "grid-cols-1",
-  2: "grid-cols-2",
-  3: "grid-cols-3",
-  4: "grid-cols-2 lg:grid-cols-4",
+  2: "grid-cols-1 sm:grid-cols-2",
+  3: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3",
+  4: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4",
   5: "grid-cols-2 lg:grid-cols-3",
 };
 

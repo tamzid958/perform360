@@ -349,7 +349,7 @@ export default function EvaluationFormPage({ params: paramsPromise }: { params: 
                   {/* Connector line before (except first) */}
                   {i > 0 && (
                     <div
-                      className={`h-[2px] w-6 sm:w-10 transition-colors duration-200 ${
+                      className={`h-[2px] w-4 sm:w-6 md:w-10 transition-colors duration-200 ${
                         isSectionComplete(i - 1) ? "bg-green-400" : "bg-gray-200"
                       }`}
                     />
@@ -429,7 +429,7 @@ export default function EvaluationFormPage({ params: paramsPromise }: { params: 
               return (
                 <div key={q.id} className={questionClasses}>
                   {/* Question Number & Label */}
-                  <div className="flex items-start gap-3 mb-4">
+                  <div className="flex items-start gap-2 sm:gap-3 mb-4">
                     <span
                       className={`
                         w-7 h-7 rounded-lg flex items-center justify-center text-[12px] font-semibold flex-shrink-0 mt-0.5
@@ -450,8 +450,8 @@ export default function EvaluationFormPage({ params: paramsPromise }: { params: 
 
                   {/* Rating Scale */}
                   {q.type === "rating_scale" && (
-                    <div className="pl-10">
-                      <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${(q.scaleMax || 5) - (q.scaleMin || 1) + 1}, minmax(0, 1fr))` }}>
+                    <div className="pl-0 sm:pl-10">
+                      <div className="grid gap-1.5 sm:gap-2" style={{ gridTemplateColumns: `repeat(${(q.scaleMax || 5) - (q.scaleMin || 1) + 1}, minmax(0, 1fr))` }}>
                         {Array.from(
                           { length: (q.scaleMax || 5) - (q.scaleMin || 1) + 1 },
                           (_, i) => i + (q.scaleMin || 1)
@@ -462,17 +462,17 @@ export default function EvaluationFormPage({ params: paramsPromise }: { params: 
                               key={val}
                               onClick={() => setAnswer(q.id, val)}
                               className={`
-                                relative py-3.5 rounded-xl text-center transition-all duration-200
+                                relative py-2.5 sm:py-3.5 rounded-xl text-center transition-all duration-200
                                 ${selected
                                   ? "bg-brand-500 text-white shadow-md ring-2 ring-brand-500/20"
                                   : "bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200/60 hover:border-gray-300"
                                 }
                               `}
                             >
-                              <div className="text-[15px] font-semibold">{val}</div>
+                              <div className="text-[13px] sm:text-[15px] font-semibold">{val}</div>
                               {q.scaleLabels?.[val - (q.scaleMin || 1)] && (
                                 <div
-                                  className={`text-[10px] mt-0.5 leading-tight px-1 ${
+                                  className={`text-[9px] sm:text-[10px] mt-0.5 leading-tight px-0.5 sm:px-1 hidden sm:block ${
                                     selected ? "text-white/80" : "text-gray-400"
                                   }`}
                                 >
@@ -499,7 +499,7 @@ export default function EvaluationFormPage({ params: paramsPromise }: { params: 
                     const wordCount = text.trim() === "" ? 0 : text.trim().split(/\s+/).length;
                     const isOverLimit = wordCount > MAX_WORDS;
                     return (
-                      <div className="pl-10">
+                      <div className="pl-0 sm:pl-10">
                         <textarea
                           value={text}
                           onChange={(e) => {
@@ -524,7 +524,7 @@ export default function EvaluationFormPage({ params: paramsPromise }: { params: 
 
                   {/* Multiple Choice */}
                   {q.type === "multiple_choice" && q.options && (
-                    <div className="pl-10 space-y-2">
+                    <div className="pl-0 sm:pl-10 space-y-2">
                       {q.options.map((option) => {
                         const selected = answers[q.id] === option;
                         return (
@@ -562,7 +562,7 @@ export default function EvaluationFormPage({ params: paramsPromise }: { params: 
 
                   {/* Inline Validation Error */}
                   {hasError && (
-                    <p className="pl-10 mt-2 text-[13px] text-red-500">This question is required</p>
+                    <p className="pl-0 sm:pl-10 mt-2 text-[13px] text-red-500">This question is required</p>
                   )}
                 </div>
               );

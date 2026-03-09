@@ -137,20 +137,18 @@ export default async function TemplateAnalyticsPage({
       </Link>
 
       {/* Template Header */}
-      <div className="flex items-start justify-between mb-8">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center">
-            <Globe size={24} strokeWidth={1.5} className="text-brand-500" />
-          </div>
-          <div>
-            <h1 className="text-title text-gray-900">{template.name}</h1>
-            {template.description && (
-              <p className="text-body text-gray-500 mt-1">{template.description}</p>
-            )}
-            <div className="flex items-center gap-1.5 text-[13px] text-gray-400 mt-1">
-              <Calendar size={13} strokeWidth={1.5} />
-              Created {formatDate(template.createdAt)}
-            </div>
+      <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4 mb-8">
+        <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-2xl bg-blue-50 flex items-center justify-center shrink-0">
+          <Globe size={24} strokeWidth={1.5} className="text-brand-500" />
+        </div>
+        <div className="min-w-0">
+          <h1 className="text-title-small sm:text-title text-gray-900">{template.name}</h1>
+          {template.description && (
+            <p className="text-callout sm:text-body text-gray-500 mt-1">{template.description}</p>
+          )}
+          <div className="flex items-center gap-1.5 text-[13px] text-gray-400 mt-1">
+            <Calendar size={13} strokeWidth={1.5} />
+            Created {formatDate(template.createdAt)}
           </div>
         </div>
       </div>
@@ -200,13 +198,13 @@ export default async function TemplateAnalyticsPage({
                     {section.description && (
                       <p className="text-[13px] text-gray-500 ml-8 mb-2">{section.description}</p>
                     )}
-                    <div className="ml-8 space-y-2">
+                    <div className="ml-2 sm:ml-8 space-y-2">
                       {section.questions?.map((q, qIdx) => {
                         const typeInfo = QUESTION_TYPE_BADGE[q.type] ?? { label: q.type, variant: "default" as const };
                         return (
                           <div
                             key={qIdx}
-                            className="flex items-start justify-between py-2 px-3 rounded-xl bg-gray-50/60 border border-gray-100/50"
+                            className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1.5 sm:gap-3 py-2 px-3 rounded-xl bg-gray-50/60 border border-gray-100/50"
                           >
                             <div className="flex items-start gap-2 flex-1 min-w-0">
                               <span className="text-[12px] text-gray-400 mt-0.5 shrink-0">
@@ -214,7 +212,7 @@ export default async function TemplateAnalyticsPage({
                               </span>
                               <p className="text-[13px] text-gray-700">{q.text}</p>
                             </div>
-                            <div className="flex items-center gap-2 ml-3 shrink-0">
+                            <div className="flex flex-wrap items-center gap-2 ml-6 sm:ml-3 shrink-0">
                               <Badge variant={typeInfo.variant}>
                                 {typeInfo.label}
                               </Badge>

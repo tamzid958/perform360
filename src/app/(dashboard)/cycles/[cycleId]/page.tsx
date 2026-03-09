@@ -965,7 +965,7 @@ export default function CycleDetailPage() {
                     </span>
                   </div>
                   <div className="overflow-x-auto -mx-1 sm:mx-0">
-                    <table className="w-full min-w-[580px]">
+                    <table className="w-full min-w-[420px] sm:min-w-0">
                       <thead>
                         <tr className="border-b border-gray-50">
                           <th className="text-left text-[11px] font-medium text-gray-400 tracking-wide px-4 py-2">

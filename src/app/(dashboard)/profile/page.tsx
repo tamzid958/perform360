@@ -154,10 +154,10 @@ export default function ProfilePage() {
                 }}
               >
                 {/* Avatar + role */}
-                <div className="flex items-center gap-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                   <Avatar src={profile.avatar} name={profile.name} size="lg" />
-                  <div>
-                    <div className="flex items-center gap-2">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
                       <p className="text-headline text-gray-900">{profile.name}</p>
                       <Badge variant={ROLE_BADGE_VARIANT[profile.role] ?? "default"}>
                         {profile.role}
@@ -186,9 +186,9 @@ export default function ProfilePage() {
 
                   <div className="space-y-1.5">
                     <label className="block text-[13px] font-medium text-gray-700">Avatar</label>
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                       <Avatar src={profile.avatar} name={name || profile.name} size="lg" />
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <input
                           ref={fileInputRef}
                           type="file"

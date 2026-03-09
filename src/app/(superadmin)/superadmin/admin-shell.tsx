@@ -21,7 +21,7 @@ export function SuperAdminShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-gray-100">
       {/* Top Bar */}
       <header className="bg-gray-900 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-3">
             <Image src="/logo.png" alt="Performs360" width={100} height={19} className="h-5 w-auto brightness-0 invert" />
             <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[11px] font-medium">
@@ -35,7 +35,7 @@ export function SuperAdminShell({ children }: { children: React.ReactNode }) {
             Sign Out
           </button>
         </div>
-        <nav className="max-w-7xl mx-auto px-4 sm:px-6 flex gap-1 overflow-x-auto">
+        <nav className="max-w-7xl mx-auto px-4 sm:px-6 flex gap-1 overflow-x-auto [scrollbar-width:none] [-webkit-overflow-scrolling:touch] [&::-webkit-scrollbar]:hidden">
           {navigation.map((item) => {
             const isActive =
               pathname === item.href ||

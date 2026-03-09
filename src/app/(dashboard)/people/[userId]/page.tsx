@@ -213,7 +213,7 @@ export default function PersonDetailPage() {
         <PageHeader title="" description="">
           <Skeleton className="h-9 w-32" />
         </PageHeader>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6 max-w-xl">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6 max-w-xl">
           {[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 rounded-2xl" />)}
         </div>
         <Card className="mb-6">
@@ -268,7 +268,7 @@ export default function PersonDetailPage() {
       </PageHeader>
 
       {/* Stats Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6 max-w-xl">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6 max-w-xl">
         <div className="flex items-center gap-3 rounded-2xl border border-blue-100 bg-blue-50/50 px-4 py-3">
           <div className="p-2 rounded-xl bg-blue-100">
             <Users size={18} strokeWidth={1.5} className="text-blue-600" />

@@ -167,7 +167,7 @@ export default function CompaniesPage() {
       {/* Table */}
       <Card padding="sm">
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full hidden md:table">
             <thead>
               <tr className="border-b border-gray-100">
                 <th className="text-left text-[12px] font-medium text-gray-400 uppercase tracking-wider px-4 py-3">
@@ -176,16 +176,16 @@ export default function CompaniesPage() {
                 <th className="text-left text-[12px] font-medium text-gray-400 uppercase tracking-wider px-4 py-3">
                   Users
                 </th>
-                <th className="text-left text-[12px] font-medium text-gray-400 uppercase tracking-wider px-4 py-3">
+                <th className="text-left text-[12px] font-medium text-gray-400 uppercase tracking-wider px-4 py-3 hidden lg:table-cell">
                   Teams
                 </th>
-                <th className="text-left text-[12px] font-medium text-gray-400 uppercase tracking-wider px-4 py-3">
+                <th className="text-left text-[12px] font-medium text-gray-400 uppercase tracking-wider px-4 py-3 hidden lg:table-cell">
                   Cycles
                 </th>
                 <th className="text-left text-[12px] font-medium text-gray-400 uppercase tracking-wider px-4 py-3">
                   Encryption
                 </th>
-                <th className="text-left text-[12px] font-medium text-gray-400 uppercase tracking-wider px-4 py-3">
+                <th className="text-left text-[12px] font-medium text-gray-400 uppercase tracking-wider px-4 py-3 hidden lg:table-cell">
                   Created
                 </th>
                 <th className="text-right px-4 py-3"></th>
@@ -205,10 +205,10 @@ export default function CompaniesPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3"><Skeleton className="h-4 w-8" /></td>
-                    <td className="px-4 py-3"><Skeleton className="h-4 w-8" /></td>
-                    <td className="px-4 py-3"><Skeleton className="h-4 w-8" /></td>
+                    <td className="px-4 py-3 hidden lg:table-cell"><Skeleton className="h-4 w-8" /></td>
+                    <td className="px-4 py-3 hidden lg:table-cell"><Skeleton className="h-4 w-8" /></td>
                     <td className="px-4 py-3"><Skeleton className="h-5 w-20 rounded-full" /></td>
-                    <td className="px-4 py-3"><Skeleton className="h-4 w-24" /></td>
+                    <td className="px-4 py-3 hidden lg:table-cell"><Skeleton className="h-4 w-24" /></td>
                     <td className="px-4 py-3"><Skeleton className="h-6 w-6" /></td>
                   </tr>
                 ))
@@ -253,10 +253,10 @@ export default function CompaniesPage() {
                         {company.userCount}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-[14px] text-gray-600">
+                    <td className="px-4 py-3 text-[14px] text-gray-600 hidden lg:table-cell">
                       {company.teamCount}
                     </td>
-                    <td className="px-4 py-3 text-[14px] text-gray-600">
+                    <td className="px-4 py-3 text-[14px] text-gray-600 hidden lg:table-cell">
                       {company.cycleCount}
                     </td>
                     <td className="px-4 py-3">
@@ -264,7 +264,7 @@ export default function CompaniesPage() {
                         {company.encryptionConfigured ? "Configured" : "Pending"}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3 text-[13px] text-gray-500">
+                    <td className="px-4 py-3 text-[13px] text-gray-500 hidden lg:table-cell">
                       {formatDate(company.createdAt)}
                     </td>
                     <td className="px-4 py-3 text-right">
@@ -324,11 +324,99 @@ export default function CompaniesPage() {
               )}
             </tbody>
           </table>
+
+          {/* Mobile card layout */}
+          <div className="md:hidden divide-y divide-gray-100">
+            {loading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="p-4 space-y-2">
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="w-9 h-9 rounded-xl shrink-0" />
+                    <div className="flex-1">
+                      <Skeleton className="h-4 w-28" />
+                      <Skeleton className="h-3 w-20 mt-1" />
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : companies.length === 0 ? (
+              <div className="px-4 py-8 text-center text-[14px] text-gray-400">
+                {searchQuery ? "No companies match your search" : "No companies registered yet"}
+              </div>
+            ) : (
+              companies.map((company) => (
+                <div key={company.id} className="p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <Link href={`/superadmin/companies/${company.id}`} className="flex items-center gap-3 group min-w-0">
+                      <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center shrink-0">
+                        <Building2 size={16} strokeWidth={1.5} className="text-gray-400" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[14px] font-medium text-gray-900 group-hover:text-brand-500 transition-colors truncate">
+                          {company.name}
+                        </p>
+                        <p className="text-[12px] text-gray-500 truncate">{company.slug}</p>
+                      </div>
+                    </Link>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors shrink-0">
+                          <MoreHorizontal size={16} strokeWidth={1.5} className="text-gray-400" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem asChild>
+                          <Link href={`/superadmin/companies/${company.id}`}>
+                            <BarChart3 size={14} strokeWidth={1.5} className="mr-2" />
+                            View Analytics
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={async () => {
+                            const res = await fetch(`/api/admin/impersonate/${company.id}`, { method: "POST" });
+                            const json = await res.json();
+                            if (json.success) {
+                              window.location.href = "/overview";
+                            } else {
+                              alert(json.error ?? "Failed to impersonate");
+                            }
+                          }}
+                        >
+                          <ExternalLink size={14} strokeWidth={1.5} className="mr-2" />
+                          Impersonate Admin
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem className="text-red-600" onClick={() => handleDelete(company.id)}>
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 ml-12 text-[13px] text-gray-500">
+                    <div className="flex items-center gap-1">
+                      <Users size={13} strokeWidth={1.5} className="text-gray-400" />
+                      {company.userCount} users
+                    </div>
+                    <span className="text-gray-300">&middot;</span>
+                    <span>{company.teamCount} teams</span>
+                    <span className="text-gray-300">&middot;</span>
+                    <span>{company.cycleCount} cycles</span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 mt-2 ml-12">
+                    <Badge variant={company.encryptionConfigured ? "success" : "warning"}>
+                      {company.encryptionConfigured ? "Configured" : "Pending"}
+                    </Badge>
+                    <span className="text-[12px] text-gray-400">{formatDate(company.createdAt)}</span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
 
         {/* Pagination */}
         {pagination && pagination.totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-2 px-4 py-3 border-t border-gray-100">
             <p className="text-[13px] text-gray-400">
               Showing {companies.length} of {pagination.total} companies
             </p>

@@ -7,6 +7,7 @@ import {
   type ArticleOutput,
 } from "../blog-prompt";
 import { sanitizeHtml, sanitizeSlug } from "../blog-utils";
+import { BLOG_CONFIG } from "../constants";
 import type { BlogGeneratePayload } from "@/types/job";
 
 /**
@@ -41,6 +42,29 @@ export async function handleBlogGenerate(
 
       const articleData = articleRawData as unknown as ArticleOutput;
 
+      // Validate word count
+      const wordCount = countWords(articleData.content_html);
+      if (wordCount < BLOG_CONFIG.minWords || wordCount > BLOG_CONFIG.maxWords) {
+        console.warn(
+          `[BlogGenerate] Article ${i + 1} word count ${wordCount} outside range ${BLOG_CONFIG.minWords}-${BLOG_CONFIG.maxWords}, proceeding anyway`
+        );
+      }
+
+      // Check title similarity against existing posts
+      const existingTitles = await prisma.blogPost.findMany({
+        select: { title: true },
+        orderBy: { createdAt: "desc" },
+        take: 50,
+      });
+      const similarTitle = existingTitles.find(
+        (p) => titleSimilarity(p.title, articleData.title) > 0.7
+      );
+      if (similarTitle) {
+        throw new Error(
+          `Generated title "${articleData.title}" is too similar to existing title "${similarTitle.title}"`
+        );
+      }
+
       // Sanitize content and ensure unique slug
       const cleanHtml = sanitizeHtml(articleData.content_html);
       const slug = await ensureUniqueSlug(articleData.slug);
@@ -63,7 +87,7 @@ export async function handleBlogGenerate(
 
       successCount++;
       console.log(
-        `[BlogGenerate] Article ${i + 1} saved: "${articleData.title}"`
+        `[BlogGenerate] Article ${i + 1} saved: "${articleData.title}" (${wordCount} words)`
       );
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -117,6 +141,42 @@ function parseJson(raw: string): Record<string, unknown> | null {
 
     return null;
   }
+}
+
+/**
+ * Count words in HTML content by stripping tags.
+ */
+function countWords(html: string): number {
+  const text = html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  if (!text) return 0;
+  return text.split(" ").length;
+}
+
+/**
+ * Compute bigram-based similarity between two titles (0-1).
+ * Returns 1.0 for identical titles, 0.0 for completely different ones.
+ */
+function titleSimilarity(a: string, b: string): number {
+  const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9 ]/g, "").trim();
+  const bigrams = (s: string): Set<string> => {
+    const words = normalize(s).split(/\s+/);
+    const set = new Set<string>();
+    for (let i = 0; i < words.length - 1; i++) {
+      set.add(`${words[i]} ${words[i + 1]}`);
+    }
+    return set;
+  };
+
+  const setA = bigrams(a);
+  const setB = bigrams(b);
+  if (setA.size === 0 && setB.size === 0) return 1;
+  if (setA.size === 0 || setB.size === 0) return 0;
+
+  let intersection = 0;
+  for (const bg of setA) {
+    if (setB.has(bg)) intersection++;
+  }
+  return (2 * intersection) / (setA.size + setB.size);
 }
 
 /**

@@ -181,7 +181,7 @@ export function BlogEditor({ post }: BlogEditorProps) {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div className="flex items-center gap-3">
           <Link
             href="/superadmin/blog"
@@ -217,7 +217,7 @@ export function BlogEditor({ post }: BlogEditorProps) {
             <div
               role="listbox"
               aria-label="Post status"
-              className={`absolute right-0 top-full mt-1 w-40 bg-white rounded-lg border border-gray-200 shadow-lg py-1 z-20 transition-all duration-150 origin-top-right ${
+              className={`absolute right-0 top-full mt-1 w-36 sm:w-40 bg-white rounded-lg border border-gray-200 shadow-lg py-1 z-20 transition-all duration-150 origin-top-right ${
                 statusOpen
                   ? "opacity-100 scale-100"
                   : "opacity-0 scale-95 pointer-events-none"

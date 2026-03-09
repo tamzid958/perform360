@@ -155,7 +155,7 @@ export default async function SuperAdminDashboard() {
       </div>
 
       {/* Platform Health */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         <Card>
           <div className="flex items-start justify-between mb-3">
             <p className="text-callout text-gray-500">Overall Completion</p>
@@ -205,7 +205,7 @@ export default async function SuperAdminDashboard() {
           <CardTitle>Cycle Status Overview</CardTitle>
           <CardDescription>Distribution of evaluation cycles across all tenants</CardDescription>
         </CardHeader>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 px-4 pb-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 px-4 pb-4">
           <div className="text-center p-4 rounded-xl bg-gray-50/80 border border-gray-100/50">
             <p className="text-[24px] font-bold text-gray-700 tracking-tight">
               {data.cycleStatusMap["DRAFT"] ?? 0}
@@ -236,20 +236,62 @@ export default async function SuperAdminDashboard() {
       {/* Recent Companies */}
       <Card padding="sm">
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
               <CardTitle>Recent Companies</CardTitle>
               <CardDescription>Latest tenant organizations on the platform</CardDescription>
             </div>
             <Link
               href="/superadmin/companies"
-              className="text-[14px] font-medium text-brand-500 hover:text-brand-600 transition-colors"
+              className="text-[14px] font-medium text-brand-500 hover:text-brand-600 active:text-brand-700 transition-colors"
             >
               View all
             </Link>
           </div>
         </CardHeader>
-        <div className="overflow-x-auto">
+
+        {/* Mobile card layout */}
+        <div className="md:hidden divide-y divide-gray-100">
+          {data.recentCompanies.length === 0 ? (
+            <div className="px-4 py-8 text-center text-[14px] text-gray-400">
+              No companies registered yet
+            </div>
+          ) : (
+            data.recentCompanies.map((company) => (
+              <Link
+                key={company.id}
+                href={`/superadmin/companies/${company.id}`}
+                className="block px-4 py-3 active:bg-gray-50/50 transition-colors"
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center text-[14px] font-semibold text-gray-500 shrink-0">
+                    {company.name[0]}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[14px] font-medium text-gray-900 truncate">
+                      {company.name}
+                    </p>
+                    <p className="text-[12px] text-gray-500">{company.slug}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 flex-wrap text-[13px] text-gray-500 ml-12">
+                  <span className="flex items-center gap-1">
+                    <Users size={14} strokeWidth={1.5} className="text-gray-400" />
+                    {company._count.users} users
+                  </span>
+                  <span>{company._count.cycles} cycles</span>
+                  <Badge variant={company.encryptionSetupAt ? "success" : "warning"}>
+                    {company.encryptionSetupAt ? "Configured" : "Pending"}
+                  </Badge>
+                  <span>{formatDate(company.createdAt)}</span>
+                </div>
+              </Link>
+            ))
+          )}
+        </div>
+
+        {/* Desktop table layout */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-100">

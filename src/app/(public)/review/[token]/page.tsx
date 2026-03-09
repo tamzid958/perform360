@@ -209,7 +209,7 @@ export default function ReviewOTPPage({ params: paramsPromise }: { params: Promi
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center px-3 py-4 sm:p-4">
       {RECAPTCHA_SITE_KEY && (
         <Script
           src={`https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`}
@@ -256,7 +256,7 @@ export default function ReviewOTPPage({ params: paramsPromise }: { params: Promi
                     onChange={(e) => handleChange(index, e.target.value)}
                     onKeyDown={(e) => handleKeyDown(index, e)}
                     disabled={isLoading || cooldown > 0}
-                    className="w-10 h-12 sm:w-12 sm:h-14 text-center text-[18px] sm:text-[20px] font-semibold rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all disabled:opacity-50"
+                    className="w-9 h-11 sm:w-12 sm:h-14 text-center text-[16px] sm:text-[20px] font-semibold rounded-lg sm:rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all disabled:opacity-50"
                     autoFocus={index === 0}
                   />
                 ))}

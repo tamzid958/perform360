@@ -301,7 +301,7 @@ export default function EncryptionSettingsPage() {
               </div>
             </div>
           </CardHeader>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+          <div className="grid grid-cols-2 gap-4 mt-4">
             <div>
               <p className="text-[12px] text-gray-500 uppercase tracking-wider">Algorithm</p>
               <p className="text-[14px] font-medium text-gray-900 mt-1">AES-256-GCM</p>
@@ -392,7 +392,7 @@ export default function EncryptionSettingsPage() {
               </div>
             </div>
           </CardHeader>
-          <div className="mt-4 flex items-center gap-3">
+          <div className="mt-4 flex flex-wrap items-center gap-3">
             <Badge variant={status.remainingRecoveryCodes > 2 ? "success" : status.remainingRecoveryCodes > 0 ? "warning" : "error"}>
               {status.remainingRecoveryCodes} remaining
             </Badge>
@@ -512,17 +512,17 @@ export default function EncryptionSettingsPage() {
 
           {newCodes.length > 0 ? (
             <div className="space-y-4 mt-2">
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {newCodes.map((code, i) => (
                   <div
                     key={i}
-                    className="px-3 py-2 rounded-lg bg-gray-50 border border-gray-200 font-mono text-[14px] text-gray-800 text-center"
+                    className="px-3 py-2 rounded-lg bg-gray-50 border border-gray-200 font-mono text-[13px] sm:text-[14px] text-gray-800 text-center"
                   >
                     {code}
                   </div>
                 ))}
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Button variant="secondary" onClick={handleCopyCodes} className="flex-1">
                   <Copy size={16} strokeWidth={1.5} className="mr-2" />
                   {copied ? "Copied!" : "Copy All"}

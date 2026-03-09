@@ -188,8 +188,8 @@ export default function BlogListPage() {
             Manage AI-generated blog posts
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 mr-2 pr-2 border-r border-gray-200">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2 sm:mr-2 sm:pr-2 sm:border-r border-gray-200">
             <Toggle
               checked={!generationPaused}
               onChange={handleTogglePause}
@@ -209,7 +209,8 @@ export default function BlogListPage() {
             ) : (
               <Sparkles size={16} strokeWidth={1.5} className="mr-1.5" />
             )}
-            Generate Articles
+            <span className="hidden sm:inline">Generate Articles</span>
+            <span className="sm:hidden">Generate</span>
           </Button>
           <Button size="sm" asChild>
             <Link href="/superadmin/blog/new">
@@ -221,7 +222,7 @@ export default function BlogListPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex items-center gap-2 mb-6">
+      <div className="flex flex-wrap items-center gap-2 mb-6">
         {["", "PUBLISHED", "DRAFT"].map((status) => (
           <button
             key={status}
@@ -258,10 +259,10 @@ export default function BlogListPage() {
                 <th className="text-left text-[12px] font-medium text-gray-400 uppercase tracking-wider px-4 py-3">
                   Status
                 </th>
-                <th className="text-left text-[12px] font-medium text-gray-400 uppercase tracking-wider px-4 py-3">
+                <th className="hidden md:table-cell text-left text-[12px] font-medium text-gray-400 uppercase tracking-wider px-4 py-3">
                   Keyword
                 </th>
-                <th className="text-left text-[12px] font-medium text-gray-400 uppercase tracking-wider px-4 py-3">
+                <th className="hidden sm:table-cell text-left text-[12px] font-medium text-gray-400 uppercase tracking-wider px-4 py-3">
                   Date
                 </th>
                 <th className="text-right px-4 py-3"></th>
@@ -272,12 +273,12 @@ export default function BlogListPage() {
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i}>
                     <td className="px-4 py-3">
-                      <Skeleton className="h-4 w-64" />
-                      <Skeleton className="h-3 w-40 mt-1" />
+                      <Skeleton className="h-4 w-full max-w-[16rem]" />
+                      <Skeleton className="h-3 w-2/3 max-w-[10rem] mt-1" />
                     </td>
                     <td className="px-4 py-3"><Skeleton className="h-5 w-20 rounded-full" /></td>
-                    <td className="px-4 py-3"><Skeleton className="h-4 w-24" /></td>
-                    <td className="px-4 py-3"><Skeleton className="h-4 w-24" /></td>
+                    <td className="hidden md:table-cell px-4 py-3"><Skeleton className="h-4 w-24" /></td>
+                    <td className="hidden sm:table-cell px-4 py-3"><Skeleton className="h-4 w-24" /></td>
                     <td className="px-4 py-3"><Skeleton className="h-6 w-6" /></td>
                   </tr>
                 ))
@@ -308,10 +309,10 @@ export default function BlogListPage() {
                         {post.status === "PUBLISHED" ? "Published" : "Draft"}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3 text-[13px] text-gray-500">
+                    <td className="hidden md:table-cell px-4 py-3 text-[13px] text-gray-500">
                       {post.primaryKeyword || "—"}
                     </td>
-                    <td className="px-4 py-3 text-[13px] text-gray-500">
+                    <td className="hidden sm:table-cell px-4 py-3 text-[13px] text-gray-500">
                       {formatDate(post.publishedAt ?? post.createdAt)}
                     </td>
                     <td className="px-4 py-3 text-right">
@@ -371,7 +372,7 @@ export default function BlogListPage() {
 
         {/* Pagination */}
         {pagination && pagination.totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-2 px-4 py-3 border-t border-gray-100">
             <p className="text-[13px] text-gray-400">
               Showing {posts.length} of {pagination.total} posts
             </p>
