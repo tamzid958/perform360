@@ -103,22 +103,22 @@ jobs:
             git reset --hard origin/master
 
             echo "--- Writing .env.production from secrets ---"
-            cat > .env.production <<ENVEOF
-DATABASE_URL=${{ secrets.DATABASE_URL }}
-NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}
-NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}
-NEXT_PUBLIC_APP_URL=${{ secrets.NEXT_PUBLIC_APP_URL }}
-AUTH_TRUST_HOST=${{ secrets.AUTH_TRUST_HOST }}
-EMAIL_PROVIDER=${{ secrets.EMAIL_PROVIDER }}
-BREVO_API_KEY=${{ secrets.BREVO_API_KEY }}
-RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
-EMAIL_FROM=${{ secrets.EMAIL_FROM }}
-NEXT_PUBLIC_RECAPTCHA_SITE_KEY=${{ secrets.NEXT_PUBLIC_RECAPTCHA_SITE_KEY }}
-RECAPTCHA_SECRET_KEY=${{ secrets.RECAPTCHA_SECRET_KEY }}
-SUPER_ADMIN_EMAIL=${{ secrets.SUPER_ADMIN_EMAIL }}
-SUPER_ADMIN_NAME=${{ secrets.SUPER_ADMIN_NAME }}
-NEXT_PUBLIC_MIXPANEL_TOKEN=${{ secrets.NEXT_PUBLIC_MIXPANEL_TOKEN }}
-ENVEOF
+            cat > .env.production <<'ENVEOF'
+            DATABASE_URL=${{ secrets.DATABASE_URL }}
+            NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}
+            NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}
+            NEXT_PUBLIC_APP_URL=${{ secrets.NEXT_PUBLIC_APP_URL }}
+            AUTH_TRUST_HOST=${{ secrets.AUTH_TRUST_HOST }}
+            EMAIL_PROVIDER=${{ secrets.EMAIL_PROVIDER }}
+            BREVO_API_KEY=${{ secrets.BREVO_API_KEY }}
+            RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
+            EMAIL_FROM=${{ secrets.EMAIL_FROM }}
+            NEXT_PUBLIC_RECAPTCHA_SITE_KEY=${{ secrets.NEXT_PUBLIC_RECAPTCHA_SITE_KEY }}
+            RECAPTCHA_SECRET_KEY=${{ secrets.RECAPTCHA_SECRET_KEY }}
+            SUPER_ADMIN_EMAIL=${{ secrets.SUPER_ADMIN_EMAIL }}
+            SUPER_ADMIN_NAME=${{ secrets.SUPER_ADMIN_NAME }}
+            NEXT_PUBLIC_MIXPANEL_TOKEN=${{ secrets.NEXT_PUBLIC_MIXPANEL_TOKEN }}
+            ENVEOF
             chmod 600 .env.production
 
             echo "--- Logging in to GHCR ---"
