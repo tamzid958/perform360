@@ -16,7 +16,7 @@ describe("reCAPTCHA Client", () => {
     process.env = { ...originalEnv };
     // Clean up window.grecaptcha
     if (typeof globalThis.window !== "undefined") {
-      delete (globalThis.window as Record<string, unknown>).grecaptcha;
+      delete (globalThis.window as unknown as Record<string, unknown>).grecaptcha;
     }
   });
 
@@ -56,7 +56,7 @@ describe("reCAPTCHA Client", () => {
       process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY = "test-site-key";
       setupWindow();
 
-      (globalThis.window as Record<string, unknown>).grecaptcha = {
+      (globalThis.window as unknown as Record<string, unknown>).grecaptcha = {
         ready: (cb: () => void) => cb(),
         execute: vi.fn().mockResolvedValue("recaptcha-token-123"),
       };
@@ -65,7 +65,7 @@ describe("reCAPTCHA Client", () => {
       const result = await executeRecaptcha("submit");
 
       expect(result).toBe("recaptcha-token-123");
-      expect((globalThis.window as Record<string, unknown> & { grecaptcha: { execute: ReturnType<typeof vi.fn> } }).grecaptcha.execute).toHaveBeenCalledWith(
+      expect((globalThis.window as unknown as Record<string, unknown> & { grecaptcha: { execute: ReturnType<typeof vi.fn> } }).grecaptcha.execute).toHaveBeenCalledWith(
         "test-site-key",
         { action: "submit" }
       );
@@ -75,7 +75,7 @@ describe("reCAPTCHA Client", () => {
       process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY = "test-site-key";
       setupWindow();
 
-      (globalThis.window as Record<string, unknown>).grecaptcha = {
+      (globalThis.window as unknown as Record<string, unknown>).grecaptcha = {
         ready: (cb: () => void) => cb(),
         execute: vi.fn().mockRejectedValue(new Error("Network error")),
       };
@@ -95,7 +95,7 @@ describe("reCAPTCHA Client", () => {
 
       // Simulate grecaptcha loading after 200ms
       vi.advanceTimersByTime(200);
-      (globalThis.window as Record<string, unknown>).grecaptcha = {
+      (globalThis.window as unknown as Record<string, unknown>).grecaptcha = {
         ready: (cb: () => void) => cb(),
         execute: vi.fn().mockResolvedValue("delayed-token"),
       };
