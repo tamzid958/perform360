@@ -1,32 +1,36 @@
 import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/prisma";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600; // Match blog ISR: revalidate every hour
 
 const BASE_URL = "https://performs360.com";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Fetch all published blog posts for dynamic sitemap entries
-  const blogPosts = await prisma.blogPost.findMany({
-    where: { status: "PUBLISHED" },
-    select: { slug: true, updatedAt: true },
-    orderBy: { publishedAt: "desc" },
-  });
+  // Skip DB query when DATABASE_URL is absent (e.g. Docker build)
+  let blogEntries: MetadataRoute.Sitemap = [];
+  if (process.env.DATABASE_URL) {
+    const blogPosts = await prisma.blogPost.findMany({
+      where: { status: "PUBLISHED" },
+      select: { slug: true, updatedAt: true },
+      orderBy: { publishedAt: "desc" },
+    });
 
-  const blogEntries: MetadataRoute.Sitemap = [
-    {
-      url: `${BASE_URL}/blog`,
-      lastModified: blogPosts[0]?.updatedAt ?? new Date(),
-      changeFrequency: "daily",
-      priority: 0.8,
-    },
-    ...blogPosts.map((post) => ({
-      url: `${BASE_URL}/blog/${post.slug}`,
-      lastModified: post.updatedAt,
-      changeFrequency: "monthly" as const,
-      priority: 0.7,
-    })),
-  ];
+    blogEntries = [
+      {
+        url: `${BASE_URL}/blog`,
+        lastModified: blogPosts[0]?.updatedAt ?? new Date(),
+        changeFrequency: "daily",
+        priority: 0.8,
+      },
+      ...blogPosts.map((post) => ({
+        url: `${BASE_URL}/blog/${post.slug}`,
+        lastModified: post.updatedAt,
+        changeFrequency: "monthly" as const,
+        priority: 0.7,
+      })),
+    ];
+  }
 
   return [
     {

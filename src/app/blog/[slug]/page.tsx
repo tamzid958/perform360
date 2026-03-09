@@ -13,8 +13,12 @@ interface BlogPostPageProps {
   params: Promise<{ slug: string }>;
 }
 
-// Pre-render all published blog posts at build time for SEO indexing
+// Pre-render published blog posts at build time when DB is available;
+// falls back to on-demand ISR when DATABASE_URL is absent (e.g. Docker build)
 export async function generateStaticParams() {
+  if (!process.env.DATABASE_URL) {
+    return [];
+  }
   const posts = await prisma.blogPost.findMany({
     where: { status: "PUBLISHED" },
     select: { slug: true },
