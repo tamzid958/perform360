@@ -9,7 +9,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  APP_DIR: /root/perform360
+  APP_DIR: /root/performs360
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
