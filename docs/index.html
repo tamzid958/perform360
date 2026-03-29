@@ -281,7 +281,7 @@
       <div class="mt-10 border border-gray-800 flex items-center justify-between gap-4 px-4 md:px-5 py-4 reveal d1 overflow-x-auto">
         <div class="flex items-center gap-3 font-mono text-[12px] md:text-[13px] min-w-0">
           <span class="text-accent font-bold select-none shrink-0">$</span>
-          <span class="text-gray-400 break-all md:whitespace-nowrap">curl -fsSL https://raw.githubusercontent.com/tamzid-performs360/performs360/production/deploy.sh | bash</span>
+          <span class="text-gray-400 break-all md:whitespace-nowrap">curl -fsSL https://raw.githubusercontent.com/tamzid958/perform360/master/deploy.sh | bash</span>
         </div>
         <button id="copyBtn" class="text-gray-500 hover:text-gray-300 transition-colors shrink-0" aria-label="Copy">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
@@ -375,7 +375,7 @@
     }));
 
     document.getElementById('copyBtn').addEventListener('click', function() {
-      navigator.clipboard.writeText('curl -fsSL https://raw.githubusercontent.com/tamzid-performs360/performs360/production/deploy.sh | bash');
+      navigator.clipboard.writeText('curl -fsSL https://raw.githubusercontent.com/tamzid958/perform360/master/deploy.sh | bash');
       this.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>';
       setTimeout(() => { this.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>'; }, 2000);
     });

@@ -3,10 +3,10 @@
 # Performs360 — One-Command Interactive Deployment Script
 #
 # Usage:
-#   bash <(curl -fsSL https://raw.githubusercontent.com/tamzid-performs360/performs360/production/deploy.sh)
+#   bash <(curl -fsSL https://raw.githubusercontent.com/tamzid958/perform360/master/deploy.sh)
 #
 #   or download first:
-#   curl -fsSL https://raw.githubusercontent.com/tamzid-performs360/performs360/production/deploy.sh -o deploy.sh
+#   curl -fsSL https://raw.githubusercontent.com/tamzid958/perform360/master/deploy.sh -o deploy.sh
 #   bash deploy.sh
 # ─────────────────────────────────────────────────────────
 set -euo pipefail
@@ -101,7 +101,7 @@ success "Docker daemon is running"
 echo ""
 
 # ── Repository ───────────────────────────────────────────
-REPO_URL="https://github.com/tamzid-performs360/performs360.git"
+REPO_URL="https://github.com/tamzid958/perform360.git"
 INSTALL_DIR="performs360"
 
 prompt_with_default INSTALL_DIR "Installation directory" "$INSTALL_DIR"

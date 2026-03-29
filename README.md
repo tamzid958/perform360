@@ -9,13 +9,13 @@ Self-hosted 360-degree performance review platform. Run reviews, collect multi-s
 **One command — installs everything:**
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/tamzid-performs360/performs360/production/deploy.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/tamzid958/perform360/master/deploy.sh)
 ```
 
 Or download first:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/tamzid-performs360/performs360/production/deploy.sh -o deploy.sh
+curl -fsSL https://raw.githubusercontent.com/tamzid958/perform360/master/deploy.sh -o deploy.sh
 bash deploy.sh
 ```
 
@@ -38,8 +38,8 @@ The interactive script will:
 If you prefer to set things up manually:
 
 ```bash
-git clone -b production https://github.com/tamzid-performs360/performs360.git
-cd performs360
+git clone https://github.com/tamzid958/perform360.git
+cd perform360
 cp .env.production.example .env
 # Edit .env with your values
 docker compose up -d --build
@@ -64,24 +64,18 @@ docker compose up -d --build
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────┐
-│                 Docker Host                 │
-│                                             │
-│  ┌─────────────┐      ┌─────────────────┐  │
-│  │   App        │      │   Worker         │  │
-│  │  (Next.js)   │      │  (Background     │  │
-│  │  Port 3000   │      │   job processor) │  │
-│  └──────┬───────┘      └────────┬─────────┘  │
-│         │                       │            │
-│         └───────────┬───────────┘            │
-│                     │                        │
-└─────────────────────┼────────────────────────┘
-                      │
-              ┌───────┴────────┐
-              │  PostgreSQL    │
-              │  (external)    │
-              └────────────────┘
+```mermaid
+---
+config:
+  theme: dark
+---
+graph TD
+    PG[(PostgreSQL<br/>external)] --- App
+    PG --- Worker
+    subgraph Docker Host
+        App[App<br/>Next.js · Port 3000]
+        Worker[Worker<br/>Background jobs · cycles, email]
+    end
 ```
 
 **Services:**
@@ -106,7 +100,7 @@ docker compose down
 docker compose restart
 
 # Update to latest version
-git pull origin production
+git pull origin master
 docker compose up -d --build
 ```
 
