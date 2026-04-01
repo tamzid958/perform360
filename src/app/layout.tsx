@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "@fontsource-variable/inter";
 import AuthSessionProvider from "@/components/session-provider";
+import { BuiltBy } from "@/components/ui/built-by";
 import "./globals.css";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
@@ -32,6 +33,7 @@ export default function RootLayout({
       >
         <AuthSessionProvider>
           {children}
+          <BuiltBy />
         </AuthSessionProvider>
       </body>
     </html>

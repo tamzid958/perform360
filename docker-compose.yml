@@ -17,7 +17,9 @@ services:
     restart: "no"
 
   app:
-    build: .
+    build:
+      context: .
+      target: runner
     container_name: performs360-app
     restart: unless-stopped
     depends_on:
@@ -29,7 +31,9 @@ services:
       - .env
 
   worker:
-    build: .
+    build:
+      context: .
+      target: worker
     container_name: performs360-worker
     restart: unless-stopped
     depends_on:
@@ -37,4 +41,3 @@ services:
         condition: service_completed_successfully
     env_file:
       - .env
-    entrypoint: ["node", "--import", "tsx", "scripts/worker.ts"]
