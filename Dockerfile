@@ -24,7 +24,15 @@ RUN \
 # Generate Prisma client
 RUN npx prisma generate
 
-# Stage 2: Build the application
+# Stage 2: Migrate (full node_modules for prisma CLI)
+FROM node:20-alpine AS migrate
+RUN apk add --no-cache openssl
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY prisma ./prisma
+ENTRYPOINT ["node_modules/.bin/prisma"]
+
+# Stage 3: Build the application
 FROM node:20-alpine AS builder
 RUN apk add --no-cache openssl
 WORKDIR /app

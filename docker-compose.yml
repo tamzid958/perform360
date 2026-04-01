@@ -7,11 +7,13 @@
 
 services:
   migrate:
-    build: .
+    build:
+      context: .
+      target: migrate
     container_name: performs360-migrate
     env_file:
       - .env
-    entrypoint: ["node", "node_modules/prisma/build/index.js", "db", "push", "--skip-generate"]
+    command: ["db", "push", "--skip-generate"]
     restart: "no"
 
   app:
