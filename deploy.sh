@@ -109,18 +109,10 @@ prompt_with_default INSTALL_DIR "Installation directory" "$INSTALL_DIR"
 REPO_EXISTS=false
 if [[ -d "$INSTALL_DIR" ]]; then
   REPO_EXISTS=true
-  warn "Directory '$INSTALL_DIR' already exists."
-  read -rp "$(echo -e "${BOLD}Pull latest changes? (y/n)${NC} [y]: ")" pull_choice
-  pull_choice="${pull_choice:-y}"
-  if [[ "$pull_choice" =~ ^[Yy]$ ]]; then
-    info "Pulling latest changes..."
-    cd "$INSTALL_DIR"
-    git pull origin production
-    success "Repository updated"
-  else
-    cd "$INSTALL_DIR"
-    info "Using existing directory as-is"
-  fi
+  info "Directory '$INSTALL_DIR' already exists — pulling latest changes..."
+  cd "$INSTALL_DIR"
+  git pull origin production
+  success "Repository updated"
 else
   info "Cloning repository..."
   git clone -b production "$REPO_URL" "$INSTALL_DIR"
