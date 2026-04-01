@@ -106,7 +106,9 @@ INSTALL_DIR="performs360"
 
 prompt_with_default INSTALL_DIR "Installation directory" "$INSTALL_DIR"
 
+REPO_EXISTS=false
 if [[ -d "$INSTALL_DIR" ]]; then
+  REPO_EXISTS=true
   warn "Directory '$INSTALL_DIR' already exists."
   read -rp "$(echo -e "${BOLD}Pull latest changes? (y/n)${NC} [y]: ")" pull_choice
   pull_choice="${pull_choice:-y}"
@@ -128,70 +130,87 @@ fi
 
 echo ""
 
-# ── Configuration ────────────────────────────────────────
-info "Let's configure your deployment."
-echo -e "${YELLOW}─────────────────────────────────────────${NC}"
-echo ""
+# ── Check if .env already configured ────────────────────
+env_configured() {
+  [[ -f .env ]] && \
+  grep -q "^DATABASE_URL=.\+" .env && \
+  grep -q "^NEXTAUTH_SECRET=.\+" .env && \
+  grep -q "^NEXTAUTH_URL=.\+" .env && \
+  grep -q "^EMAIL_PROVIDER=.\+" .env
+}
 
-# App settings
-echo -e "${BOLD}${CYAN}1. Application Settings${NC}"
-prompt_with_default APP_URL "App URL (your domain)" "http://localhost:3000"
-prompt_with_default APP_PORT "App port" "3000"
+if [[ "$REPO_EXISTS" == true ]] && env_configured; then
+  success "Existing .env detected and looks configured — skipping setup."
+  # Read values from .env for the deploy summary
+  APP_URL=$(grep "^NEXTAUTH_URL=" .env | cut -d'=' -f2-)
+  APP_PORT=$(grep "^PORT=" .env | cut -d'=' -f2-)
+  APP_PORT="${APP_PORT:-3000}"
+  EMAIL_PROVIDER=$(grep "^EMAIL_PROVIDER=" .env | cut -d'=' -f2-)
+else
+  # ── Configuration ──────────────────────────────────────
+  info "Let's configure your deployment."
+  echo -e "${YELLOW}─────────────────────────────────────────${NC}"
+  echo ""
 
-# Generate NEXTAUTH_SECRET automatically
-NEXTAUTH_SECRET=$(openssl rand -base64 32 2>/dev/null || head -c 32 /dev/urandom | base64)
-success "Generated NEXTAUTH_SECRET automatically"
+  # App settings
+  echo -e "${BOLD}${CYAN}1. Application Settings${NC}"
+  prompt_with_default APP_URL "App URL (your domain)" "http://localhost:3000"
+  prompt_with_default APP_PORT "App port" "3000"
 
-echo ""
+  # Generate NEXTAUTH_SECRET automatically
+  NEXTAUTH_SECRET=$(openssl rand -base64 32 2>/dev/null || head -c 32 /dev/urandom | base64)
+  success "Generated NEXTAUTH_SECRET automatically"
 
-# Database settings (external PostgreSQL)
-echo -e "${BOLD}${CYAN}2. Database Settings (external PostgreSQL)${NC}"
-echo "  Provide the connection URL to your existing PostgreSQL database."
-echo "  Format: postgresql://USER:PASSWORD@HOST:5432/DBNAME?schema=public"
-echo ""
-prompt_required DATABASE_URL "Database URL"
+  echo ""
 
-echo ""
+  # Database settings (external PostgreSQL)
+  echo -e "${BOLD}${CYAN}2. Database Settings (external PostgreSQL)${NC}"
+  echo "  Provide the connection URL to your existing PostgreSQL database."
+  echo "  Format: postgresql://USER:PASSWORD@HOST:5432/DBNAME?schema=public"
+  echo ""
+  prompt_required DATABASE_URL "Database URL"
 
-# Email settings
-echo -e "${BOLD}${CYAN}3. Email Settings${NC}"
-echo "  Email is used for sending OTP codes and review invitations."
-echo "  Providers: resend | brevo | smtp"
-echo ""
-prompt_with_default EMAIL_PROVIDER "Email provider" "smtp"
-prompt_with_default EMAIL_FROM "From address" "Performs360 <noreply@performs360.com>"
+  echo ""
 
-RESEND_API_KEY=""
-BREVO_API_KEY=""
-SMTP_HOST=""
-SMTP_PORT=""
-SMTP_USER=""
-SMTP_PASS=""
+  # Email settings
+  echo -e "${BOLD}${CYAN}3. Email Settings${NC}"
+  echo "  Email is used for sending OTP codes and review invitations."
+  echo "  Providers: resend | brevo | smtp"
+  echo ""
+  prompt_with_default EMAIL_PROVIDER "Email provider" "smtp"
+  prompt_with_default EMAIL_FROM "From address" "Performs360 <noreply@performs360.com>"
 
-case "$EMAIL_PROVIDER" in
-  resend)
-    prompt_required RESEND_API_KEY "Resend API key"
-    ;;
-  brevo)
-    prompt_required BREVO_API_KEY "Brevo API key"
-    ;;
-  smtp)
-    prompt_with_default SMTP_HOST "SMTP host" "smtp.gmail.com"
-    prompt_with_default SMTP_PORT "SMTP port" "587"
-    prompt_required SMTP_USER "SMTP username"
-    prompt_secret SMTP_PASS "SMTP password"
-    ;;
-  *)
-    error "Unknown email provider: $EMAIL_PROVIDER"
-    ;;
-esac
+  RESEND_API_KEY=""
+  BREVO_API_KEY=""
+  SMTP_HOST=""
+  SMTP_PORT=""
+  SMTP_USER=""
+  SMTP_PASS=""
 
-echo ""
+  case "$EMAIL_PROVIDER" in
+    resend)
+      prompt_required RESEND_API_KEY "Resend API key"
+      ;;
+    brevo)
+      prompt_required BREVO_API_KEY "Brevo API key"
+      ;;
+    smtp)
+      prompt_with_default SMTP_HOST "SMTP host" "smtp.gmail.com"
+      prompt_with_default SMTP_PORT "SMTP port" "587"
+      prompt_required SMTP_USER "SMTP username"
+      prompt_secret SMTP_PASS "SMTP password"
+      ;;
+    *)
+      error "Unknown email provider: $EMAIL_PROVIDER"
+      ;;
+  esac
 
-# ── Write .env ───────────────────────────────────────────
-info "Writing .env file..."
+  echo ""
 
-cat > .env <<ENVFILE
+  # ── Write .env ─────────────────────────────────────────
+  info "Writing .env file..."
+
+  cat > .env <<ENVFILE
 # ─────────────────────────────────────────────────────────
 # Performs360 — Production Environment
 # Generated by deploy.sh on $(date -u +"%Y-%m-%d %H:%M:%S UTC")
@@ -221,7 +240,9 @@ SMTP_PASS=${SMTP_PASS}
 EMAIL_FROM="${EMAIL_FROM}"
 ENVFILE
 
-success ".env file written"
+  success ".env file written"
+fi
+
 echo ""
 
 # ── Build & Deploy ───────────────────────────────────────
